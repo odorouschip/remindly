@@ -12,7 +12,7 @@ import {
   Smartphone,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   REMINDER_PRESETS_MINUTES,
   reminderDueAt,
@@ -66,7 +66,9 @@ export function CalendarApp() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
   const [status, setStatus] = useState("Ready to build your day.");
-  const [isPending, startTransition] = useTransition();
+  const [isAuthWorking, setIsAuthWorking] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const supabase = useMemo(() => (isSupabaseConfigured ? getSupabaseBrowserClient() : null), []);
 
@@ -94,38 +96,59 @@ export function CalendarApp() {
 
   async function loadEvents(currentUserId = userId) {
     if (!supabase || !currentUserId) return;
+    setIsRefreshing(true);
 
-    const { data, error } = await supabase
-      .from("events")
-      .select("*, reminders(*)")
-      .eq("user_id", currentUserId)
-      .is("deleted_at", null)
-      .order("starts_at", { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*, reminders(*)")
+        .eq("user_id", currentUserId)
+        .is("deleted_at", null)
+        .order("starts_at", { ascending: true });
 
-    if (error) {
-      setStatus(error.message);
-      return;
+      if (error) {
+        setStatus(error.message);
+        return;
+      }
+
+      setEvents((data ?? []) as EventWithReminders[]);
+      setStatus("Calendar synced.");
+    } finally {
+      setIsRefreshing(false);
     }
-
-    setEvents((data ?? []) as EventWithReminders[]);
-    setStatus("Calendar synced.");
   }
 
   async function handleAuth() {
     if (!supabase) return;
-    const authCall =
-      authMode === "sign-in"
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password });
 
-    const { data, error } = await authCall;
-    if (error) {
-      setStatus(error.message);
-      return;
+    setIsAuthWorking(true);
+    setStatus(authMode === "sign-in" ? "Signing in..." : "Creating account...");
+
+    try {
+      const authCall =
+        authMode === "sign-in"
+          ? supabase.auth.signInWithPassword({ email, password })
+          : supabase.auth.signUp({ email, password });
+
+      const { data, error } = await authCall;
+      if (error) {
+        setStatus(error.message);
+        return;
+      }
+
+      const sessionUserId = data.session?.user.id ?? null;
+      setUserId(sessionUserId);
+
+      if (!data.session) {
+        setStatus("Account created. Confirm your email, then sign in.");
+        return;
+      }
+
+      setStatus(authMode === "sign-up" ? "Account created and signed in." : "Signed in.");
+      await loadEvents(sessionUserId);
+    } finally {
+      setIsAuthWorking(false);
     }
-
-    setUserId(data.user?.id ?? null);
-    setStatus(authMode === "sign-up" ? "Account created. Check email confirmation if Supabase requires it." : "Signed in.");
   }
 
   async function handleSignOut() {
@@ -138,7 +161,10 @@ export function CalendarApp() {
   }
 
   async function handleSaveEvent() {
-    if (!supabase || !userId) return;
+    if (!supabase || !userId) {
+      setStatus("Sign in before saving events.");
+      return;
+    }
 
     const startsAt = fromDateTimeLocal(form.startsAt).toISOString();
     const endsAt = fromDateTimeLocal(form.endsAt).toISOString();
@@ -153,7 +179,10 @@ export function CalendarApp() {
       return;
     }
 
-    startTransition(async () => {
+    setIsSaving(true);
+    setStatus("Saving event...");
+
+    try {
       const eventPayload = {
         user_id: userId,
         title: form.title.trim(),
@@ -177,7 +206,11 @@ export function CalendarApp() {
         return;
       }
 
-      await supabase.from("reminders").delete().eq("event_id", savedEvent.id);
+      const { error: deleteReminderError } = await supabase.from("reminders").delete().eq("event_id", savedEvent.id);
+      if (deleteReminderError) {
+        setStatus(deleteReminderError.message);
+        return;
+      }
 
       if (form.reminderOffsets.length > 0) {
         const reminderRows = form.reminderOffsets.map((offset) => ({
@@ -199,11 +232,17 @@ export function CalendarApp() {
       setSelectedEventId(null);
       setForm(emptyForm);
       await loadEvents(userId);
-    });
+      setStatus("Event saved.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleDeleteEvent(eventId: string) {
-    if (!supabase || !userId) return;
+    if (!supabase || !userId) {
+      setStatus("Sign in before deleting events.");
+      return;
+    }
     const { error } = await supabase.from("events").update({ deleted_at: new Date().toISOString() }).eq("id", eventId);
     if (error) {
       setStatus(error.message);
@@ -276,9 +315,9 @@ export function CalendarApp() {
               required
             />
           </label>
-          <button type="submit">
+          <button type="submit" disabled={isAuthWorking}>
             <Check aria-hidden />
-            {authMode === "sign-in" ? "Sign in" : "Create account"}
+            {isAuthWorking ? "Working" : authMode === "sign-in" ? "Sign in" : "Create account"}
           </button>
           <button type="button" className="text-button" onClick={() => setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in")}>
             {authMode === "sign-in" ? "Need an account?" : "Already have one?"}
@@ -297,7 +336,7 @@ export function CalendarApp() {
           <span>Calender</span>
         </div>
         <div className="topbar-actions">
-          <button type="button" className="icon-button" title="Refresh events" onClick={() => void loadEvents()}>
+          <button type="button" className="icon-button" title="Refresh events" disabled={isRefreshing} onClick={() => void loadEvents()}>
             <RefreshCcw aria-hidden />
           </button>
           <button type="button" className="icon-button" title="Sign out" onClick={handleSignOut}>
@@ -365,9 +404,9 @@ export function CalendarApp() {
               <p className="eyebrow">{selectedEvent ? "Editing" : "New event"}</p>
               <h2>{selectedEvent ? selectedEvent.title : "Build a countdown"}</h2>
             </div>
-            <button type="submit" disabled={isPending}>
+            <button type="submit" disabled={isSaving}>
               <Save aria-hidden />
-              {isPending ? "Saving" : "Save"}
+              {isSaving ? "Saving" : "Save"}
             </button>
           </div>
 

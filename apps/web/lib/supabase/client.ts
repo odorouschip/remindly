@@ -35,13 +35,39 @@ export type Database = {
         Row: EventRow;
         Insert: Omit<EventRow, "id" | "created_at" | "updated_at"> & { id?: string };
         Update: Partial<Omit<EventRow, "id" | "created_at" | "updated_at">>;
+        Relationships: [
+          {
+            foreignKeyName: "events_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       reminders: {
         Row: ReminderRow;
         Insert: Omit<ReminderRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<ReminderRow, "id" | "created_at">>;
+        Relationships: [
+          {
+            foreignKeyName: "reminders_event_id_fkey";
+            columns: ["event_id"];
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reminders_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
 

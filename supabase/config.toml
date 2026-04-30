@@ -1,0 +1,4 @@
+project_id = "calender"
+
+[functions.dispatch-reminders]
+verify_jwt = false

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Remindly — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #111; font-family: 'DM Sans', sans-serif; overflow: hidden; }
+
+  .shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }
+
+  .header {
+    padding: 14px 28px;
+    border-bottom: 1px solid #222;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-logo-dot {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: #F4845F;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.03em; }
+  .header-sub   { font-size: 10px; font-weight: 600; color: #444; letter-spacing: .1em; margin-left: auto; }
+
+  .canvas {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* Web section */
+  .web-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 12px 20px 20px;
+    overflow: hidden;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; color: #444;
+    letter-spacing: .1em; margin-bottom: 10px; padding-left: 2px;
+  }
+  .browser-frame {
+    flex: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.55);
+    border: 1px solid #2a2a2a;
+    display: flex;
+    flex-direction: column;
+  }
+  .browser-chrome {
+    background: #2a2a2a;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .browser-dots { display: flex; gap: 5px; }
+  .browser-dot  { width: 11px; height: 11px; border-radius: 50%; }
+  .browser-url  {
+    flex: 1; background: #1a1a1a; border-radius: 5px;
+    padding: 4px 12px; font-size: 11px; color: #555; text-align: center;
+  }
+  .browser-body { flex: 1; overflow: hidden; }
+  .browser-body iframe { width: 100%; height: 100%; border: none; display: block; }
+
+  /* Divider */
+  .divider { width: 1px; background: #222; flex-shrink: 0; }
+
+  /* iOS section */
+  .ios-section {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 20px 12px;
+  }
+  .phone-wrap {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .phone-outer {
+    width: 290px;
+    height: 100%;
+    max-height: 610px;
+    position: relative;
+  }
+  .phone-body {
+    position: absolute; inset: 0;
+    background: #1a1a1a;
+    border-radius: 42px;
+    box-shadow: 0 0 0 1px #333, 0 20px 60px rgba(0,0,0,.7), inset 0 0 0 1px #444;
+    overflow: hidden;
+  }
+  .phone-status {
+    height: 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px 0;
+    position: relative; z-index: 10; flex-shrink: 0;
+  }
+  .phone-notch {
+    width: 88px; height: 24px; background: #1a1a1a;
+    border-radius: 0 0 16px 16px;
+    position: absolute; left: 50%; transform: translateX(-50%); top: 0;
+  }
+  .phone-time { font-size: 12px; font-weight: 700; color: #1C1C1E; }
+  .phone-icons { display: flex; gap: 5px; align-items: center; }
+  .phone-content {
+    position: absolute; top: 44px; bottom: 0; left: 0; right: 0;
+    overflow: hidden; background: #F2F2F7;
+  }
+  .phone-content iframe { width: 100%; height: 100%; border: none; display: block; }
+  .phone-home {
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 4px; background: rgba(0,0,0,.22); border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="header-logo-dot">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="3" width="12" height="10" rx="2" stroke="white" stroke-width="1.4"/>
+          <path d="M1 6h12" stroke="white" stroke-width="1.4"/>
+          <path d="M4 1v3M10 1v3" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="header-title">Remindly</span>
+    </div>
+    <span class="header-sub">DESIGN EXPLORATION</span>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas">
+    <!-- Web -->
+    <div class="web-section">
+      <div class="section-label">WEB — BROWSER</div>
+      <div class="browser-frame">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <div class="browser-dot" style="background:#FF5F56"></div>
+            <div class="browser-dot" style="background:#FFBD2E"></div>
+            <div class="browser-dot" style="background:#27C93F"></div>
+          </div>
+          <div class="browser-url">remindly.app</div>
+        </div>
+        <div class="browser-body">
+          <iframe src="web.html" title="Remindly Web"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- iOS -->
+    <div class="ios-section">
+      <div class="section-label">iOS — MOBILE</div>
+      <div class="phone-wrap">
+        <div class="phone-outer">
+          <div class="phone-body">
+            <div class="phone-status">
+              <span class="phone-time">9:41</span>
+              <div class="phone-notch"></div>
+              <div class="phone-icons">
+                <svg width="15" height="10" viewBox="0 0 15 10" fill="none">
+                  <rect x="0" y="3" width="3" height="7" rx="1" fill="#1C1C1E"/>
+                  <rect x="4" y="2" width="3" height="8" rx="1" fill="#1C1C1E"/>
+                  <rect x="8" y="1" width="3" height="9" rx="1" fill="#1C1C1E"/>
+                  <rect x="12" y="0" width="3" height="10" rx="1" fill="#1C1C1E" opacity=".3"/>
+                </svg>
+                <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+                  <path d="M1 4.5C3.5 2 9.5 2 12 4.5M3 6.5C4.5 5 8.5 5 10 6.5M5 8.5C5.8 7.8 7.2 7.8 8 8.5" stroke="#1C1C1E" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                <svg width="22" height="11" viewBox="0 0 22 11">
+                  <rect x="0" y="1" width="18" height="9" rx="3" stroke="#1C1C1E" stroke-width="1.2" fill="none"/>
+                  <rect x="1.5" y="2.5" width="14" height="6" rx="1.5" fill="#1C1C1E"/>
+                  <path d="M19.5 3.5v4" stroke="#1C1C1E" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="phone-content">
+              <iframe src="ios.html" title="Remindly iOS"></iframe>
+            </div>
+            <div class="phone-home"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

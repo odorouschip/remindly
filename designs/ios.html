@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Remindly — iOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; background: #F2F2F7; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const CATS = [
+  { id:'work',     label:'Work',     color:'#5046E5' },
+  { id:'personal', label:'Personal', color:'#E85D3A' },
+  { id:'health',   label:'Health',   color:'#2DA87E' },
+  { id:'social',   label:'Social',   color:'#C47EDB' },
+];
+const getCat = id => CATS.find(c=>c.id===id)||CATS[0];
+
+const TODAY = (() => { const d=new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; })();
+function p2(n){ return String(n).padStart(2,'0'); }
+function fmtDate(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+function parseDate(s){ const[y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const EVENTS_INIT = [
+  {id:1, title:'Morning standup',     date:'2026-05-01', time:'09:00', end:'09:30', cat:'work',    recur:'Daily'},
+  {id:2, title:'Design critique',     date:'2026-05-01', time:'14:00', end:'15:30', cat:'work',    recur:''},
+  {id:3, title:'Gym',                 date:'2026-05-01', time:'06:30', end:'07:30', cat:'health',  recur:'Daily'},
+  {id:4, title:'Lunch with Jamie',    date:'2026-05-02', time:'12:30', end:'13:30', cat:'social',  recur:''},
+  {id:5, title:'Sprint planning',     date:'2026-05-04', time:'10:00', end:'11:30', cat:'work',    recur:''},
+  {id:6, title:'Doctor checkup',      date:'2026-05-05', time:'15:00', end:'15:30', cat:'health',  recur:''},
+  {id:7, title:'Movie night',         date:'2026-05-03', time:'19:00', end:'22:00', cat:'social',  recur:''},
+  {id:8, title:'Weekly review',       date:'2026-05-08', time:'17:00', end:'18:00', cat:'work',    recur:'Weekly'},
+  {id:9, title:'Morning run',         date:'2026-05-06', time:'06:30', end:'07:15', cat:'health',  recur:'Daily'},
+  {id:10,title:'1:1 with manager',    date:'2026-05-07', time:'11:00', end:'11:30', cat:'work',    recur:'Weekly'},
+  {id:11,title:'Book club',           date:'2026-05-08', time:'18:30', end:'20:00', cat:'social',  recur:''},
+  {id:12,title:'Product demo',        date:'2026-05-12', time:'13:00', end:'14:00', cat:'work',    recur:''},
+  {id:13,title:'Dentist',             date:'2026-05-14', time:'09:30', end:'10:00', cat:'health',  recur:''},
+  {id:14,title:'Birthday dinner',     date:'2026-05-16', time:'19:00', end:'22:00', cat:'social',  recur:''},
+  {id:15,title:'Yoga',                date:'2026-05-19', time:'08:00', end:'09:00', cat:'health',  recur:'Weekly'},
+  {id:16,title:'Client call',         date:'2026-05-21', time:'15:00', end:'16:00', cat:'work',    recur:''},
+  {id:17,title:'Meditation',          date:'2026-05-26', time:'07:30', end:'08:00', cat:'personal',recur:'Daily'},
+  {id:18,title:'Quarterly review',    date:'2026-05-29', time:'10:00', end:'12:00', cat:'work',    recur:''},
+];
+
+// ─── SHARED UTILS ────────────────────────────────────────────────────────────
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function firstDow(y,m){ return new Date(y,m,1).getDay(); }
+function fmtTime(t){ if(!t)return''; const[h,m]=t.split(':').map(Number); const ap=h>=12?'PM':'AM'; return `${h%12||12}:${p2(m)} ${ap}`; }
+function darken(hex, amt=30){ let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); r=Math.max(0,r-amt);g=Math.max(0,g-amt);b=Math.max(0,b-amt); return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+
+// ─── iOS CALENDAR ─────────────────────────────────────────────────────────────
+function IOSCalendar({ accent, events, setEvents }) {
+  const [tab,    setTab]    = React.useState('calendar'); // calendar|agenda|search
+  const [year,   setYear]   = React.useState(2026);
+  const [month,  setMonth]  = React.useState(4);
+  const [selDate,setSelDate]= React.useState(TODAY);
+  const [modalEv,setModalEv]= React.useState(null);
+  const [search, setSearch] = React.useState('');
+  const [iosCreateOpen, setIosCreateOpen] = React.useState(false);
+
+  const navMonth = d => {
+    let m=month+d, y=year;
+    if(m<0){m=11;y--;} if(m>11){m=0;y++;}
+    setMonth(m); setYear(y);
+  };
+
+  const filtered = search ? events.filter(e=>e.title.toLowerCase().includes(search.toLowerCase())) : events;
+  const dayEvs   = filtered.filter(e=>e.date===selDate);
+
+  const saveEvent = ev => {
+    if(ev.id) setEvents(evs=>evs.map(e=>e.id===ev.id?ev:e));
+    else setEvents(evs=>[...evs,{...ev,id:Date.now()}]);
+  };
+  const deleteEvent = id => { setEvents(evs=>evs.filter(e=>e.id!==id)); setModalEv(null); };
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:'#F2F2F7',fontFamily:"'DM Sans',sans-serif",overflow:'hidden',position:'relative'}}>
+      {/* Header */}
+      <div style={{background:'#fff',paddingTop:6,paddingBottom:0,flexShrink:0,borderBottom:'1px solid rgba(0,0,0,0.08)'}}>
+        {tab==='calendar'&&(
+          <>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 16px 8px'}}>
+              <button onClick={()=>navMonth(-1)} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:accent,lineHeight:1,padding:'4px 2px'}}>‹</button>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:15,fontWeight:700,color:'#1C1C1E',letterSpacing:'-0.02em'}}>{MONTHS[month]}</div>
+                <div style={{fontSize:11,color:'#8E8E93',fontWeight:500}}>{year}</div>
+              </div>
+              <button onClick={()=>navMonth(1)} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:accent,lineHeight:1,padding:'4px 2px'}}>›</button>
+            </div>
+            <IOSMiniCal year={year} month={month} selDate={selDate} onSelect={d=>setSelDate(d)} events={filtered} accent={accent}/>
+          </>
+        )}
+        {tab==='agenda'&&(
+          <div style={{padding:'8px 16px 10px'}}>
+            <div style={{fontSize:20,fontWeight:700,color:'#1C1C1E',letterSpacing:'-0.03em'}}>Upcoming</div>
+          </div>
+        )}
+        {tab==='search'&&(
+          <div style={{padding:'8px 16px 10px'}}>
+            <div style={{position:'relative'}}>
+              <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:.4}} width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#1C1C1E" strokeWidth="1.4"/><path d="M10 10l2.5 2.5" stroke="#1C1C1E" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search events…"
+                style={{width:'100%',padding:'9px 12px 9px 30px',borderRadius:10,border:'none',background:'#F2F2F7',fontSize:14,color:'#1C1C1E',outline:'none'}}/>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:'auto',minHeight:0}}>
+        {tab==='calendar'&&(
+          <div style={{padding:'12px 16px 20px'}}>
+            {/* Day header */}
+            <div style={{fontSize:13,fontWeight:600,color:'#8E8E93',marginBottom:10,letterSpacing:'.02em'}}>
+              {selDate===TODAY?'TODAY — ':''}{parseDate(selDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+            </div>
+            {dayEvs.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:'#C7C7CC',fontSize:14}}>No events</div>}
+            {dayEvs.sort((a,b)=>a.time.localeCompare(b.time)).map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>setModalEv(ev)} accent={accent}/>)}
+          </div>
+        )}
+        {tab==='agenda'&&<IOSAgenda events={filtered} onPress={ev=>setModalEv(ev)} accent={accent}/>}
+        {tab==='search'&&<IOSSearchResults events={filtered} search={search} onPress={ev=>setModalEv(ev)} accent={accent}/>}
+      </div>
+
+      {/* New event FAB */}
+      {tab!=='search'&&(
+        <button onClick={()=>setIosCreateOpen(true)} style={{
+          position:'absolute',right:14,bottom:72,width:48,height:48,borderRadius:24,
+          background:accent,border:'none',cursor:'pointer',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:`0 4px 16px ${accent}66`,zIndex:10,
+          transition:'transform 0.15s',
+        }}
+        onMouseEnter={e=>e.currentTarget.style.transform='scale(1.08)'}
+        onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
+      )}
+
+      {/* Tab bar */}
+      <div style={{
+        display:'flex',background:'rgba(250,248,246,0.97)',borderTop:'1px solid rgba(0,0,0,0.08)',
+        paddingBottom:20,flexShrink:0,backdropFilter:'blur(10px)',
+      }}>
+        {[
+          {id:'calendar', icon:<CalIcon/>, label:'Calendar'},
+          {id:'agenda',   icon:<ListIcon/>, label:'Agenda'},
+          {id:'search',   icon:<SearchIcon/>, label:'Search'},
+        ].map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{
+            flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+            padding:'8px 0 0',background:'none',border:'none',cursor:'pointer',
+          }}>
+            <div style={{color:tab===t.id?accent:'#8E8E93',transition:'color 0.15s'}}>{t.icon}</div>
+            <span style={{fontSize:10,fontWeight:tab===t.id?600:400,color:tab===t.id?accent:'#8E8E93'}}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Modal */}
+      {modalEv!==null&&<IOSEventModal ev={modalEv} onClose={()=>setModalEv(null)} onSave={saveEvent} onDelete={deleteEvent} accent={accent}/>}
+      {/* iOS Create Panel */}
+      {iosCreateOpen&&<IOSCreatePanel accent={accent} defaultDate={selDate} onClose={()=>setIosCreateOpen(false)} onSave={ev=>{saveEvent(ev);setIosCreateOpen(false);}}/>}
+    </div>
+  );
+}
+
+function CalIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="4" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.6"/><path d="M2 9h18" stroke="currentColor" strokeWidth="1.6"/><path d="M7 2v3M15 2v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><rect x="6" y="12" width="3" height="3" rx="0.5" fill="currentColor"/><rect x="10" y="12" width="3" height="3" rx="0.5" fill="currentColor"/></svg>);}
+function ListIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M8 6h10M8 11h10M8 16h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="11" r="1" fill="currentColor"/><circle cx="4.5" cy="16" r="1" fill="currentColor"/></svg>);}
+function SearchIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="10" cy="10" r="6.5" stroke="currentColor" strokeWidth="1.6"/><path d="M15 15l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>);}
+
+// ─── iOS CREATE PANEL ────────────────────────────────────────────────────────
+function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
+  const [tab,       setTab]      = React.useState('event');
+  const [title,     setTitle]    = React.useState('');
+  const [date,      setDate]     = React.useState(defaultDate||TODAY);
+  const [time,      setTime]     = React.useState('09:00');
+  const [end,       setEnd]      = React.useState('10:00');
+  const [cat,       setCat]      = React.useState('work');
+  const [recur,     setRecur]    = React.useState('');
+  const [taskTitle, setTaskTitle]= React.useState('');
+  const [dueDate,   setDueDate]  = React.useState(defaultDate||TODAY);
+  const [remind,    setRemind]   = React.useState('1-day');
+  const [priority,  setPriority] = React.useState('medium');
+
+  const rowSt={background:'#fff',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F2F2F7'};
+  const labelSt={fontSize:14,color:'#1C1C1E',fontWeight:500};
+  const valSt={fontSize:14,color:'#8E8E93'};
+
+  const handleSave = () => {
+    if(tab==='event'){
+      if(!title.trim()) return;
+      onSave({title,date,time,end,cat,recur});
+    } else {
+      if(!taskTitle.trim()) return;
+      onSave({title:taskTitle+' ✓',date:dueDate,time:'',end:'',cat:'personal',recur:'',isTask:true,remind,priority});
+    }
+  };
+
+  return (
+    <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:200,backdropFilter:'blur(4px)'}}>
+      <div style={{background:'#F2F2F7',borderRadius:'20px 20px 0 0',maxHeight:'90%',overflow:'auto'}}>
+        <div style={{display:'flex',justifyContent:'center',padding:'10px 0 4px'}}>
+          <div style={{width:36,height:4,borderRadius:2,background:'rgba(0,0,0,.18)'}}/>
+        </div>
+        {/* Tabs */}
+        <div style={{display:'flex',padding:'0 16px 12px',gap:8}}>
+          {['event','task'].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{
+              flex:1,padding:'9px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,
+              background:tab===t?accent:'rgba(0,0,0,0.07)',
+              color:tab===t?'#fff':'#8E8E93',
+              transition:'all 0.15s',textTransform:'capitalize',
+            }}>{t==='event'?'Event':'Task'}</button>
+          ))}
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px 12px'}}>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:500}}>Cancel</button>
+          <span style={{fontWeight:700,fontSize:15,color:'#1C1C1E'}}>{tab==='event'?'New Event':'New Task'}</span>
+          <button onClick={handleSave} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:700}}>Add</button>
+        </div>
+
+        {tab==='event'&&(
+          <>
+            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+              <div style={{...rowSt,borderBottom:'none'}}>
+                <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event title"
+                  style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}} autoFocus/>
+              </div>
+            </div>
+            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+              <div style={rowSt}><span style={labelSt}>Date</span><input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
+              <div style={rowSt}><span style={labelSt}>Start</span><input type="time" value={time} onChange={e=>setTime(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
+              <div style={{...rowSt,borderBottom:'none'}}><span style={labelSt}>End</span><input type="time" value={end} onChange={e=>setEnd(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
+            </div>
+            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+              <div style={rowSt}>
+                <span style={labelSt}>Category</span>
+                <div style={{display:'flex',gap:8}}>{CATS.map(c=><div key={c.id} onClick={()=>setCat(c.id)} style={{width:22,height:22,borderRadius:'50%',background:c.color,cursor:'pointer',boxShadow:cat===c.id?`0 0 0 2px #fff, 0 0 0 4px ${c.color}`:'none',transition:'box-shadow 0.15s'}}/>)}</div>
+              </div>
+              <div style={{...rowSt,borderBottom:'none'}}>
+                <span style={labelSt}>Repeat</span>
+                <select value={recur} onChange={e=>setRecur(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent',cursor:'pointer'}}>
+                  {['','Daily','Weekly','Monthly','Yearly'].map(r=><option key={r} value={r}>{r||'Never'}</option>)}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab==='task'&&(
+          <>
+            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+              <div style={{...rowSt,borderBottom:'none'}}>
+                <input value={taskTitle} onChange={e=>setTaskTitle(e.target.value)} placeholder="Task name"
+                  style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}} autoFocus/>
+              </div>
+            </div>
+            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+              <div style={{...rowSt,borderBottom:'none'}}>
+                <span style={labelSt}>Due date</span>
+                <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/>
+              </div>
+            </div>
+            <div style={{margin:'0 0 10px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
+              <div style={{fontSize:12,fontWeight:600,color:'#8E8E93',marginBottom:10,letterSpacing:'.04em'}}>REMIND ME</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                {[
+                  {v:'at-time',l:'At due time'},
+                  {v:'30-min', l:'30 min before'},
+                  {v:'1-day',  l:'1 day before'},
+                  {v:'1-week', l:'1 week before'},
+                  {v:'2-weeks',l:'2 weeks before'},
+                  {v:'custom', l:'Custom…'},
+                ].map(r=>(
+                  <div key={r.v} onClick={()=>setRemind(r.v)} style={{
+                    padding:'8px 6px',borderRadius:8,cursor:'pointer',fontSize:11,fontWeight:500,textAlign:'center',
+                    background:remind===r.v?accent:'#F2F2F7',
+                    color:remind===r.v?'#fff':'#4a4744',
+                    transition:'all 0.15s',
+                  }}>{r.l}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{margin:'0 0 20px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
+              <div style={{fontSize:12,fontWeight:600,color:'#8E8E93',marginBottom:10,letterSpacing:'.04em'}}>PRIORITY</div>
+              <div style={{display:'flex',gap:8}}>
+                {[{v:'low',l:'Low',c:'#2DA87E'},{v:'medium',l:'Medium',c:'#D97706'},{v:'high',l:'High',c:'#E85D3A'}].map(p=>(
+                  <div key={p.v} onClick={()=>setPriority(p.v)} style={{
+                    flex:1,padding:'9px 0',textAlign:'center',borderRadius:8,cursor:'pointer',
+                    fontSize:12,fontWeight:600,
+                    background:priority===p.v?p.c:'#F2F2F7',
+                    color:priority===p.v?'#fff':p.c,
+                    transition:'all 0.15s',
+                  }}>{p.l}</div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── iOS MINI CALENDAR ───────────────────────────────────────────────────────
+function IOSMiniCal({ year, month, selDate, onSelect, events, accent }) {
+  const first = firstDow(year,month);
+  const days  = daysInMonth(year,month);
+  const evDates = new Set(events.map(e=>e.date));
+  const cells = [...Array(first).fill(null), ...Array.from({length:days},(_,i)=>i+1)];
+
+  return (
+    <div style={{padding:'0 12px 8px'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',textAlign:'center',marginBottom:2}}>
+        {DAYS3.map(d=><div key={d} style={{fontSize:10,fontWeight:600,color:'#8E8E93',padding:'2px 0'}}>{d[0]}</div>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',textAlign:'center'}}>
+        {cells.map((d,i)=>{
+          if(!d) return <div key={i}/>;
+          const ds=`${year}-${p2(month+1)}-${p2(d)}`;
+          const isSel=ds===selDate, isToday=ds===TODAY, hasEv=evDates.has(ds);
+          return (
+            <div key={i} onClick={()=>onSelect(ds)} style={{padding:'2px 0',cursor:'pointer'}}>
+              <div style={{
+                width:30,height:30,lineHeight:'30px',borderRadius:'50%',margin:'0 auto',
+                fontSize:13,fontWeight:isSel||isToday?700:400,
+                background:isSel?accent:isToday?accent+'22':'transparent',
+                color:isSel?'#fff':isToday?accent:'#1C1C1E',
+                position:'relative',
+              }}>
+                {d}
+                {hasEv&&!isSel&&<div style={{position:'absolute',bottom:2,left:'50%',transform:'translateX(-50%)',width:4,height:4,borderRadius:'50%',background:isSel?'#fff':accent}}/>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── iOS EVENT CARD ──────────────────────────────────────────────────────────
+function IOSEventCard({ ev, onPress, accent }) {
+  const c = getCat(ev.cat);
+  return (
+    <div onClick={onPress} style={{
+      display:'flex',gap:12,alignItems:'flex-start',
+      background:'#FBF9F7',borderRadius:14,padding:'13px 14px',marginBottom:8,
+      boxShadow:'0 1px 3px rgba(0,0,0,0.06)',cursor:'pointer',
+    }}>
+      <div style={{width:4,borderRadius:2,alignSelf:'stretch',background:c.color,minHeight:32,flexShrink:0}}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:600,fontSize:14,color:'#1C1C1E',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ev.title}</div>
+        <div style={{fontSize:12,color:'#8E8E93'}}>
+          {ev.time&&`${fmtTime(ev.time)}${ev.end?` – ${fmtTime(ev.end)}`:''}`}
+          {ev.recur&&<span style={{marginLeft:6,color:c.color}}>· ↻ {ev.recur}</span>}
+        </div>
+      </div>
+      <span style={{fontSize:10,background:c.color+'22',color:c.color,borderRadius:6,padding:'3px 7px',fontWeight:600,flexShrink:0}}>{c.label}</span>
+    </div>
+  );
+}
+
+// ─── iOS AGENDA ──────────────────────────────────────────────────────────────
+function IOSAgenda({ events, onPress, accent }) {
+  const upcoming=[...events].filter(e=>e.date>=TODAY).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const grouped={};
+  upcoming.forEach(e=>{ if(!grouped[e.date]) grouped[e.date]=[]; grouped[e.date].push(e); });
+
+  return (
+    <div style={{padding:'12px 16px 20px'}}>
+      {upcoming.length===0&&<div style={{textAlign:'center',padding:40,color:'#C7C7CC',fontSize:14}}>No upcoming events</div>}
+      {Object.entries(grouped).map(([date,evs])=>{
+        const isToday=date===TODAY;
+        const d=parseDate(date);
+        return (
+          <div key={date} style={{marginBottom:20}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+              <div style={{textAlign:'center',width:40,flexShrink:0}}>
+                <div style={{fontSize:10,fontWeight:700,color:isToday?accent:'#8E8E93',letterSpacing:'.05em'}}>{DAYS3[d.getDay()].toUpperCase()}</div>
+                <div style={{
+                  fontSize:20,fontWeight:700,color:isToday?'#fff':'#1C1C1E',
+                  background:isToday?accent:'transparent',width:36,height:36,
+                  lineHeight:'36px',borderRadius:'50%',margin:'0 auto',textAlign:'center',
+                }}>{d.getDate()}</div>
+              </div>
+              <div style={{flex:1,height:1,background:'#E5E5EA'}}/>
+            </div>
+            <div style={{paddingLeft:0}}>
+              {evs.map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>onPress(ev)} accent={accent}/>)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── iOS SEARCH ──────────────────────────────────────────────────────────────
+function IOSSearchResults({ events, search, onPress, accent }) {
+  if(!search) return (
+    <div style={{padding:40,textAlign:'center',color:'#C7C7CC',fontSize:14}}>
+      <SearchIcon/>
+      <div style={{marginTop:8}}>Search for events</div>
+    </div>
+  );
+  const results=events.filter(e=>e.title.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>a.date.localeCompare(b.date));
+  return (
+    <div style={{padding:'12px 16px'}}>
+      <div style={{fontSize:12,color:'#8E8E93',marginBottom:8}}>{results.length} result{results.length!==1?'s':''}</div>
+      {results.map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>onPress(ev)} accent={accent}/>)}
+      {results.length===0&&<div style={{textAlign:'center',padding:30,color:'#C7C7CC',fontSize:14}}>No events found</div>}
+    </div>
+  );
+}
+
+// ─── iOS EVENT MODAL ──────────────────────────────────────────────────────────
+function IOSEventModal({ ev, onClose, onSave, onDelete, accent }) {
+  const isNew=!ev.id;
+  const [title, setTitle]=React.useState(ev.title||'');
+  const [date,  setDate] =React.useState(ev.date||TODAY);
+  const [time,  setTime] =React.useState(ev.time||'09:00');
+  const [end,   setEnd]  =React.useState(ev.end||'10:00');
+  const [cat,   setCat]  =React.useState(ev.cat||'work');
+  const [recur, setRecur]=React.useState(ev.recur||'');
+
+  const rowStyle={background:'#fff',padding:'13px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F2F2F7'};
+  const labelStyle={fontSize:14,color:'#1C1C1E',fontWeight:500};
+  const valueStyle={fontSize:14,color:'#8E8E93'};
+
+  return (
+    <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:200,backdropFilter:'blur(4px)'}}>
+      <div style={{background:'#F2F2F7',borderRadius:'20px 20px 0 0',maxHeight:'88%',overflow:'auto'}}>
+        {/* Handle */}
+        <div style={{display:'flex',justifyContent:'center',padding:'10px 0 6px'}}>
+          <div style={{width:36,height:4,borderRadius:2,background:'rgba(0,0,0,.18)'}}/>
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px 14px'}}>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:500}}>Cancel</button>
+          <span style={{fontWeight:700,fontSize:16,color:'#1C1C1E'}}>{isNew?'New Event':'Edit Event'}</span>
+          <button onClick={()=>onSave({...ev,title,date,time,end,cat,recur})} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:600}}>{isNew?'Add':'Save'}</button>
+        </div>
+        {/* Fields */}
+        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
+          <div style={{...rowStyle,borderBottom:'1px solid #F2F2F7'}}>
+            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event title"
+              style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}}/>
+          </div>
+        </div>
+        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
+          <div style={rowStyle}>
+            <span style={labelStyle}>Date</span>
+            <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
+          </div>
+          <div style={rowStyle}>
+            <span style={labelStyle}>Start</span>
+            <input type="time" value={time} onChange={e=>setTime(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
+          </div>
+          <div style={{...rowStyle,borderBottom:'none'}}>
+            <span style={labelStyle}>End</span>
+            <input type="time" value={end} onChange={e=>setEnd(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
+          </div>
+        </div>
+        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
+          <div style={rowStyle}>
+            <span style={labelStyle}>Category</span>
+            <div style={{display:'flex',gap:8}}>
+              {CATS.map(c=>(
+                <div key={c.id} onClick={()=>setCat(c.id)} style={{
+                  width:24,height:24,borderRadius:'50%',background:c.color,cursor:'pointer',
+                  boxShadow:cat===c.id?`0 0 0 3px #fff, 0 0 0 5px ${c.color}`:'none',
+                  transition:'box-shadow 0.15s',
+                }}/>
+              ))}
+            </div>
+          </div>
+          <div style={{...rowStyle,borderBottom:'none'}}>
+            <span style={labelStyle}>Repeat</span>
+            <select value={recur} onChange={e=>setRecur(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent',cursor:'pointer'}}>
+              {['','Daily','Weekly','Monthly','Yearly'].map(r=><option key={r} value={r}>{r||'Never'}</option>)}
+            </select>
+          </div>
+        </div>
+        {!isNew&&(
+          <div style={{margin:'0 0 30px',borderRadius:12,overflow:'hidden'}}>
+            <button onClick={()=>onDelete(ev.id)} style={{
+              width:'100%',padding:'14px',background:'#fff',border:'none',cursor:'pointer',
+              fontSize:15,color:'#FF3B30',fontWeight:500,
+            }}>Delete Event</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [events, setEvents] = React.useState(EVENTS_INIT);
+  const accent = '#F4845F';
+  return (
+    <div style={{width:'100%',height:'100%'}}>
+      <IOSCalendar accent={accent} events={events} setEvents={setEvents}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-# Calender iOS
+# Remindly iOS
 
 This folder contains the native SwiftUI + ActivityKit source for the iPhone app and Live Activity widget.
 

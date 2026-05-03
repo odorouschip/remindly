@@ -1,13 +1,15 @@
-# Calender
+# Remindly
 
-Calender is a personal calendar MVP with a synced web app, Supabase backend, and native iOS source for notifications plus Live Activities.
+Remindly is a cross-platform calendar and task manager with a polished web app, native iOS app with Live Activities, and a Supabase backend.
 
-## What is implemented
+![Remindly web app](assets/design_screenshot.jpg)
 
-- `apps/web`: Next.js PWA for sign in, event CRUD, simple repeats, and reminder offsets.
-- `packages/shared`: shared TypeScript calendar/reminder logic with recurrence and Live Activity state helpers.
-- `supabase`: database migration, row-level security policies, and an Edge Function for dispatching due reminders to APNs.
-- `apps/ios`: SwiftUI app source, Supabase REST sync, local notifications, ActivityKit control, and WidgetKit Live Activity UI.
+## What's included
+
+- **`apps/web`** — Next.js web app with month/week/agenda views, event and task creation, category colors, repeat rules, and reminder offsets.
+- **`apps/ios`** — Native SwiftUI app with Supabase sync, local notifications, ActivityKit Live Activities, and a WidgetKit widget.
+- **`supabase`** — Database migration, row-level security policies, and an Edge Function that dispatches due reminders to APNs.
+- **`packages/shared`** — Shared TypeScript logic for recurrence, reminder offsets, and Live Activity state.
 
 ## First-time setup
 
@@ -23,7 +25,7 @@ Create the web env file:
 Copy-Item apps\web\.env.example apps\web\.env.local
 ```
 
-Then fill in:
+Fill in your Supabase project credentials:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -38,42 +40,35 @@ npm run dev:web
 
 ## Supabase setup
 
-Install and log in to the Supabase CLI, then link your project:
-
 ```powershell
 supabase login
 supabase link --project-ref your-project-ref
 supabase db push
 ```
 
-Set Edge Function secrets:
+Set Edge Function secrets and deploy the reminder dispatcher:
 
 ```powershell
 supabase secrets set --env-file supabase\functions\dispatch-reminders\.env
-```
-
-Deploy the reminder dispatcher:
-
-```powershell
 supabase functions deploy dispatch-reminders
 ```
 
-Schedule `dispatch-reminders` to run once per minute in Supabase Scheduled Functions. If you set `CRON_SECRET`, send it as a bearer token when invoking the function.
+Schedule `dispatch-reminders` to run once per minute in Supabase Scheduled Functions. If you set `CRON_SECRET`, pass it as a bearer token when invoking the function.
 
 ## iOS setup
 
-Open [apps/ios/README.md](apps/ios/README.md) on a Mac and follow the Xcode target setup. The iOS side needs a real device, an Apple Developer account, Push Notifications, and Live Activities enabled.
+See [apps/ios/README.md](apps/ios/README.md) for Xcode target configuration. The iOS app requires a real device, an Apple Developer account, and Push Notifications + Live Activities entitlements enabled.
 
 ## Useful commands
 
 ```powershell
-npm run dev:web
-npm run typecheck
-npm run test
+npm run dev:web      # start web app at localhost:3000
+npm run typecheck    # TypeScript check across all packages
+npm run test         # run test suite
 ```
 
-## Current v1 limits
+## Known limits
 
-- Events are standalone inside Calender; Apple Calendar and Google Calendar import are not included yet.
-- Simple repeats are supported in the shared model and UI, but recurring reminder dispatch should be expanded before relying on long-term recurring schedules.
-- Critical Alerts are not used because Apple requires a special entitlement.
+- No Apple Calendar / Google Calendar import yet.
+- Recurring reminder dispatch works for simple rules; complex long-term recurrence should be validated before relying on it in production.
+- Critical Alerts are not used (requires a special Apple entitlement).

@@ -6,7 +6,7 @@ This folder contains the native SwiftUI + ActivityKit source for the iPhone app 
 
 1. On a Mac, create a new iOS app project named `Calender`.
 2. Set the minimum deployment target to iOS 17.2.
-3. Add the files in `apps/ios/Calender` to the main app target.
+3. Add the files in `apps/ios/Calender` to the main app target. Make sure all `.swift` files in that folder are members of the target — `Theme.swift` and `CalendarMetadata.swift` were added when the design was ported and need to be included alongside the older files.
 4. Add a Widget Extension target named `CalenderLiveActivity`.
 5. Add `apps/ios/CalenderLiveActivity` to the widget extension target.
 6. Add `apps/ios/Shared/CalenderActivityAttributes.swift` to both the app target and widget extension target.

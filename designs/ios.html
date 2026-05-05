@@ -57,6 +57,10 @@ const EVENTS_INIT = [
   {id:16,title:'Client call',         date:'2026-05-21', time:'15:00', end:'16:00', cat:'work',    recur:''},
   {id:17,title:'Meditation',          date:'2026-05-26', time:'07:30', end:'08:00', cat:'personal',recur:'Daily'},
   {id:18,title:'Quarterly review',    date:'2026-05-29', time:'10:00', end:'12:00', cat:'work',    recur:''},
+  // Tasks
+  {id:19,title:'Submit expense report ✓', date:'2026-05-06', time:'', end:'', cat:'work',   recur:'', isTask:true, priority:'high',   remind:'1-day'},
+  {id:20,title:'Call dentist ✓',          date:'2026-05-09', time:'', end:'', cat:'health', recur:'', isTask:true, priority:'medium', remind:'30-min'},
+  {id:21,title:'Renew license ✓',         date:'2026-05-14', time:'', end:'', cat:'personal',recur:'',isTask:true, priority:'high',   remind:'1-week'},
 ];
 
 // ─── SHARED UTILS ────────────────────────────────────────────────────────────
@@ -71,9 +75,8 @@ function IOSCalendar({ accent, events, setEvents }) {
   const [year,   setYear]   = React.useState(2026);
   const [month,  setMonth]  = React.useState(4);
   const [selDate,setSelDate]= React.useState(TODAY);
-  const [modalEv,setModalEv]= React.useState(null);
+  const [editorEv,setEditorEv]= React.useState(null); // null=closed, {date}=new, ev=edit
   const [search, setSearch] = React.useState('');
-  const [iosCreateOpen, setIosCreateOpen] = React.useState(false);
 
   const navMonth = d => {
     let m=month+d, y=year;
@@ -88,7 +91,7 @@ function IOSCalendar({ accent, events, setEvents }) {
     if(ev.id) setEvents(evs=>evs.map(e=>e.id===ev.id?ev:e));
     else setEvents(evs=>[...evs,{...ev,id:Date.now()}]);
   };
-  const deleteEvent = id => { setEvents(evs=>evs.filter(e=>e.id!==id)); setModalEv(null); };
+  const deleteEvent = id => setEvents(evs=>evs.filter(e=>e.id!==id));
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:'#F2F2F7',fontFamily:"'DM Sans',sans-serif",overflow:'hidden',position:'relative'}}>
@@ -132,16 +135,16 @@ function IOSCalendar({ accent, events, setEvents }) {
               {selDate===TODAY?'TODAY — ':''}{parseDate(selDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
             </div>
             {dayEvs.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:'#C7C7CC',fontSize:14}}>No events</div>}
-            {dayEvs.sort((a,b)=>a.time.localeCompare(b.time)).map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>setModalEv(ev)} accent={accent}/>)}
+            {dayEvs.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>setEditorEv(ev)} accent={accent}/>)}
           </div>
         )}
-        {tab==='agenda'&&<IOSAgenda events={filtered} onPress={ev=>setModalEv(ev)} accent={accent}/>}
-        {tab==='search'&&<IOSSearchResults events={filtered} search={search} onPress={ev=>setModalEv(ev)} accent={accent}/>}
+        {tab==='agenda'&&<IOSAgenda events={filtered} onPress={ev=>setEditorEv(ev)} accent={accent}/>}
+        {tab==='search'&&<IOSSearchResults events={filtered} search={search} onPress={ev=>setEditorEv(ev)} accent={accent}/>}
       </div>
 
       {/* New event FAB */}
       {tab!=='search'&&(
-        <button onClick={()=>setIosCreateOpen(true)} style={{
+        <button onClick={()=>setEditorEv({date:selDate})} style={{
           position:'absolute',right:14,bottom:72,width:48,height:48,borderRadius:24,
           background:accent,border:'none',cursor:'pointer',
           display:'flex',alignItems:'center',justifyContent:'center',
@@ -174,10 +177,17 @@ function IOSCalendar({ accent, events, setEvents }) {
         ))}
       </div>
 
-      {/* Modal */}
-      {modalEv!==null&&<IOSEventModal ev={modalEv} onClose={()=>setModalEv(null)} onSave={saveEvent} onDelete={deleteEvent} accent={accent}/>}
-      {/* iOS Create Panel */}
-      {iosCreateOpen&&<IOSCreatePanel accent={accent} defaultDate={selDate} onClose={()=>setIosCreateOpen(false)} onSave={ev=>{saveEvent(ev);setIosCreateOpen(false);}}/>}
+      {/* Unified editor panel — new or edit, event or task */}
+      {editorEv!==null&&(
+        <IOSEditorPanel
+          accent={accent}
+          defaultDate={editorEv.date||selDate}
+          editEv={editorEv.id?editorEv:null}
+          onClose={()=>setEditorEv(null)}
+          onSave={ev=>{saveEvent(ev);setEditorEv(null);}}
+          onDelete={id=>{deleteEvent(id);setEditorEv(null);}}
+        />
+      )}
     </div>
   );
 }
@@ -186,31 +196,32 @@ function CalIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="
 function ListIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M8 6h10M8 11h10M8 16h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="11" r="1" fill="currentColor"/><circle cx="4.5" cy="16" r="1" fill="currentColor"/></svg>);}
 function SearchIcon(){return(<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="10" cy="10" r="6.5" stroke="currentColor" strokeWidth="1.6"/><path d="M15 15l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>);}
 
-// ─── iOS CREATE PANEL ────────────────────────────────────────────────────────
-function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
-  const [tab,       setTab]      = React.useState('event');
-  const [title,     setTitle]    = React.useState('');
-  const [date,      setDate]     = React.useState(defaultDate||TODAY);
-  const [time,      setTime]     = React.useState('09:00');
-  const [end,       setEnd]      = React.useState('10:00');
-  const [cat,       setCat]      = React.useState('work');
-  const [recur,     setRecur]    = React.useState('');
-  const [taskTitle, setTaskTitle]= React.useState('');
-  const [dueDate,   setDueDate]  = React.useState(defaultDate||TODAY);
-  const [remind,    setRemind]   = React.useState('1-day');
-  const [priority,  setPriority] = React.useState('medium');
+// ─── iOS EDITOR PANEL (create or edit, event or task) ────────────────────────
+function IOSEditorPanel({ accent, defaultDate, editEv, onClose, onSave, onDelete }) {
+  const isEdit = !!(editEv?.id);
+  const [tab,       setTab]      = React.useState(editEv?.isTask?'task':'event');
+  const [title,     setTitle]    = React.useState(!editEv?.isTask?(editEv?.title||''):'');
+  const [date,      setDate]     = React.useState(!editEv?.isTask?(editEv?.date||defaultDate||TODAY):defaultDate||TODAY);
+  const [time,      setTime]     = React.useState(editEv?.time||'09:00');
+  const [end,       setEnd]      = React.useState(editEv?.end||'10:00');
+  const [cat,       setCat]      = React.useState(editEv?.cat||'work');
+  const [recur,     setRecur]    = React.useState(editEv?.recur||'');
+  const [taskTitle, setTaskTitle]= React.useState(editEv?.isTask?(editEv?.title?.replace(' ✓','')||''):'');
+  const [dueDate,   setDueDate]  = React.useState(editEv?.isTask?(editEv?.date||defaultDate||TODAY):defaultDate||TODAY);
+  const [remind,    setRemind]   = React.useState(editEv?.remind||'1-day');
+  const [priority,  setPriority] = React.useState(editEv?.priority||'medium');
 
-  const rowSt={background:'#fff',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F2F2F7'};
-  const labelSt={fontSize:14,color:'#1C1C1E',fontWeight:500};
-  const valSt={fontSize:14,color:'#8E8E93'};
+  const rowSt = {background:'#fff',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F2F2F7'};
+  const labelSt = {fontSize:14,color:'#1C1C1E',fontWeight:500};
+  const valSt = {fontSize:14,color:'#8E8E93'};
 
   const handleSave = () => {
-    if(tab==='event'){
+    if(tab==='event') {
       if(!title.trim()) return;
-      onSave({title,date,time,end,cat,recur});
+      onSave({...(editEv||{}),title,date,time,end,cat,recur,isTask:false});
     } else {
       if(!taskTitle.trim()) return;
-      onSave({title:taskTitle+' ✓',date:dueDate,time:'',end:'',cat:'personal',recur:'',isTask:true,remind,priority});
+      onSave({...(editEv||{}),title:taskTitle.replace(' ✓','')+' ✓',date:dueDate,time:'',end:'',cat:'personal',recur:'',isTask:true,remind,priority});
     }
   };
 
@@ -220,37 +231,38 @@ function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
         <div style={{display:'flex',justifyContent:'center',padding:'10px 0 4px'}}>
           <div style={{width:36,height:4,borderRadius:2,background:'rgba(0,0,0,.18)'}}/>
         </div>
-        {/* Tabs */}
+        {/* Tab switcher */}
         <div style={{display:'flex',padding:'0 16px 12px',gap:8}}>
           {['event','task'].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{
               flex:1,padding:'9px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,
               background:tab===t?accent:'rgba(0,0,0,0.07)',
               color:tab===t?'#fff':'#8E8E93',
-              transition:'all 0.15s',textTransform:'capitalize',
+              transition:'all 0.15s',
             }}>{t==='event'?'Event':'Task'}</button>
           ))}
         </div>
+        {/* Header row */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px 12px'}}>
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:500}}>Cancel</button>
-          <span style={{fontWeight:700,fontSize:15,color:'#1C1C1E'}}>{tab==='event'?'New Event':'New Task'}</span>
-          <button onClick={handleSave} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:700}}>Add</button>
+          <span style={{fontWeight:700,fontSize:15,color:'#1C1C1E'}}>{isEdit?(tab==='event'?'Edit Event':'Edit Task'):(tab==='event'?'New Event':'New Task')}</span>
+          <button onClick={handleSave} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:700}}>{isEdit?'Save':'Add'}</button>
         </div>
 
         {tab==='event'&&(
           <>
-            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+            <div style={{margin:'0 16px 10px',borderRadius:12,overflow:'hidden'}}>
               <div style={{...rowSt,borderBottom:'none'}}>
                 <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event title"
                   style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}} autoFocus/>
               </div>
             </div>
-            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+            <div style={{margin:'0 16px 10px',borderRadius:12,overflow:'hidden'}}>
               <div style={rowSt}><span style={labelSt}>Date</span><input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
               <div style={rowSt}><span style={labelSt}>Start</span><input type="time" value={time} onChange={e=>setTime(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
               <div style={{...rowSt,borderBottom:'none'}}><span style={labelSt}>End</span><input type="time" value={end} onChange={e=>setEnd(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/></div>
             </div>
-            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+            <div style={{margin:'0 16px 10px',borderRadius:12,overflow:'hidden'}}>
               <div style={rowSt}>
                 <span style={labelSt}>Category</span>
                 <div style={{display:'flex',gap:8}}>{CATS.map(c=><div key={c.id} onClick={()=>setCat(c.id)} style={{width:22,height:22,borderRadius:'50%',background:c.color,cursor:'pointer',boxShadow:cat===c.id?`0 0 0 2px #fff, 0 0 0 4px ${c.color}`:'none',transition:'box-shadow 0.15s'}}/>)}</div>
@@ -267,28 +279,25 @@ function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
 
         {tab==='task'&&(
           <>
-            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+            <div style={{margin:'0 16px 10px',borderRadius:12,overflow:'hidden'}}>
               <div style={{...rowSt,borderBottom:'none'}}>
                 <input value={taskTitle} onChange={e=>setTaskTitle(e.target.value)} placeholder="Task name"
                   style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}} autoFocus/>
               </div>
             </div>
-            <div style={{margin:'0 0 10px',borderRadius:12,overflow:'hidden'}}>
+            <div style={{margin:'0 16px 10px',borderRadius:12,overflow:'hidden'}}>
               <div style={{...rowSt,borderBottom:'none'}}>
                 <span style={labelSt}>Due date</span>
                 <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{...valSt,border:'none',outline:'none',background:'transparent'}}/>
               </div>
             </div>
-            <div style={{margin:'0 0 10px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
+            <div style={{margin:'0 16px 10px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
               <div style={{fontSize:12,fontWeight:600,color:'#8E8E93',marginBottom:10,letterSpacing:'.04em'}}>REMIND ME</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {[
-                  {v:'at-time',l:'At due time'},
-                  {v:'30-min', l:'30 min before'},
-                  {v:'1-day',  l:'1 day before'},
-                  {v:'1-week', l:'1 week before'},
-                  {v:'2-weeks',l:'2 weeks before'},
-                  {v:'custom', l:'Custom…'},
+                  {v:'at-time',l:'At due time'},{v:'30-min',l:'30 min before'},
+                  {v:'1-day',l:'1 day before'},{v:'1-week',l:'1 week before'},
+                  {v:'2-weeks',l:'2 weeks before'},{v:'custom',l:'Custom…'},
                 ].map(r=>(
                   <div key={r.v} onClick={()=>setRemind(r.v)} style={{
                     padding:'8px 6px',borderRadius:8,cursor:'pointer',fontSize:11,fontWeight:500,textAlign:'center',
@@ -299,7 +308,7 @@ function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
                 ))}
               </div>
             </div>
-            <div style={{margin:'0 0 20px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
+            <div style={{margin:'0 16px 10px',padding:'12px 16px',background:'#fff',borderRadius:12}}>
               <div style={{fontSize:12,fontWeight:600,color:'#8E8E93',marginBottom:10,letterSpacing:'.04em'}}>PRIORITY</div>
               <div style={{display:'flex',gap:8}}>
                 {[{v:'low',l:'Low',c:'#2DA87E'},{v:'medium',l:'Medium',c:'#D97706'},{v:'high',l:'High',c:'#E85D3A'}].map(p=>(
@@ -315,6 +324,17 @@ function IOSCreatePanel({ accent, defaultDate, onClose, onSave }) {
             </div>
           </>
         )}
+
+        {/* Delete button when editing */}
+        {isEdit&&onDelete&&(
+          <div style={{margin:'0 16px 20px',borderRadius:12,overflow:'hidden'}}>
+            <button onClick={()=>onDelete(editEv.id)} style={{
+              width:'100%',padding:'14px',background:'#fff',border:'none',cursor:'pointer',
+              fontSize:15,color:'#FF3B30',fontWeight:500,
+            }}>Delete {tab==='event'?'Event':'Task'}</button>
+          </div>
+        )}
+        {!isEdit&&<div style={{height:20}}/>}
       </div>
     </div>
   );
@@ -358,6 +378,7 @@ function IOSMiniCal({ year, month, selDate, onSelect, events, accent }) {
 }
 
 // ─── iOS EVENT CARD ──────────────────────────────────────────────────────────
+const PRI_COLOR = {low:'#2DA87E',medium:'#D97706',high:'#E85D3A'};
 function IOSEventCard({ ev, onPress, accent }) {
   const c = getCat(ev.cat);
   return (
@@ -370,11 +391,25 @@ function IOSEventCard({ ev, onPress, accent }) {
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontWeight:600,fontSize:14,color:'#1C1C1E',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ev.title}</div>
         <div style={{fontSize:12,color:'#8E8E93'}}>
-          {ev.time&&`${fmtTime(ev.time)}${ev.end?` – ${fmtTime(ev.end)}`:''}`}
-          {ev.recur&&<span style={{marginLeft:6,color:c.color}}>· ↻ {ev.recur}</span>}
+          {ev.isTask ? (
+            ev.priority&&<span style={{color:PRI_COLOR[ev.priority]||'#8E8E93',fontWeight:500}}>
+              {ev.priority.charAt(0).toUpperCase()+ev.priority.slice(1)} priority
+            </span>
+          ) : (
+            <>
+              {ev.time&&`${fmtTime(ev.time)}${ev.end?` – ${fmtTime(ev.end)}`:''}`}
+              {ev.recur&&<span style={{marginLeft:6,color:c.color}}>· ↻ {ev.recur}</span>}
+            </>
+          )}
         </div>
       </div>
-      <span style={{fontSize:10,background:c.color+'22',color:c.color,borderRadius:6,padding:'3px 7px',fontWeight:600,flexShrink:0}}>{c.label}</span>
+      {ev.isTask ? (
+        <div style={{width:22,height:22,borderRadius:'50%',border:`2px solid ${c.color}`,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke={c.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      ) : (
+        <span style={{fontSize:10,background:c.color+'22',color:c.color,borderRadius:6,padding:'3px 7px',fontWeight:600,flexShrink:0}}>{c.label}</span>
+      )}
     </div>
   );
 }
@@ -428,86 +463,6 @@ function IOSSearchResults({ events, search, onPress, accent }) {
       <div style={{fontSize:12,color:'#8E8E93',marginBottom:8}}>{results.length} result{results.length!==1?'s':''}</div>
       {results.map(ev=><IOSEventCard key={ev.id} ev={ev} onPress={()=>onPress(ev)} accent={accent}/>)}
       {results.length===0&&<div style={{textAlign:'center',padding:30,color:'#C7C7CC',fontSize:14}}>No events found</div>}
-    </div>
-  );
-}
-
-// ─── iOS EVENT MODAL ──────────────────────────────────────────────────────────
-function IOSEventModal({ ev, onClose, onSave, onDelete, accent }) {
-  const isNew=!ev.id;
-  const [title, setTitle]=React.useState(ev.title||'');
-  const [date,  setDate] =React.useState(ev.date||TODAY);
-  const [time,  setTime] =React.useState(ev.time||'09:00');
-  const [end,   setEnd]  =React.useState(ev.end||'10:00');
-  const [cat,   setCat]  =React.useState(ev.cat||'work');
-  const [recur, setRecur]=React.useState(ev.recur||'');
-
-  const rowStyle={background:'#fff',padding:'13px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F2F2F7'};
-  const labelStyle={fontSize:14,color:'#1C1C1E',fontWeight:500};
-  const valueStyle={fontSize:14,color:'#8E8E93'};
-
-  return (
-    <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:200,backdropFilter:'blur(4px)'}}>
-      <div style={{background:'#F2F2F7',borderRadius:'20px 20px 0 0',maxHeight:'88%',overflow:'auto'}}>
-        {/* Handle */}
-        <div style={{display:'flex',justifyContent:'center',padding:'10px 0 6px'}}>
-          <div style={{width:36,height:4,borderRadius:2,background:'rgba(0,0,0,.18)'}}/>
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px 14px'}}>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:500}}>Cancel</button>
-          <span style={{fontWeight:700,fontSize:16,color:'#1C1C1E'}}>{isNew?'New Event':'Edit Event'}</span>
-          <button onClick={()=>onSave({...ev,title,date,time,end,cat,recur})} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,color:accent,fontWeight:600}}>{isNew?'Add':'Save'}</button>
-        </div>
-        {/* Fields */}
-        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
-          <div style={{...rowStyle,borderBottom:'1px solid #F2F2F7'}}>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event title"
-              style={{fontSize:15,fontWeight:500,border:'none',outline:'none',background:'transparent',width:'100%',color:'#1C1C1E'}}/>
-          </div>
-        </div>
-        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
-          <div style={rowStyle}>
-            <span style={labelStyle}>Date</span>
-            <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
-          </div>
-          <div style={rowStyle}>
-            <span style={labelStyle}>Start</span>
-            <input type="time" value={time} onChange={e=>setTime(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
-          </div>
-          <div style={{...rowStyle,borderBottom:'none'}}>
-            <span style={labelStyle}>End</span>
-            <input type="time" value={end} onChange={e=>setEnd(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent'}}/>
-          </div>
-        </div>
-        <div style={{margin:'0 0 16px',borderRadius:12,overflow:'hidden'}}>
-          <div style={rowStyle}>
-            <span style={labelStyle}>Category</span>
-            <div style={{display:'flex',gap:8}}>
-              {CATS.map(c=>(
-                <div key={c.id} onClick={()=>setCat(c.id)} style={{
-                  width:24,height:24,borderRadius:'50%',background:c.color,cursor:'pointer',
-                  boxShadow:cat===c.id?`0 0 0 3px #fff, 0 0 0 5px ${c.color}`:'none',
-                  transition:'box-shadow 0.15s',
-                }}/>
-              ))}
-            </div>
-          </div>
-          <div style={{...rowStyle,borderBottom:'none'}}>
-            <span style={labelStyle}>Repeat</span>
-            <select value={recur} onChange={e=>setRecur(e.target.value)} style={{...valueStyle,border:'none',outline:'none',background:'transparent',cursor:'pointer'}}>
-              {['','Daily','Weekly','Monthly','Yearly'].map(r=><option key={r} value={r}>{r||'Never'}</option>)}
-            </select>
-          </div>
-        </div>
-        {!isNew&&(
-          <div style={{margin:'0 0 30px',borderRadius:12,overflow:'hidden'}}>
-            <button onClick={()=>onDelete(ev.id)} style={{
-              width:'100%',padding:'14px',background:'#fff',border:'none',cursor:'pointer',
-              fontSize:15,color:'#FF3B30',fontWeight:500,
-            }}>Delete Event</button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

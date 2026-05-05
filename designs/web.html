@@ -68,15 +68,13 @@ function fmtTime(t){ if(!t)return''; const[h,m]=t.split(':').map(Number); const 
 function darken(hex, amt=30){ let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); r=Math.max(0,r-amt);g=Math.max(0,g-amt);b=Math.max(0,b-amt); return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
 
 // ─── WEB CALENDAR ─────────────────────────────────────────────────────────────
-function WebCalendar({ accent, events, setEvents }) {
+function WebCalendar({ accent, setAccent, onOpenTweaks, events, setEvents }) {
   const [year,  setYear]  = React.useState(2026);
   const [month, setMonth] = React.useState(4); // May
   const [gridView, setGridView] = React.useState('month'); // 'month' | 'week' | null
   const [agendaOpen, setAgendaOpen] = React.useState(false); // independent toggle
   const [selDate, setSelDate] = React.useState(TODAY);
-  const [modalEv, setModalEv] = React.useState(null); // null=closed, {}=new, ev=edit
   const [search, setSearch] = React.useState('');
-  const [searchOpen, setSearchOpen] = React.useState(false);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editEv, setEditEv] = React.useState(null); // event being edited in panel
 
@@ -102,7 +100,7 @@ function WebCalendar({ accent, events, setEvents }) {
     if(ev.id) setEvents(evs=>evs.map(e=>e.id===ev.id?ev:e));
     else setEvents(evs=>[...evs,{...ev,id:Date.now()}]);
   };
-  const deleteEvent = id => { setEvents(evs=>evs.filter(e=>e.id!==id)); setModalEv(null); };
+  const deleteEvent = id => setEvents(evs=>evs.filter(e=>e.id!==id));
 
   const today = new Date();
 
@@ -115,7 +113,8 @@ function WebCalendar({ accent, events, setEvents }) {
           <div style={{width:28,height:28,borderRadius:8,background:accent,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="10" rx="2" stroke="white" strokeWidth="1.4"/><path d="M1 6h12" stroke="white" strokeWidth="1.4"/><path d="M4 1v3M10 1v3" stroke="white" strokeWidth="1.4" strokeLinecap="round"/></svg>
           </div>
-          <span style={{fontWeight:700,fontSize:15,color:'#1A1714',letterSpacing:'-0.02em'}}>Remindly</span>
+          <span style={{fontWeight:700,fontSize:15,color:'#1A1714',letterSpacing:'-0.02em',flex:1}}>Remindly</span>
+          <button onClick={()=>onOpenTweaks&&onOpenTweaks()} title="Tweak accent color" style={{background:'none',border:'none',cursor:'pointer',color:'#b0ada8',fontSize:14,padding:2}}>⚙</button>
         </div>
 
         {/* Search */}
@@ -137,6 +136,9 @@ function WebCalendar({ accent, events, setEvents }) {
         {/* Categories dropdown */}
         <WebCategoriesDropdown accent={accent}/>
 
+        <button style={{marginTop:'auto',padding:'7px 10px',borderRadius:7,border:'1px solid #E5E2DD',background:'transparent',color:'#8a8580',fontSize:11,fontWeight:600,cursor:'pointer'}}>
+          Sign out
+        </button>
       </aside>
 
       {/* Main */}
@@ -198,11 +200,6 @@ function WebCalendar({ accent, events, setEvents }) {
       {/* Create/Edit panel slides in on top */}
       <WebCreatePanel accent={accent} defaultDate={selDate} open={createOpen} editEv={editEv}
         onClose={closePanel} onSave={ev=>{saveEvent(ev);closePanel();}} onDelete={id=>{deleteEvent(id);closePanel();}}/>
-      {/* FAB */}
-      {!createOpen && <WebFAB accent={accent} onOpen={openNew}/>}
-      {/* Modal */}
-      {modalEv!==null && <WebEventModal ev={modalEv} onClose={()=>setModalEv(null)}
-        onSave={saveEvent} onDelete={deleteEvent} accent={accent}/>}
     </div>
   );
 }
@@ -222,9 +219,6 @@ function HoverButton({ accent, onClick, children, style={}, blushRest=false }) {
       }}>{children}</button>
   );
 }
-
-// ─── WEB FAB (hidden — using topbar New button only) ─────────────────────────
-function WebFAB({ accent, onOpen }) { return null; }
 
 // ─── WEB SIDEBAR MINI AGENDA ──────────────────────────────────────────────────
 function WebSidebarAgenda({ events, accent, onClickEvent }) {
@@ -619,7 +613,7 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
           const dayEvs = isCur ? events.filter(e=>e.date===ds) : [];
           const isToday=ds===TODAY, isSel=ds===selDate;
           return (
-            <div key={i}
+            <div key={i} data-cal-cell="1"
               onClick={()=>isCur&&onSelect(ds)}
               onDoubleClick={()=>isCur&&onDoubleClickDay&&onDoubleClickDay(ds)}
               style={{
@@ -770,79 +764,6 @@ function WebAgendaView({ events, onClickEvent, accent }) {
   );
 }
 
-// ─── WEB EVENT MODAL ─────────────────────────────────────────────────────────
-function WebEventModal({ ev, onClose, onSave, onDelete, accent }) {
-  const isNew = !ev.id;
-  const [title,  setTitle]  = React.useState(ev.title||'');
-  const [date,   setDate]   = React.useState(ev.date||TODAY);
-  const [time,   setTime]   = React.useState(ev.time||'09:00');
-  const [end,    setEnd]    = React.useState(ev.end||'10:00');
-  const [cat,    setCat]    = React.useState(ev.cat||'work');
-  const [recur,  setRecur]  = React.useState(ev.recur||'');
-  const inputStyle = {width:'100%',padding:'8px 10px',borderRadius:8,border:'1px solid #E5E2DD',fontSize:13,color:'#1A1714',outline:'none',background:'#F3F0EC'};
-  const labelStyle = {fontSize:11,fontWeight:600,color:'#8a8580',letterSpacing:'.05em',display:'block',marginBottom:5};
-
-  return (
-    <div onClick={e=>e.target===e.currentTarget&&onClose()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,backdropFilter:'blur(2px)'}}>
-      <div style={{background:'#FAF8F5',borderRadius:16,padding:28,width:400,boxShadow:'0 24px 60px rgba(0,0,0,.18)',position:'relative'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-          <h3 style={{fontSize:17,fontWeight:700,letterSpacing:'-0.02em'}}>{isNew?'New Event':'Edit Event'}</h3>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:'#b0ada8',lineHeight:1}}>×</button>
-        </div>
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div>
-            <label style={labelStyle}>TITLE</label>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event name…" style={inputStyle}/>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <div>
-              <label style={labelStyle}>DATE</label>
-              <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={inputStyle}/>
-            </div>
-            <div>
-              <label style={labelStyle}>CATEGORY</label>
-              <select value={cat} onChange={e=>setCat(e.target.value)} style={{...inputStyle,cursor:'pointer'}}>
-                {CATS.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <div>
-              <label style={labelStyle}>START TIME</label>
-              <input type="time" value={time} onChange={e=>setTime(e.target.value)} style={inputStyle}/>
-            </div>
-            <div>
-              <label style={labelStyle}>END TIME</label>
-              <input type="time" value={end} onChange={e=>setEnd(e.target.value)} style={inputStyle}/>
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>RECURRING</label>
-            <select value={recur} onChange={e=>setRecur(e.target.value)} style={{...inputStyle,cursor:'pointer'}}>
-              {['','Daily','Weekly','Monthly','Yearly'].map(r=><option key={r} value={r}>{r||'Does not repeat'}</option>)}
-            </select>
-          </div>
-          {/* Cat color preview */}
-          <div style={{display:'flex',gap:8,paddingTop:2}}>
-            {CATS.map(c=>(
-              <div key={c.id} onClick={()=>setCat(c.id)} style={{
-                flex:1,height:6,borderRadius:99,background:c.color,
-                opacity:cat===c.id?1:0.25,cursor:'pointer',transition:'opacity 0.15s',
-              }}/>
-            ))}
-          </div>
-        </div>
-        <div style={{display:'flex',gap:8,marginTop:22}}>
-          {!isNew&&<button onClick={()=>onDelete(ev.id)} style={{padding:'9px 16px',borderRadius:8,border:'1px solid #fecaca',background:'#fff5f5',color:'#e85d3a',fontSize:13,fontWeight:600,cursor:'pointer'}}>Delete</button>}
-          <div style={{flex:1}}/>
-          <button onClick={onClose} style={{padding:'9px 16px',borderRadius:8,border:'1px solid #E5E2DD',background:'#fff',color:'#4a4744',fontSize:13,fontWeight:500,cursor:'pointer'}}>Cancel</button>
-          <HoverButton accent={accent} onClick={()=>onSave({...ev,title,date,time,end,cat,recur})} style={{padding:'9px 20px',borderRadius:8,border:'none',fontSize:13,fontWeight:600,cursor:'pointer'}}>{isNew?'Create':'Save'}</HoverButton>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── TWEAKS ───────────────────────────────────────────────────────────────────
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#F4845F",
@@ -880,7 +801,7 @@ function App() {
 
   return (
     <div style={{width:'100%',height:'100%',position:'relative'}}>
-      <WebCalendar accent={accent} events={events} setEvents={setEvents}/>
+      <WebCalendar accent={accent} setAccent={setAccent} onOpenTweaks={()=>setShowTweaks(s=>!s)} events={events} setEvents={setEvents}/>
       {showTweaks&&(
         <div style={{position:'fixed',bottom:20,right:20,background:'#1c1c1e',borderRadius:16,padding:20,width:280,boxShadow:'0 8px 32px rgba(0,0,0,.5)',border:'1px solid #333',zIndex:1000}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>

@@ -402,10 +402,10 @@ const baseSelectSt: CSSProperties = { ...baseInputSt, cursor:"pointer", appearan
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <>
+    <div>
       <label style={fieldLabelSt}>{label}</label>
       {children}
-    </>
+    </div>
   );
 }
 

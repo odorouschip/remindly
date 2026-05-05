@@ -674,7 +674,7 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
   const [year, setYear] = useState<number>(today.getFullYear());
   const [month, setMonth] = useState<number>(today.getMonth());
   const [gridView, setGridView] = useState<"month" | "week" | null>("month");
-  const [agendaOpen, setAgendaOpen] = useState<boolean>(false);
+  const [agendaOpen, setAgendaOpen] = useState<boolean>(true);
   const [selDate, setSelDate] = useState<string | null>(todayLocalIso);
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);

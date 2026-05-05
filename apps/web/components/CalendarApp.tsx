@@ -1,8 +1,9 @@
 "use client";
 
-import { CalendarDays, Check } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { LoginScreen } from "./LoginScreen";
 import {
   REMINDER_PRESETS_MINUTES,
   reminderDueAt,
@@ -37,7 +38,7 @@ type DesignEvent = {
 
 type EventWithReminders = EventRow & { reminders: ReminderRow[] };
 
-type AuthMode = "sign-in" | "sign-up";
+type OAuthProvider = "google" | "apple" | "azure" | "github";
 
 // ─── DATA / CONSTANTS ─────────────────────────────────────────────────────────
 type Category = { id: CategoryId; label: string; color: string };
@@ -272,12 +273,10 @@ function rowToDesign(row: EventWithReminders): DesignEvent {
 export function CalendarApp() {
   const supabase = useMemo(() => (isSupabaseConfigured ? getSupabaseBrowserClient() : null), []);
 
-  const [authMode, setAuthMode] = useState<AuthMode>("sign-in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [authView, setAuthView] = useState<"login" | "signup" | "forgot">("login");
   const [userId, setUserId] = useState<string | null>(null);
   const [events, setEvents] = useState<EventWithReminders[]>([]);
-  const [status, setStatus] = useState("Ready to build your day.");
+  const [status, setStatus] = useState("");
   const [isAuthWorking, setIsAuthWorking] = useState(false);
   const [themeId, setThemeIdState] = useState<string>("ivory");
   const theme = getTheme(themeId);
@@ -320,24 +319,31 @@ export function CalendarApp() {
     setEvents((data ?? []) as EventWithReminders[]);
   }
 
-  async function handleAuth() {
+  async function handleSignIn(email: string, password: string) {
     if (!supabase) return;
     setIsAuthWorking(true);
-    setStatus(authMode === "sign-in" ? "Signing in…" : "Creating account…");
+    setStatus("Signing in…");
     try {
-      const call = authMode === "sign-in"
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password });
-      const { data, error } = await call;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setStatus(error.message); return; }
       const id = data.session?.user.id ?? null;
       setUserId(id);
-      if (!data.session) { setStatus("Account created. Confirm your email, then sign in."); return; }
-      setStatus(authMode === "sign-up" ? "Account created and signed in." : "Signed in.");
+      setStatus("Signed in.");
       await loadEvents(id);
     } finally {
       setIsAuthWorking(false);
     }
+  }
+
+  async function handleOAuth(provider: OAuthProvider) {
+    if (!supabase) return;
+    setStatus(`Redirecting to ${provider}…`);
+    const redirectTo = typeof window !== "undefined" ? window.location.origin : "";
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      ...(redirectTo ? { options: { redirectTo } } : {}),
+    });
+    if (error) setStatus(error.message);
   }
 
   async function handleSignOut() {
@@ -423,39 +429,33 @@ export function CalendarApp() {
   }
 
   if (!userId) {
+    if (authView === "login") {
+      return (
+        <LoginScreen
+          onSignIn={handleSignIn}
+          onOAuth={handleOAuth}
+          onForgotPassword={() => { setStatus(""); setAuthView("forgot"); }}
+          onSignUp={() => { setStatus(""); setAuthView("signup"); }}
+          status={status}
+          isWorking={isAuthWorking}
+        />
+      );
+    }
+    // signup / forgot screens — stubs until those designs are ported.
     return (
-      <main className="auth-screen">
-        <section className="auth-copy">
-          <div className="brand-lockup">
-            <CalendarDays aria-hidden />
-            <span>Remindly</span>
-          </div>
-          <h1>Calendar reminders that stay visible when they matter.</h1>
-          <p>Sync events across web and iPhone, then let Live Activities handle the hard-to-miss countdown.</p>
-        </section>
-        <form
-          className="auth-form"
-          onSubmit={(event) => { event.preventDefault(); void handleAuth(); }}
-        >
-          <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password"
-              autoComplete={authMode === "sign-in" ? "current-password" : "new-password"} required />
-          </label>
-          <button type="submit" disabled={isAuthWorking}>
-            <Check aria-hidden />
-            {isAuthWorking ? "Working" : authMode === "sign-in" ? "Sign in" : "Create account"}
+      <main style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans', sans-serif",background:"#FAFAF9",color:"#1A1714",padding:24}}>
+        <div style={{maxWidth:400,textAlign:"center"}}>
+          <h2 style={{fontSize:22,fontWeight:700,letterSpacing:"-0.03em",marginBottom:10}}>
+            {authView === "signup" ? "Sign up" : "Reset password"}
+          </h2>
+          <p style={{fontSize:13,color:"#8a8580",marginBottom:20,lineHeight:1.5}}>
+            This screen is coming soon — we'll wire it up next.
+          </p>
+          <button onClick={() => { setStatus(""); setAuthView("login"); }}
+            style={{padding:"10px 20px",borderRadius:9,border:"1px solid #E5E2DD",background:"#fff",fontFamily:"inherit",fontSize:13,fontWeight:600,color:"#1A1714",cursor:"pointer"}}>
+            Back to sign in
           </button>
-          <button type="button" className="text-button"
-            onClick={() => setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in")}>
-            {authMode === "sign-in" ? "Need an account?" : "Already have one?"}
-          </button>
-          <p className="status-line">{status}</p>
-        </form>
+        </div>
       </main>
     );
   }

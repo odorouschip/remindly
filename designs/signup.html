@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Remindly — Create Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; background: #FAFAF9; color: #1A1714; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Left brand panel */
+  .brand-panel {
+    background: #1A1714;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-panel .bg-circles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .brand-panel .logo-mark {
+    position: absolute;
+    top: 48px;
+    left: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-panel .logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #F4845F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-panel .logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.03em;
+  }
+  .brand-panel .tagline { position: relative; z-index: 1; }
+  .brand-panel .tagline h1 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 14px;
+    text-wrap: pretty;
+  }
+  .brand-panel .tagline h1 span { color: #F4845F; }
+  .brand-panel .tagline p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+    max-width: 340px;
+  }
+
+  /* Feature list */
+  .features {
+    position: absolute;
+    top: 50%;
+    left: 48px;
+    right: 48px;
+    transform: translateY(-60%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: fadeIn 0.6s ease 0.3s both;
+  }
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px;
+  }
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: rgba(244,132,95,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .feature-text .title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+  .feature-text .desc  { font-size: 11px; color: rgba(255,255,255,0.38); margin-top: 2px; }
+
+  /* Right form panel */
+  .form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    background: #FDFCFB;
+    overflow-y: auto;
+  }
+  .form-card {
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.45s ease both;
+    padding: 8px 0;
+  }
+  .form-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #1A1714;
+    margin-bottom: 6px;
+  }
+  .form-card .subtitle {
+    font-size: 13px;
+    color: #8a8580;
+    margin-bottom: 28px;
+  }
+  .form-card .subtitle a {
+    color: #F4845F;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .form-card .subtitle a:hover { text-decoration: underline; }
+
+  /* OAuth */
+  .oauth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .oauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 11px 10px;
+    border-radius: 10px;
+    border: 1px solid #E5E2DD;
+    background: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1A1714;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .oauth-btn:hover {
+    background: #F8F6F3;
+    border-color: #D1CEC9;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .oauth-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #E5E2DD; }
+  .divider span { font-size: 11px; color: #b0ada8; font-weight: 500; white-space: nowrap; }
+
+  /* Fields */
+  .field-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #8a8580;
+    letter-spacing: .07em;
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 13px;
+    border-radius: 9px;
+    border: 1px solid #E5E2DD;
+    background: #F5F2EE;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    color: #1A1714;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: #F4845F;
+    box-shadow: 0 0 0 3px rgba(244,132,95,0.15);
+    background: #fff;
+  }
+  .field input::placeholder { color: #c8c4be; }
+
+  /* Password strength */
+  .pw-strength { margin-top: 8px; }
+  .pw-bars { display: flex; gap: 4px; margin-bottom: 4px; }
+  .pw-bar {
+    height: 3px;
+    flex: 1;
+    border-radius: 99px;
+    background: #E5E2DD;
+    transition: background 0.3s;
+  }
+  .pw-bar.active-weak   { background: #E85D3A; }
+  .pw-bar.active-fair   { background: #D97706; }
+  .pw-bar.active-good   { background: #2DA87E; }
+  .pw-bar.active-strong { background: #5046E5; }
+  .pw-label { font-size: 10px; color: #b0ada8; }
+
+  /* Agreement */
+  .agree-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-bottom: 20px;
+    margin-top: 4px;
+  }
+  .agree-row input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #F4845F;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .agree-row span {
+    font-size: 12px;
+    color: #4a4744;
+    line-height: 1.5;
+  }
+  .agree-row span a { color: #F4845F; text-decoration: none; font-weight: 600; }
+  .agree-row span a:hover { text-decoration: underline; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #F4845F;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, box-shadow 0.18s;
+    letter-spacing: -0.01em;
+  }
+  .submit-btn:hover {
+    background: #E06A44;
+    box-shadow: 0 4px 14px rgba(244,132,95,0.35);
+  }
+  .submit-btn:disabled { opacity: 0.7; cursor: default; }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .step-dot {
+    width: 24px;
+    height: 4px;
+    border-radius: 99px;
+    background: #E5E2DD;
+    transition: background 0.2s, width 0.2s;
+  }
+  .step-dot.active { background: #F4845F; width: 32px; }
+  .step-dot.done   { background: #2DA87E; }
+
+  .terms-note {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #b0ada8;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .page { grid-template-columns: 1fr; }
+    .brand-panel { display: none; }
+    .form-panel { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Brand panel -->
+  <div class="brand-panel">
+    <svg class="bg-circles" viewBox="0 0 500 700" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <circle cx="80"  cy="100" r="200" fill="rgba(244,132,95,0.07)"/>
+      <circle cx="450" cy="650" r="200" fill="rgba(244,132,95,0.07)"/>
+      <circle cx="300" cy="350" r="100" fill="rgba(244,132,95,0.04)"/>
+    </svg>
+
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="10" rx="2" stroke="white" stroke-width="1.4"/><path d="M1 6h12" stroke="white" stroke-width="1.4"/><path d="M4 1v3M10 1v3" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+      <span class="logo-text">Remindly</span>
+    </div>
+
+    <!-- Feature highlights -->
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="3" width="16" height="14" rx="3" stroke="#F4845F" stroke-width="1.5"/><path d="M1 7h16" stroke="#F4845F" stroke-width="1.5"/><path d="M5 1v3M13 1v3" stroke="#F4845F" stroke-width="1.5" stroke-linecap="round"/><path d="M5 11h4M5 14h2" stroke="#F4845F" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feature-text">
+          <div class="title">Month, week & agenda views</div>
+          <div class="desc">See your schedule any way you like</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke="#F4845F" stroke-width="1.5"/><path d="M9 5v4.5l3 2" stroke="#F4845F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feature-text">
+          <div class="title">Smart reminders & tasks</div>
+          <div class="desc">Never miss what matters</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9.5C3 6.46 5.46 4 8.5 4h1C12.54 4 15 6.46 15 9.5S12.54 15 9.5 15h-1C5.46 15 3 12.54 3 9.5Z" stroke="#F4845F" stroke-width="1.5"/><path d="M7 9.5h4M9 7.5v4" stroke="#F4845F" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feature-text">
+          <div class="title">Import from Google, Outlook & more</div>
+          <div class="desc">One tap to sync all your calendars</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tagline">
+      <h1>Start for free.<br/>Stay <span>organized</span><br/>forever.</h1>
+      <p>Join thousands of people who use Remindly to plan their days with clarity.</p>
+    </div>
+  </div>
+
+  <!-- Form panel -->
+  <div class="form-panel">
+    <div class="form-card">
+      <h2>Create your account</h2>
+      <p class="subtitle">Already have one? <a href="login.html">Sign in</a></p>
+
+      <!-- Progress dots -->
+      <div class="steps">
+        <div class="step-dot active" id="step1-dot"></div>
+        <div class="step-dot" id="step2-dot"></div>
+        <div class="step-dot" id="step3-dot"></div>
+        <span style="font-size:11px;color:#b0ada8;margin-left:4px;" id="step-label">Step 1 of 3 — Your info</span>
+      </div>
+
+      <!-- OAuth buttons -->
+      <div class="oauth-grid">
+        <button class="oauth-btn" onclick="quickSignup('google')">
+          <span class="oauth-icon">
+            <svg viewBox="0 0 18 18" width="18" height="18"><path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/></svg>
+          </span>
+          Sign up with Google
+        </button>
+        <button class="oauth-btn" onclick="quickSignup('apple')">
+          <span class="oauth-icon">
+            <svg viewBox="0 0 18 18" width="18" height="18"><path fill-rule="evenodd" d="M12.547 0c.072.847-.24 1.69-.73 2.327-.49.636-1.254 1.11-2.057 1.057-.09-.82.27-1.68.727-2.27C10.968.5 11.78.025 12.547 0Zm2.682 6.37c-.886-.548-1.897-.794-2.912-.74-.753.04-1.476.268-2.108.63-.39.225-.76.5-1.21.5-.424 0-.78-.256-1.154-.47a6.018 6.018 0 0 0-2.1-.62c-1.376-.1-2.738.563-3.62 1.58C.875 9.01.5 10.7.7 12.36c.22 1.87.97 3.62 2.07 5.03.44.573.91 1.14 1.57 1.14.63 0 .88-.39 1.65-.4.77-.01 1.02.4 1.65.39.66-.01 1.14-.58 1.58-1.15a10.2 10.2 0 0 0 1.42-2.67c-.89-.41-1.72-1.17-2.18-2.09-.46-.92-.56-2.04-.14-2.99.36-.83 1.05-1.5 1.91-1.84.5-.2 1.03-.3 1.56-.3.56 0 1.1.12 1.61.32.3.12.59.27.87.44Z" fill="#1C1C1E"/></svg>
+          </span>
+          Sign up with Apple
+        </button>
+        <button class="oauth-btn" onclick="quickSignup('microsoft')">
+          <span class="oauth-icon">
+            <svg viewBox="0 0 18 18" width="18" height="18"><rect x="0" y="0" width="8.5" height="8.5" fill="#F25022"/><rect x="9.5" y="0" width="8.5" height="8.5" fill="#7FBA00"/><rect x="0" y="9.5" width="8.5" height="8.5" fill="#00A4EF"/><rect x="9.5" y="9.5" width="8.5" height="8.5" fill="#FFB900"/></svg>
+          </span>
+          Sign up with Microsoft
+        </button>
+        <button class="oauth-btn" onclick="quickSignup('github')">
+          <span class="oauth-icon">
+            <svg viewBox="0 0 18 18" width="18" height="18"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 0C4.03 0 0 4.03 0 9c0 3.98 2.58 7.35 6.16 8.54.45.08.62-.19.62-.43v-1.5c-2.5.54-3.04-1.21-3.04-1.21-.41-1.04-1-1.32-1-1.32-.82-.56.06-.55.06-.55.9.06 1.38.93 1.38.93.8 1.37 2.1.97 2.61.74.08-.58.31-.97.57-1.19-1.99-.23-4.09-.99-4.09-4.42 0-.98.35-1.78.93-2.4-.09-.23-.4-1.14.09-2.37 0 0 .75-.24 2.47.92A8.6 8.6 0 0 1 9 4.39c.76 0 1.53.1 2.25.3 1.72-1.16 2.47-.92 2.47-.92.49 1.23.18 2.14.09 2.37.58.62.93 1.42.93 2.4 0 3.44-2.1 4.19-4.1 4.41.32.28.61.82.61 1.65v2.45c0 .24.16.52.62.43A9.003 9.003 0 0 0 18 9c0-4.97-4.03-9-9-9Z" fill="#24292E"/></svg>
+          </span>
+          Sign up with GitHub
+        </button>
+      </div>
+
+      <div class="divider"><span>or create with email</span></div>
+
+      <!-- Multi-step form -->
+      <form id="signup-form" onsubmit="handleStep(event)">
+
+        <!-- Step 1: Personal info -->
+        <div id="step-1">
+          <div class="field-row-grid">
+            <div class="field" style="margin-bottom:0">
+              <label>FIRST NAME</label>
+              <input type="text" id="firstName" placeholder="Alex" autocomplete="given-name" required/>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>LAST NAME</label>
+              <input type="text" id="lastName" placeholder="Johnson" autocomplete="family-name" required/>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:14px">
+            <label>EMAIL ADDRESS</label>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required/>
+          </div>
+
+          <div class="field">
+            <label>PASSWORD</label>
+            <input type="password" id="password" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkStrength(this.value)" required minlength="8"/>
+            <div class="pw-strength">
+              <div class="pw-bars">
+                <div class="pw-bar" id="bar1"></div>
+                <div class="pw-bar" id="bar2"></div>
+                <div class="pw-bar" id="bar3"></div>
+                <div class="pw-bar" id="bar4"></div>
+              </div>
+              <span class="pw-label" id="pw-label">Enter a password</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>CONFIRM PASSWORD</label>
+            <input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" required/>
+          </div>
+        </div>
+
+        <!-- Step 2: Preferences (hidden) -->
+        <div id="step-2" style="display:none">
+          <div class="field">
+            <label>TIME ZONE</label>
+            <select id="timezone">
+              <option value="America/New_York">Eastern Time (ET)</option>
+              <option value="America/Chicago">Central Time (CT)</option>
+              <option value="America/Denver">Mountain Time (MT)</option>
+              <option value="America/Los_Angeles">Pacific Time (PT)</option>
+              <option value="Europe/London">London (GMT)</option>
+              <option value="Europe/Paris">Paris (CET)</option>
+              <option value="Asia/Tokyo">Tokyo (JST)</option>
+              <option value="Asia/Shanghai">Shanghai (CST)</option>
+              <option value="Australia/Sydney">Sydney (AEST)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>WEEK STARTS ON</label>
+            <select id="weekStart">
+              <option value="sunday">Sunday</option>
+              <option value="monday">Monday</option>
+              <option value="saturday">Saturday</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>DEFAULT VIEW</label>
+            <select id="defaultView">
+              <option value="month">Month</option>
+              <option value="week">Week</option>
+              <option value="agenda">Agenda</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>IMPORT CALENDARS</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:2px">
+              <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#1A1714;font-weight:400;letter-spacing:0;cursor:pointer">
+                <input type="checkbox" style="accent-color:#F4845F;width:15px;height:15px"/>
+                <span>Google Calendar</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#1A1714;font-weight:400;letter-spacing:0;cursor:pointer">
+                <input type="checkbox" style="accent-color:#F4845F;width:15px;height:15px"/>
+                <span>Microsoft Outlook</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#1A1714;font-weight:400;letter-spacing:0;cursor:pointer">
+                <input type="checkbox" style="accent-color:#F4845F;width:15px;height:15px"/>
+                <span>Apple Calendar</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Confirmation (hidden) -->
+        <div id="step-3" style="display:none">
+          <div style="text-align:center;padding:16px 0 24px">
+            <div style="width:64px;height:64px;border-radius:50%;background:#F4845F22;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="13" stroke="#F4845F" stroke-width="1.5"/><path d="M8 14.5l4 4 8-8" stroke="#F4845F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div style="font-size:17px;font-weight:700;color:#1A1714;margin-bottom:8px;letter-spacing:-0.02em">Almost there!</div>
+            <div style="font-size:13px;color:#8a8580;line-height:1.6;max-width:320px;margin:0 auto">
+              We've sent a verification email to <strong id="confirm-email" style="color:#1A1714"></strong>. Click the link to activate your account.
+            </div>
+            <div style="margin-top:24px;padding:14px 18px;background:#F5F2EE;border-radius:10px;border:1px solid #E5E2DD">
+              <div style="font-size:11px;font-weight:600;color:#8a8580;letter-spacing:.06em;margin-bottom:8px">YOUR ACCOUNT</div>
+              <div style="font-size:13px;font-weight:600;color:#1A1714" id="confirm-name"></div>
+              <div style="font-size:12px;color:#8a8580;margin-top:2px" id="confirm-email-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agreement (step 1 only) -->
+        <div id="agree-row" class="agree-row">
+          <input type="checkbox" id="agree" required/>
+          <span>I agree to Remindly's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Continue</button>
+      </form>
+
+      <p class="terms-note" id="terms-note" style="margin-top:16px;font-size:11px;color:#b0ada8;text-align:center;line-height:1.6">
+        Your data is encrypted and never shared.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  function updateStepUI() {
+    const dots  = [document.getElementById('step1-dot'), document.getElementById('step2-dot'), document.getElementById('step3-dot')];
+    const labels = ['Step 1 of 3 — Your info', 'Step 2 of 3 — Preferences', 'Step 3 of 3 — Confirm'];
+    dots.forEach((dot, i) => {
+      dot.className = 'step-dot';
+      if (i + 1 === currentStep) dot.classList.add('active');
+      else if (i + 1 < currentStep) dot.classList.add('done');
+    });
+    document.getElementById('step-label').textContent = labels[currentStep - 1];
+
+    // Show / hide agree row
+    document.getElementById('agree-row').style.display = currentStep === 1 ? 'flex' : 'none';
+
+    // Submit btn label
+    const btn = document.getElementById('submit-btn');
+    if (currentStep === 1) btn.textContent = 'Continue';
+    else if (currentStep === 2) btn.textContent = 'Create account';
+    else { btn.textContent = 'Go to Remindly'; btn.type = 'button'; btn.onclick = () => window.location.href = 'web.html'; }
+
+    // Terms note
+    document.getElementById('terms-note').style.display = currentStep === 3 ? 'none' : 'block';
+  }
+
+  function handleStep(e) {
+    e.preventDefault();
+
+    if (currentStep === 1) {
+      const pw  = document.getElementById('password').value;
+      const cpw = document.getElementById('confirmPassword').value;
+      if (pw !== cpw) {
+        document.getElementById('confirmPassword').style.borderColor = '#E85D3A';
+        document.getElementById('confirmPassword').style.boxShadow = '0 0 0 3px rgba(232,93,58,0.15)';
+        document.getElementById('confirmPassword').placeholder = 'Passwords don\'t match';
+        return;
+      }
+      document.getElementById('step-1').style.display = 'none';
+      document.getElementById('step-2').style.display = 'block';
+      currentStep = 2;
+      updateStepUI();
+
+    } else if (currentStep === 2) {
+      // Show confirmation
+      const first = document.getElementById('firstName').value;
+      const last  = document.getElementById('lastName').value;
+      const email = document.getElementById('email').value;
+      document.getElementById('confirm-email').textContent  = email;
+      document.getElementById('confirm-email-2').textContent = email;
+      document.getElementById('confirm-name').textContent   = first + ' ' + last;
+
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('step-3').style.display = 'block';
+      currentStep = 3;
+      updateStepUI();
+    }
+  }
+
+  function checkStrength(val) {
+    const bars  = [1,2,3,4].map(i => document.getElementById('bar' + i));
+    const label = document.getElementById('pw-label');
+    bars.forEach(b => { b.className = 'pw-bar'; });
+
+    if (val.length === 0) { label.textContent = 'Enter a password'; return; }
+
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = ['', 'active-weak', 'active-fair', 'active-good', 'active-strong'];
+    const texts  = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    for (let i = 0; i < score; i++) bars[i].classList.add(levels[score]);
+    label.textContent = texts[score] || 'Too short';
+  }
+
+  function quickSignup(provider) {
+    const btn = event.currentTarget;
+    const orig = btn.innerHTML;
+    btn.textContent = 'Connecting…';
+    btn.disabled = true;
+    setTimeout(() => { window.location.href = 'web.html'; }, 1000);
+  }
+
+  updateStepUI();
+</script>
+</body>
+</html>

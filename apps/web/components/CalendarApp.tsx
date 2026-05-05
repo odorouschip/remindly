@@ -72,18 +72,113 @@ const RECUR_TO_DB: Record<RecurLabel, RepeatFrequency> = {
   "Yearly":  "none", // Yearly is preserved in meta only
 };
 
-const ACCENTS = [
-  { name: "Coral",      color: "#E85D3A" },
-  { name: "Terracotta", color: "#C4472A" },
-  { name: "Peach",      color: "#F4845F" },
-  { name: "Blush",      color: "#F0A896" },
-  { name: "Rust",       color: "#A63D2F" },
-  { name: "Indigo",     color: "#5046E5" },
-  { name: "Plum",       color: "#9B5DE5" },
-  { name: "Forest",     color: "#2DA87E" },
-  { name: "Ocean",      color: "#0EA5E9" },
-  { name: "Amber",      color: "#D97706" },
+// ─── THEMES ──────────────────────────────────────────────────────────────────
+type Theme = {
+  id: string; name: string; subtitle: string;
+  accent: string;
+  bg: string; scene: string | null;
+  sidebar: string; topbar: string; panel: string;
+  cellCur: string; cellSel: string; cellOff: string;
+  inputBg: string; inputBorder: string;
+  border: string; borderSoft: string; borderMid: string;
+  text: string; textSoft: string; textMute: string; textFaint: string;
+  chipBg: string; cardBg: string;
+  swatch: [string, string, string];
+};
+
+const THEMES: readonly Theme[] = [
+  {
+    id:"ivory", name:"Ivory", subtitle:"Warm beige & white",
+    accent:"#E85D3A",
+    bg:"#FAFAF9", scene:null,
+    sidebar:"#FBF9F7", topbar:"#FAF8F6", panel:"#FAF8F5",
+    cellCur:"#FEFCFA", cellSel:"#FDF9F7", cellOff:"#F5F3F0",
+    inputBg:"#F3F0EC", inputBorder:"#E5E2DD",
+    border:"#E5E2DD", borderSoft:"#F0EDE9", borderMid:"#EAE6E1",
+    text:"#1A1714", textSoft:"#4a4744", textMute:"#8a8580", textFaint:"#b0ada8",
+    chipBg:"#F0EDE9", cardBg:"#fff",
+    swatch:["#FAFAF9","#FBF9F7","#E85D3A"],
+  },
+  {
+    id:"linen", name:"Linen", subtitle:"Cool paper white",
+    accent:"#5046E5",
+    bg:"#F7F8FA", scene:null,
+    sidebar:"#FBFCFD", topbar:"#FAFBFC", panel:"#F9FAFB",
+    cellCur:"#FFFFFF", cellSel:"#F4F5FC", cellOff:"#F2F3F5",
+    inputBg:"#F1F2F5", inputBorder:"#E3E5EA",
+    border:"#E3E5EA", borderSoft:"#EEF0F3", borderMid:"#E8EAEE",
+    text:"#1A1F2E", textSoft:"#4a4f5c", textMute:"#7a8090", textFaint:"#aaaeb8",
+    chipBg:"#EEF0F3", cardBg:"#fff",
+    swatch:["#F7F8FA","#FBFCFD","#5046E5"],
+  },
+  {
+    id:"sage", name:"Sage", subtitle:"Calm forest greens",
+    accent:"#4F7D5C",
+    bg:"#F2F4EE",
+    scene:"radial-gradient(circle at 18% 22%, #D6E4C9 0%, transparent 38%), radial-gradient(circle at 82% 78%, #C9DCBE 0%, transparent 42%), radial-gradient(circle at 60% 12%, #E5EBD8 0%, transparent 50%), linear-gradient(135deg, #F2F4EE 0%, #EAEFE2 100%)",
+    sidebar:"rgba(251,252,247,0.7)", topbar:"rgba(247,249,242,0.65)", panel:"rgba(247,249,242,0.7)",
+    cellCur:"rgba(255,255,255,0.55)", cellSel:"rgba(214,228,201,0.45)", cellOff:"rgba(220,226,210,0.25)",
+    inputBg:"rgba(255,255,255,0.55)", inputBorder:"rgba(155,180,140,0.3)",
+    border:"rgba(155,180,140,0.3)", borderSoft:"rgba(155,180,140,0.18)", borderMid:"rgba(155,180,140,0.24)",
+    text:"#1F2C22", textSoft:"#3d4f43", textMute:"#6a7d70", textFaint:"#9ca99f",
+    chipBg:"rgba(214,228,201,0.5)", cardBg:"rgba(255,255,255,0.7)",
+    swatch:["#D6E4C9","#C9DCBE","#4F7D5C"],
+  },
+  {
+    id:"ocean", name:"Ocean", subtitle:"Soft sea bubbles",
+    accent:"#3A7BB5",
+    bg:"#EEF4F8",
+    scene:"radial-gradient(circle at 14% 80%, #BFDDF0 0%, transparent 38%), radial-gradient(circle at 84% 18%, #C9E5F5 0%, transparent 42%), radial-gradient(circle at 50% 50%, #DDEEF7 0%, transparent 60%), linear-gradient(160deg, #EEF4F8 0%, #DCE9F2 100%)",
+    sidebar:"rgba(252,253,255,0.7)", topbar:"rgba(248,251,253,0.65)", panel:"rgba(248,251,253,0.7)",
+    cellCur:"rgba(255,255,255,0.55)", cellSel:"rgba(191,221,240,0.45)", cellOff:"rgba(210,224,234,0.25)",
+    inputBg:"rgba(255,255,255,0.55)", inputBorder:"rgba(120,160,195,0.3)",
+    border:"rgba(120,160,195,0.3)", borderSoft:"rgba(120,160,195,0.18)", borderMid:"rgba(120,160,195,0.24)",
+    text:"#16283A", textSoft:"#3a4d5e", textMute:"#6a7e91", textFaint:"#9caab8",
+    chipBg:"rgba(191,221,240,0.5)", cardBg:"rgba(255,255,255,0.7)",
+    swatch:["#BFDDF0","#C9E5F5","#3A7BB5"],
+  },
+  {
+    id:"sunset", name:"Sunset", subtitle:"Peach & coral bubbles",
+    accent:"#D85A3D",
+    bg:"#FBEEE6",
+    scene:"radial-gradient(circle at 16% 18%, #FBC9B5 0%, transparent 40%), radial-gradient(circle at 82% 80%, #F4A98E 0%, transparent 42%), radial-gradient(circle at 70% 25%, #FCD9C8 0%, transparent 50%), linear-gradient(155deg, #FBEEE6 0%, #F6D9C8 100%)",
+    sidebar:"rgba(255,250,246,0.7)", topbar:"rgba(253,245,238,0.65)", panel:"rgba(253,245,238,0.7)",
+    cellCur:"rgba(255,255,255,0.55)", cellSel:"rgba(251,201,181,0.45)", cellOff:"rgba(238,218,205,0.25)",
+    inputBg:"rgba(255,255,255,0.55)", inputBorder:"rgba(212,140,110,0.3)",
+    border:"rgba(212,140,110,0.3)", borderSoft:"rgba(212,140,110,0.18)", borderMid:"rgba(212,140,110,0.24)",
+    text:"#2C1810", textSoft:"#5c3a2c", textMute:"#8a6a5c", textFaint:"#b8a094",
+    chipBg:"rgba(251,201,181,0.5)", cardBg:"rgba(255,255,255,0.72)",
+    swatch:["#FBC9B5","#F4A98E","#D85A3D"],
+  },
+  {
+    id:"lavender", name:"Lavender", subtitle:"Dreamy purple haze",
+    accent:"#7E5FBF",
+    bg:"#F2EEF7",
+    scene:"radial-gradient(circle at 20% 80%, #DBC9F0 0%, transparent 40%), radial-gradient(circle at 80% 20%, #C9B5E5 0%, transparent 42%), radial-gradient(circle at 50% 60%, #E5DAF2 0%, transparent 55%), linear-gradient(150deg, #F2EEF7 0%, #E5DCF2 100%)",
+    sidebar:"rgba(253,251,255,0.7)", topbar:"rgba(250,247,253,0.65)", panel:"rgba(250,247,253,0.7)",
+    cellCur:"rgba(255,255,255,0.55)", cellSel:"rgba(219,201,240,0.45)", cellOff:"rgba(225,215,235,0.25)",
+    inputBg:"rgba(255,255,255,0.55)", inputBorder:"rgba(150,125,190,0.3)",
+    border:"rgba(150,125,190,0.3)", borderSoft:"rgba(150,125,190,0.18)", borderMid:"rgba(150,125,190,0.24)",
+    text:"#241B33", textSoft:"#473b5c", textMute:"#766a8c", textFaint:"#a99fb8",
+    chipBg:"rgba(219,201,240,0.5)", cardBg:"rgba(255,255,255,0.7)",
+    swatch:["#DBC9F0","#C9B5E5","#7E5FBF"],
+  },
+  {
+    id:"midnight", name:"Midnight", subtitle:"Dark bubbles",
+    accent:"#7B92F0",
+    bg:"#1A1C2A",
+    scene:"radial-gradient(circle at 18% 22%, rgba(80,90,180,0.45) 0%, transparent 38%), radial-gradient(circle at 82% 78%, rgba(140,90,180,0.4) 0%, transparent 42%), radial-gradient(circle at 60% 12%, rgba(60,110,170,0.35) 0%, transparent 48%), linear-gradient(150deg, #1A1C2A 0%, #14182A 100%)",
+    sidebar:"rgba(35,38,55,0.7)", topbar:"rgba(30,33,48,0.65)", panel:"rgba(35,38,55,0.7)",
+    cellCur:"rgba(255,255,255,0.04)", cellSel:"rgba(123,146,240,0.18)", cellOff:"rgba(255,255,255,0.02)",
+    inputBg:"rgba(255,255,255,0.06)", inputBorder:"rgba(255,255,255,0.12)",
+    border:"rgba(255,255,255,0.12)", borderSoft:"rgba(255,255,255,0.06)", borderMid:"rgba(255,255,255,0.1)",
+    text:"#F0F0F5", textSoft:"#C8CAD4", textMute:"#888B9A", textFaint:"#5A5D6E",
+    chipBg:"rgba(255,255,255,0.08)", cardBg:"rgba(255,255,255,0.05)",
+    swatch:["#1A1C2A","#5060A8","#7B92F0"],
+  },
 ];
+const getTheme = (id: string): Theme => THEMES.find((t) => t.id === id) ?? THEMES[0]!;
+const THEME_STORAGE_KEY = "remindly:themeId";
 
 const todayLocalIso = (() => {
   const d = new Date();
@@ -184,7 +279,17 @@ export function CalendarApp() {
   const [events, setEvents] = useState<EventWithReminders[]>([]);
   const [status, setStatus] = useState("Ready to build your day.");
   const [isAuthWorking, setIsAuthWorking] = useState(false);
-  const [accent, setAccent] = useState<string>("#F4845F");
+  const [themeId, setThemeIdState] = useState<string>("ivory");
+  const theme = getTheme(themeId);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem(THEME_STORAGE_KEY) : null;
+    if (stored && THEMES.some((t) => t.id === stored)) setThemeIdState(stored);
+  }, []);
+  const setThemeId = (id: string) => {
+    setThemeIdState(id);
+    if (typeof window !== "undefined") window.localStorage.setItem(THEME_STORAGE_KEY, id);
+  };
 
   useEffect(() => {
     if (!supabase) return;
@@ -358,10 +463,11 @@ export function CalendarApp() {
   const designEvents = events.map(rowToDesign);
 
   return (
-    <div style={{position:"fixed",inset:0,width:"100vw",height:"100vh",background:"#FAFAF9",fontFamily:"'DM Sans', sans-serif",color:"#1A1714"}}>
+    <div style={{position:"fixed",inset:0,width:"100vw",height:"100vh",background:theme.bg,fontFamily:"'DM Sans', sans-serif",color:theme.text}}>
       <WebCalendar
-        accent={accent}
-        setAccent={setAccent}
+        theme={theme}
+        themeId={themeId}
+        setThemeId={setThemeId}
         events={designEvents}
         onSave={saveDesignEvent}
         onDelete={deleteDesignEvent}
@@ -371,17 +477,159 @@ export function CalendarApp() {
   );
 }
 
+// ─── SETTINGS MODAL ──────────────────────────────────────────────────────────
+const IMPORT_SOURCES = [
+  { id:"google",  name:"Google Calendar",   icon:"G", color:"#4285F4" },
+  { id:"outlook", name:"Microsoft Outlook", icon:"O", color:"#0078D4" },
+  { id:"apple",   name:"Apple Calendar",    icon:"",  color:"#1C1C1E" },
+  { id:"yahoo",   name:"Yahoo Calendar",    icon:"Y", color:"#6001D2" },
+];
+
+function SettingsModal({ open, onClose, theme, themeId, setThemeId }: {
+  open: boolean; onClose: () => void;
+  theme: Theme; themeId: string; setThemeId: (id: string) => void;
+}) {
+  const [tab, setTab] = useState<"account" | "appearance" | "categories" | "import">("account");
+
+  if (!open) return null;
+  const accent = theme.accent;
+  const tabs = [
+    { id:"account" as const,    label:"Account" },
+    { id:"appearance" as const, label:"Appearance" },
+    { id:"categories" as const, label:"Categories" },
+    { id:"import" as const,     label:"Import" },
+  ];
+  const inputSt: CSSProperties = { width:"100%", padding:"9px 11px", borderRadius:8, border:`1px solid ${theme.inputBorder}`, fontSize:13, color:theme.text, outline:"none", background:theme.inputBg };
+  const labelSt: CSSProperties = { fontSize:10, fontWeight:600, color:theme.textMute, letterSpacing:".06em", display:"block", marginBottom:6 };
+
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{position:"fixed",inset:0,background:"rgba(20,15,12,0.4)",backdropFilter:"blur(4px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{width:"100%",maxWidth:560,maxHeight:"86vh",background:theme.bg,borderRadius:14,border:`1px solid ${theme.border}`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* Header */}
+        <div style={{padding:"16px 22px 0",borderBottom:`1px solid ${theme.border}`,flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <span style={{fontSize:16,fontWeight:700,color:theme.text,letterSpacing:"-0.02em"}}>Settings</span>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:theme.textFaint,lineHeight:1,padding:0}}>×</button>
+          </div>
+          <div style={{display:"flex",gap:18}}>
+            {tabs.map((t) => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                background:"none",border:"none",cursor:"pointer",padding:"8px 0 11px",fontSize:13,fontWeight:600,
+                color: tab===t.id ? accent : theme.textMute,
+                borderBottom: tab===t.id ? `2px solid ${accent}` : "2px solid transparent",
+                transition:"color 0.15s, border-color 0.15s",
+              }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{flex:1,overflowY:"auto",padding:"20px 22px"}}>
+          {tab === "account" && (
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{width:60,height:60,borderRadius:"50%",background:accent+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:accent,flexShrink:0}}>R</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:600,color:theme.text}}>Your account</div>
+                  <div style={{fontSize:12,color:theme.textMute,marginTop:2}}>Update your profile details below.</div>
+                </div>
+              </div>
+              <div><label style={labelSt}>NAME</label><input style={inputSt} placeholder="Your name" defaultValue=""/></div>
+              <div><label style={labelSt}>EMAIL</label><input style={inputSt} placeholder="you@example.com" defaultValue="" type="email"/></div>
+              <div><label style={labelSt}>TIMEZONE</label><input style={inputSt} defaultValue={Intl.DateTimeFormat().resolvedOptions().timeZone || ""}/></div>
+            </div>
+          )}
+
+          {tab === "appearance" && (
+            <div>
+              <p style={{fontSize:12,color:theme.textMute,marginBottom:12,lineHeight:1.5}}>Each theme sets the background, surfaces, and accent color across the app.</p>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(150px, 1fr))",gap:10}}>
+                {THEMES.map((t) => {
+                  const isSel = themeId === t.id;
+                  return (
+                    <div key={t.id} onClick={() => setThemeId(t.id)} style={{
+                      cursor:"pointer", padding:11, borderRadius:10,
+                      border: `2px solid ${isSel ? t.accent : theme.border}`,
+                      background: t.bg, backgroundImage: t.scene || "none", backgroundSize:"cover",
+                      transition:"all 0.18s", boxShadow: isSel ? `0 4px 12px ${t.accent}22` : "none",
+                      position:"relative", minHeight:84, display:"flex", flexDirection:"column", justifyContent:"flex-end", gap:6,
+                    }}>
+                      {isSel && <div style={{position:"absolute",right:9,top:9,width:8,height:8,borderRadius:"50%",background:t.accent}}/>}
+                      <div style={{display:"flex",alignItems:"center",gap:7}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",background:t.accent,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {isSel && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontSize:12,fontWeight:700,color:t.text,letterSpacing:"-0.01em"}}>{t.name}</div>
+                          <div style={{fontSize:10,color:t.textMute,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.subtitle}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {tab === "categories" && (
+            <div>
+              <p style={{fontSize:12,color:theme.textMute,marginBottom:14,lineHeight:1.5}}>Categories are managed inline on each event for now.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {CATS.map((c) => (
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:`1px solid ${theme.border}`,background:theme.cardBg}}>
+                    <div style={{width:14,height:14,borderRadius:"50%",background:c.color,flexShrink:0}}/>
+                    <span style={{fontSize:13,fontWeight:500,color:theme.text}}>{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "import" && (
+            <div>
+              <p style={{fontSize:12,color:theme.textMute,marginBottom:14,lineHeight:1.5}}>Import from one of the supported services, or upload an .ics file.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                {IMPORT_SOURCES.map((src) => (
+                  <button key={src.id} style={{
+                    display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:9,
+                    border:`1px solid ${theme.border}`,background:theme.cardBg,cursor:"pointer",textAlign:"left",
+                  }}>
+                    <div style={{width:30,height:30,borderRadius:7,background:src.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{src.icon || "A"}</div>
+                    <span style={{fontSize:13,fontWeight:600,color:theme.text}}>{src.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{padding:"22px 16px",border:`2px dashed ${theme.border}`,borderRadius:10,textAlign:"center",background:theme.cardBg}}>
+                <div style={{fontSize:13,fontWeight:600,color:theme.text,marginBottom:5}}>Drop an .ics file here</div>
+                <div style={{fontSize:12,color:theme.textMute}}>or <span style={{color:accent,fontWeight:600,cursor:"pointer"}}>browse to upload</span></div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{padding:"12px 22px",borderTop:`1px solid ${theme.border}`,display:"flex",justifyContent:"flex-end",flexShrink:0}}>
+          <button onClick={onClose} style={{padding:"9px 22px",borderRadius:8,border:"none",background:accent,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── WEB CALENDAR ─────────────────────────────────────────────────────────────
 type WebCalendarProps = {
-  accent: string;
-  setAccent: (c: string) => void;
+  theme: Theme;
+  themeId: string;
+  setThemeId: (id: string) => void;
   events: DesignEvent[];
   onSave: (ev: DesignEvent) => void | Promise<void>;
   onDelete: (id: string) => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
 };
 
-function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }: WebCalendarProps) {
+function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onSignOut }: WebCalendarProps) {
+  const accent = theme.accent;
   const today = new Date();
   const [year, setYear] = useState<number>(today.getFullYear());
   const [month, setMonth] = useState<number>(today.getMonth());
@@ -391,7 +639,7 @@ function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }:
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editEv, setEditEv] = useState<DesignEvent | null>(null);
-  const [showTweaks, setShowTweaks] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const openEdit = (ev: DesignEvent) => { setEditEv(ev); setCreateOpen(true); };
   const openNew  = (date?: string | null) => { setEditEv(null); setCreateOpen(true); if (date) setSelDate(date); };
@@ -413,9 +661,9 @@ function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }:
     : events;
 
   return (
-    <div style={{display:"flex",height:"100%",background:"#FAFAF9",overflow:"hidden"}}>
+    <div style={{display:"flex",height:"100%",background:theme.bg,backgroundImage:theme.scene||"none",backgroundSize:"cover",backgroundAttachment:"fixed",color:theme.text,overflow:"hidden"}}>
       {/* Sidebar */}
-      <aside style={{width:220,flexShrink:0,borderRight:"1px solid #E5E2DD",display:"flex",flexDirection:"column",padding:"20px 16px",gap:16,background:"#FBF9F7",position:"relative"}}>
+      <aside style={{width:220,flexShrink:0,borderRight:`1px solid ${theme.border}`,display:"flex",flexDirection:"column",padding:"20px 16px",gap:16,background:theme.sidebar,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",position:"relative"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,paddingBottom:4}}>
           <div style={{width:28,height:28,borderRadius:8,background:accent,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -424,32 +672,37 @@ function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }:
               <path d="M4 1v3M10 1v3" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
           </div>
-          <span style={{fontWeight:700,fontSize:15,color:"#1A1714",letterSpacing:"-0.02em",flex:1}}>Remindly</span>
-          <button onClick={() => setShowTweaks((s) => !s)}
-            title="Tweak accent color"
-            style={{background:"none",border:"none",cursor:"pointer",color:"#b0ada8",fontSize:14,padding:2}}>⚙</button>
+          <span style={{fontWeight:700,fontSize:15,color:theme.text,letterSpacing:"-0.02em",flex:1}}>Remindly</span>
+          <button onClick={() => setShowSettings(true)}
+            title="Settings"
+            style={{background:"none",border:"none",cursor:"pointer",color:theme.textFaint,padding:3,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6}}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M7 1v1.5M7 11.5V13M13 7h-1.5M2.5 7H1M11.24 2.76l-1.06 1.06M3.82 10.18l-1.06 1.06M11.24 11.24l-1.06-1.06M3.82 3.82L2.76 2.76" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
 
         <div style={{position:"relative"}}>
-          <svg style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",opacity:0.4}} width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <circle cx="5.5" cy="5.5" r="4" stroke="#1A1714" strokeWidth="1.4"/>
-            <path d="M9 9l2.5 2.5" stroke="#1A1714" strokeWidth="1.4" strokeLinecap="round"/>
+          <svg style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",opacity:0.5}} width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="5.5" cy="5.5" r="4" stroke={theme.text} strokeWidth="1.4"/>
+            <path d="M9 9l2.5 2.5" stroke={theme.text} strokeWidth="1.4" strokeLinecap="round"/>
           </svg>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…"
-            style={{width:"100%",padding:"7px 8px 7px 26px",borderRadius:7,border:"1px solid #E5E2DD",fontSize:12,background:"#F3F0EC",color:"#1A1714",outline:"none"}}/>
+            style={{width:"100%",padding:"7px 8px 7px 26px",borderRadius:7,border:`1px solid ${theme.inputBorder}`,fontSize:12,background:theme.inputBg,color:theme.text,outline:"none"}}/>
         </div>
 
         <WebMiniCal year={year} month={month} selDate={selDate}
           onNav={navMonth}
           onSelect={(d) => { setSelDate(d); if (gridView === null) setGridView("month"); }}
-          events={filtered} accent={accent}/>
+          events={filtered} accent={accent} theme={theme}/>
 
-        <WebSidebarAgenda events={filtered} onClickEvent={openEdit}/>
+        <WebSidebarAgenda events={filtered} onClickEvent={openEdit} theme={theme}/>
 
-        <WebCategoriesDropdown/>
+        <WebCategoriesDropdown theme={theme}/>
 
         <button onClick={() => void onSignOut()}
-          style={{marginTop:"auto",padding:"7px 10px",borderRadius:7,border:"1px solid #E5E2DD",background:"transparent",color:"#8a8580",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+          style={{marginTop:"auto",padding:"7px 10px",borderRadius:7,border:`1px solid ${theme.inputBorder}`,background:"transparent",color:theme.textMute,fontSize:11,fontWeight:600,cursor:"pointer"}}>
           Sign out
         </button>
       </aside>
@@ -460,35 +713,35 @@ function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }:
           onClick={(e) => { if (gridView !== "month" && !(e.target as HTMLElement).closest("[data-cal-cell]")) deselect(); }}>
           {/* Topbar */}
           <div onClick={(e) => { e.stopPropagation(); deselect(); }}
-            style={{display:"flex",alignItems:"center",padding:"14px 24px",borderBottom:"1px solid #E5E2DD",gap:16,flexShrink:0,background:"#FAF8F6"}}>
+            style={{display:"flex",alignItems:"center",padding:"14px 24px",borderBottom:`1px solid ${theme.border}`,gap:16,flexShrink:0,background:theme.topbar,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={() => navMonth(-1)} style={{background:"none",border:"1px solid #E5E2DD",borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:"#4a4744"}}>‹</button>
+              <button onClick={() => navMonth(-1)} style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:theme.textSoft}}>‹</button>
               <button onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelDate(todayLocalIso); }}
-                style={{background:"none",border:"1px solid #E5E2DD",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:500,color:"#4a4744"}}>Today</button>
-              <button onClick={() => navMonth(1)} style={{background:"none",border:"1px solid #E5E2DD",borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:"#4a4744"}}>›</button>
+                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:500,color:theme.textSoft}}>Today</button>
+              <button onClick={() => navMonth(1)} style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:theme.textSoft}}>›</button>
             </div>
-            <h2 style={{fontSize:17,fontWeight:600,letterSpacing:"-0.02em",flex:1,margin:0}}>{monthName(month)} {year}</h2>
+            <h2 style={{fontSize:17,fontWeight:600,letterSpacing:"-0.02em",flex:1,margin:0,color:theme.text}}>{monthName(month)} {year}</h2>
             <HoverButton accent={accent} blushRest onClick={() => openNew()}
               style={{padding:"6px 14px",borderRadius:7,border:"none",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
               <span style={{fontSize:15,lineHeight:1}}>+</span> New
             </HoverButton>
-            <div style={{display:"flex",background:"#F0EDE9",borderRadius:8,padding:3,gap:2}}>
+            <div style={{display:"flex",background:theme.chipBg,borderRadius:8,padding:3,gap:2}}>
               {(["month","week"] as const).map((v) => (
                 <button key={v} onClick={() => toggleGrid(v)} style={{
                   padding:"4px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",
-                  background:gridView===v?"#fff":"transparent",
-                  color:gridView===v?"#1A1714":"#8a8580",
+                  background:gridView===v?theme.cardBg:"transparent",
+                  color:gridView===v?theme.text:theme.textMute,
                   boxShadow:gridView===v?"0 1px 3px rgba(0,0,0,0.1)":"none",
                   transition:"all 0.15s",textTransform:"capitalize",
                 }}>{v}</button>
               ))}
               <button onClick={() => setAgendaOpen((o) => !o)} style={{
                 padding:"4px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",
-                background:agendaOpen?"#fff":"transparent",
-                color:agendaOpen?"#1A1714":"#8a8580",
+                background:agendaOpen?theme.cardBg:"transparent",
+                color:agendaOpen?theme.text:theme.textMute,
                 boxShadow:agendaOpen?"0 1px 3px rgba(0,0,0,0.1)":"none",
-                transition:"all 0.15s",textTransform:"capitalize",
-              }}>agenda</button>
+                transition:"all 0.15s",
+              }}>Agenda</button>
             </div>
           </div>
 
@@ -496,52 +749,36 @@ function WebCalendar({ accent, setAccent, events, onSave, onDelete, onSignOut }:
           {gridView === "month" && (
             <WebMonthView year={year} month={month} events={filtered} selDate={selDate}
               onSelect={(d) => setSelDate(d)} onDeselect={deselect}
-              onDoubleClickDay={(d) => openNew(d)} onClickEvent={openEdit} accent={accent}/>
+              onDoubleClickDay={(d) => openNew(d)} onClickEvent={openEdit} accent={accent} theme={theme}/>
           )}
           {gridView === "week" && (
-            <WebWeekView selDate={selDate} events={filtered} onClickEvent={openEdit} accent={accent}/>
+            <WebWeekView selDate={selDate} events={filtered} onClickEvent={openEdit} accent={accent} theme={theme}/>
           )}
           {agendaOnly && (
-            <WebAgendaView events={filtered} onClickEvent={openEdit} accent={accent}/>
+            <WebAgendaView events={filtered} onClickEvent={openEdit} accent={accent} theme={theme}/>
           )}
           {gridView === null && !agendaOpen && (
             <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <rect x="2" y="5" width="28" height="24" rx="4" stroke="#d1cec9" strokeWidth="1.5"/>
-                <path d="M2 11h28" stroke="#d1cec9" strokeWidth="1.5"/>
-                <path d="M8 3v4M24 3v4" stroke="#d1cec9" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M8 17h10M8 22h6" stroke="#d1cec9" strokeWidth="1.5" strokeLinecap="round"/>
+                <rect x="2" y="5" width="28" height="24" rx="4" stroke={theme.textFaint} strokeWidth="1.5"/>
+                <path d="M2 11h28" stroke={theme.textFaint} strokeWidth="1.5"/>
+                <path d="M8 3v4M24 3v4" stroke={theme.textFaint} strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M8 17h10M8 22h6" stroke={theme.textFaint} strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span style={{fontSize:12,color:"#c8c4be"}}>Pick a view above</span>
+              <span style={{fontSize:12,color:theme.textFaint}}>Pick a view above</span>
             </div>
           )}
         </div>
 
-        <WebAgendaPanel open={showRightAgenda} events={filtered} onClickEvent={openEdit} accent={accent}/>
-        <WebCreatePanel accent={accent} defaultDate={selDate || todayLocalIso} open={createOpen} editEv={editEv}
+        <WebAgendaPanel open={showRightAgenda} events={filtered} onClickEvent={openEdit} accent={accent} theme={theme}/>
+        <WebCreatePanel accent={accent} theme={theme} defaultDate={selDate || todayLocalIso} open={createOpen} editEv={editEv}
           onClose={closePanel}
           onSave={(ev) => { void onSave(ev); closePanel(); }}
           onDelete={(id) => { void onDelete(id); closePanel(); }}/>
       </div>
 
-      {showTweaks && (
-        <div style={{position:"fixed",bottom:20,right:20,background:"#1c1c1e",borderRadius:16,padding:20,width:280,boxShadow:"0 8px 32px rgba(0,0,0,.5)",border:"1px solid #333",zIndex:1000}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-            <span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Tweaks</span>
-            <button onClick={() => setShowTweaks(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#666",fontSize:18,lineHeight:1}}>×</button>
-          </div>
-          <div style={{fontSize:11,fontWeight:600,color:"#555",letterSpacing:".08em",marginBottom:10}}>ACCENT COLOR</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
-            {ACCENTS.map((a) => (
-              <div key={a.name} onClick={() => setAccent(a.color)}
-                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer"}}>
-                <div style={{width:30,height:30,borderRadius:"50%",background:a.color,boxShadow:accent===a.color?`0 0 0 2px #1c1c1e, 0 0 0 4px ${a.color}`:"none",transition:"box-shadow 0.15s"}}/>
-                <span style={{fontSize:9,color:"#666",textAlign:"center"}}>{a.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)}
+        theme={theme} themeId={themeId} setThemeId={setThemeId}/>
     </div>
   );
 }
@@ -565,8 +802,8 @@ function HoverButton({ accent, onClick, children, style = {}, blushRest = false 
 }
 
 // ─── SIDEBAR MINI AGENDA ──────────────────────────────────────────────────────
-function WebSidebarAgenda({ events, onClickEvent }: {
-  events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void;
+function WebSidebarAgenda({ events, onClickEvent, theme }: {
+  events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; theme: Theme;
 }) {
   const upcoming = [...events]
     .filter((e) => e.date >= todayLocalIso)
@@ -574,9 +811,9 @@ function WebSidebarAgenda({ events, onClickEvent }: {
     .slice(0, 5);
   return (
     <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column"}}>
-      <div style={{fontSize:10,fontWeight:600,color:"#b0ada8",letterSpacing:".08em",marginBottom:8}}>UPCOMING</div>
+      <div style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em",marginBottom:8}}>UPCOMING</div>
       <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
-        {upcoming.length === 0 && <div style={{fontSize:11,color:"#c8c4be",padding:"6px 0"}}>Nothing coming up</div>}
+        {upcoming.length === 0 && <div style={{fontSize:11,color:theme.textFaint,padding:"6px 0"}}>Nothing coming up</div>}
         {upcoming.map((ev) => {
           const c = getCat(ev.cat);
           const d = parseDate(ev.date);
@@ -584,14 +821,14 @@ function WebSidebarAgenda({ events, onClickEvent }: {
           return (
             <div key={ev.id} onClick={() => onClickEvent(ev)} style={{
               display:"flex",gap:8,alignItems:"center",padding:"6px 8px",borderRadius:7,cursor:"pointer",
-              background:"rgba(0,0,0,0.03)",transition:"background 0.1s",
+              background:theme.chipBg,transition:"background 0.1s",
             }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.07)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.03)")}>
+              onMouseEnter={(e) => (e.currentTarget.style.background = theme.borderMid)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = theme.chipBg)}>
               <div style={{width:3,height:28,borderRadius:2,background:c.color,flexShrink:0}}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:600,color:"#1A1714",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
-                <div style={{fontSize:10,color:"#b0ada8"}}>{isToday ? "Today" : d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}{ev.time && ` · ${fmtTime(ev.time)}`}</div>
+                <div style={{fontSize:11,fontWeight:600,color:theme.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
+                <div style={{fontSize:10,color:theme.textFaint}}>{isToday ? "Today" : d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}{ev.time && ` · ${fmtTime(ev.time)}`}</div>
               </div>
             </div>
           );
@@ -602,16 +839,16 @@ function WebSidebarAgenda({ events, onClickEvent }: {
 }
 
 // ─── CATEGORIES DROPDOWN ──────────────────────────────────────────────────────
-function WebCategoriesDropdown() {
+function WebCategoriesDropdown({ theme }: { theme: Theme }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{borderTop:"1px solid #E5E2DD",paddingTop:12}}>
+    <div style={{borderTop:`1px solid ${theme.border}`,paddingTop:12}}>
       <div onClick={() => setOpen((o) => !o)} style={{
         display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom:open?8:0,
       }}>
-        <span style={{fontSize:10,fontWeight:600,color:"#b0ada8",letterSpacing:".08em"}}>CATEGORIES</span>
+        <span style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em"}}>CATEGORIES</span>
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}>
-          <path d="M2 3.5l3 3 3-3" stroke="#b0ada8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 3.5l3 3 3-3" stroke={theme.textFaint} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
       {open && (
@@ -619,7 +856,7 @@ function WebCategoriesDropdown() {
           {CATS.map((c) => (
             <div key={c.id} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",padding:"3px 0"}}>
               <div style={{width:8,height:8,borderRadius:"50%",background:c.color,flexShrink:0}}/>
-              <span style={{fontSize:12,color:"#4a4744"}}>{c.label}</span>
+              <span style={{fontSize:12,color:theme.textSoft}}>{c.label}</span>
             </div>
           ))}
         </div>
@@ -629,8 +866,8 @@ function WebCategoriesDropdown() {
 }
 
 // ─── AGENDA RIGHT PANEL ───────────────────────────────────────────────────────
-function WebAgendaPanel({ open, events, onClickEvent, accent }: {
-  open: boolean; events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string;
+function WebAgendaPanel({ open, events, onClickEvent, accent, theme }: {
+  open: boolean; events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string; theme: Theme;
 }) {
   const upcoming = [...events]
     .filter((e) => e.date >= todayLocalIso)
@@ -642,45 +879,46 @@ function WebAgendaPanel({ open, events, onClickEvent, accent }: {
     <div style={{
       width: open ? 300 : 0, flexShrink:0, overflow:"hidden",
       transition:"width 0.3s cubic-bezier(0.4,0,0.2,1)",
-      borderLeft: open ? "1px solid #E5E2DD" : "none",
-      background:"#FAF8F5", display:"flex", flexDirection:"column",
+      borderLeft: open ? `1px solid ${theme.border}` : "none",
+      background:theme.panel, backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
+      display:"flex", flexDirection:"column",
     }}>
       <div style={{width:300,height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        <div style={{padding:"16px 18px 12px",flexShrink:0,borderBottom:"1px solid #E5E2DD"}}>
-          <span style={{fontWeight:700,fontSize:15,color:"#1A1714",letterSpacing:"-0.02em"}}>Upcoming</span>
+        <div style={{padding:"16px 18px 12px",flexShrink:0,borderBottom:`1px solid ${theme.border}`}}>
+          <span style={{fontWeight:700,fontSize:15,color:theme.text,letterSpacing:"-0.02em"}}>Upcoming</span>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"8px 14px 18px"}}>
-          {upcoming.length === 0 && <div style={{padding:"30px 0",textAlign:"center",color:"#b0ada8",fontSize:13}}>Nothing upcoming</div>}
+          {upcoming.length === 0 && <div style={{padding:"30px 0",textAlign:"center",color:theme.textFaint,fontSize:13}}>Nothing upcoming</div>}
           {Object.entries(grouped).map(([date, evs]) => {
             const d = parseDate(date);
             const isToday = date === todayLocalIso;
             return (
               <div key={date} style={{marginTop:14}}>
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6}}>
-                  <span style={{fontSize:11,fontWeight:700,color:isToday?accent:"#8a8580",whiteSpace:"nowrap"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:isToday?accent:theme.textMute,whiteSpace:"nowrap"}}>
                     {isToday ? "Today" : d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}
                   </span>
                   {isToday && <span style={{fontSize:9,background:accent+"22",color:accent,borderRadius:99,padding:"1px 6px",fontWeight:700,letterSpacing:".04em"}}>TODAY</span>}
-                  <div style={{flex:1,height:1,background:"#E5E2DD"}}/>
+                  <div style={{flex:1,height:1,background:theme.border}}/>
                 </div>
                 {evs.map((ev) => {
                   const c = getCat(ev.cat);
                   return (
                     <div key={ev.id} onClick={() => onClickEvent(ev)} style={{
                       display:"flex",gap:9,alignItems:"flex-start",padding:"8px 10px",borderRadius:8,marginBottom:5,cursor:"pointer",
-                      background:"#fff",border:"1px solid #EAE6E1",transition:"border-color 0.15s",
+                      background:theme.cardBg,border:`1px solid ${theme.borderMid}`,transition:"border-color 0.15s",
                     }}
                       onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent + "66")}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EAE6E1")}>
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = theme.borderMid)}>
                       <div style={{width:3,alignSelf:"stretch",borderRadius:2,background:c.color,flexShrink:0,minHeight:22}}/>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:600,color:"#1A1714",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
-                        {ev.time && <div style={{fontSize:10,color:"#8a8580",marginTop:1}}>{fmtTime(ev.time)}{ev.end ? " – " + fmtTime(ev.end) : ""}</div>}
-                        {ev.desc && <div style={{fontSize:10,color:"#b0ada8",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.desc}</div>}
+                        <div style={{fontSize:12,fontWeight:600,color:theme.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
+                        {ev.time && <div style={{fontSize:10,color:theme.textMute,marginTop:1}}>{fmtTime(ev.time)}{ev.end ? " – " + fmtTime(ev.end) : ""}</div>}
+                        {ev.desc && <div style={{fontSize:10,color:theme.textFaint,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.desc}</div>}
                       </div>
                       <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
                         <span style={{fontSize:9,background:c.color+"18",color:c.color,borderRadius:4,padding:"2px 5px",fontWeight:600}}>{c.label}</span>
-                        {ev.isTask && <span style={{fontSize:9,color:"#c8c4be"}}>task</span>}
+                        {ev.isTask && <span style={{fontSize:9,color:theme.textFaint}}>task</span>}
                       </div>
                     </div>
                   );
@@ -695,8 +933,8 @@ function WebAgendaPanel({ open, events, onClickEvent, accent }: {
 }
 
 // ─── CREATE / EDIT PANEL ──────────────────────────────────────────────────────
-function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, onDelete }: {
-  accent: string; defaultDate: string; open: boolean; editEv: DesignEvent | null;
+function WebCreatePanel({ accent, theme, defaultDate, open, editEv, onClose, onSave, onDelete }: {
+  accent: string; theme: Theme; defaultDate: string; open: boolean; editEv: DesignEvent | null;
   onClose: () => void; onSave: (ev: DesignEvent) => void; onDelete: (id: string) => void;
 }) {
   const isEdit = !!editEv?.id;
@@ -740,8 +978,8 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editEv?.id]);
 
-  const inputSt: CSSProperties = {width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #E5E2DD",fontSize:13,color:"#1A1714",outline:"none",background:"#F3F0EC"};
-  const labelSt: CSSProperties = {fontSize:10,fontWeight:600,color:"#8a8580",letterSpacing:".06em",display:"block",marginBottom:5};
+  const inputSt: CSSProperties = {width:"100%",padding:"8px 10px",borderRadius:8,border:`1px solid ${theme.inputBorder}`,fontSize:13,color:theme.text,outline:"none",background:theme.inputBg};
+  const labelSt: CSSProperties = {fontSize:10,fontWeight:600,color:theme.textMute,letterSpacing:".06em",display:"block",marginBottom:5};
 
   const handleSave = () => {
     if (tab === "event") {
@@ -758,23 +996,24 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
     <div style={{
       width: open ? 300 : 0, flexShrink:0, overflow:"hidden",
       transition:"width 0.3s cubic-bezier(0.4,0,0.2,1)",
-      borderLeft: open ? "1px solid #E5E2DD" : "none",
-      background:"#FAF8F5", display:"flex", flexDirection:"column", position:"relative",
+      borderLeft: open ? `1px solid ${theme.border}` : "none",
+      background:theme.panel, backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
+      display:"flex", flexDirection:"column", position:"relative",
     }}>
       <div style={{width:300,height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{padding:"16px 18px 0",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <span style={{fontWeight:700,fontSize:15,color:"#1A1714",letterSpacing:"-0.02em"}}>
+            <span style={{fontWeight:700,fontSize:15,color:theme.text,letterSpacing:"-0.02em"}}>
               {isEdit ? (tab === "task" ? "Edit Task" : "Edit Event") : (tab === "task" ? "New Task" : "New Event")}
             </span>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#b0ada8",lineHeight:1,padding:2}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:theme.textFaint,lineHeight:1,padding:2}}>×</button>
           </div>
-          <div style={{display:"flex",background:"#F0EDE9",borderRadius:8,padding:3,gap:2,marginBottom:16}}>
+          <div style={{display:"flex",background:theme.chipBg,borderRadius:8,padding:3,gap:2,marginBottom:16}}>
             {(["task","event"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)} style={{
                 flex:1,padding:"5px 0",borderRadius:6,border:"none",fontSize:12,fontWeight:600,cursor:"pointer",
-                background:tab===t?"#fff":"transparent",
-                color:tab===t?accent:"#8a8580",
+                background:tab===t?theme.cardBg:"transparent",
+                color:tab===t?accent:theme.textMute,
                 boxShadow:tab===t?"0 1px 3px rgba(0,0,0,0.1)":"none",
                 transition:"all 0.15s",textTransform:"capitalize",
               }}>{t === "task" ? "Task" : "Event"}</button>
@@ -834,9 +1073,9 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
                   ]).map((r) => (
                     <div key={r.v} onClick={() => setRemind(r.v)} style={{
                       padding:"7px 6px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:500,textAlign:"center",
-                      background:remind===r.v?accent:"#F3F0EC",
-                      color:remind===r.v?"#fff":"#4a4744",
-                      border:`1px solid ${remind===r.v?accent:"#E5E2DD"}`,
+                      background:remind===r.v?accent:theme.inputBg,
+                      color:remind===r.v?"#fff":theme.textSoft,
+                      border:`1px solid ${remind===r.v?accent:theme.inputBorder}`,
                       transition:"all 0.15s",
                     }}>{r.l}</div>
                   ))}
@@ -870,10 +1109,10 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
           )}
         </div>
 
-        <div style={{padding:"12px 18px 16px",borderTop:"1px solid #E5E2DD",display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
+        <div style={{padding:"12px 18px 16px",borderTop:`1px solid ${theme.border}`,display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
           <div style={{display:"flex",gap:8}}>
             <button onClick={onClose}
-              style={{flex:1,padding:"9px 0",borderRadius:8,border:"1px solid #E5E2DD",background:"transparent",color:"#4a4744",fontSize:13,fontWeight:500,cursor:"pointer"}}>
+              style={{flex:1,padding:"9px 0",borderRadius:8,border:`1px solid ${theme.inputBorder}`,background:"transparent",color:theme.textSoft,fontSize:13,fontWeight:500,cursor:"pointer"}}>
               Cancel
             </button>
             <HoverButton onClick={handleSave} accent={accent}
@@ -883,7 +1122,7 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
           </div>
           {isEdit && editEv && (
             <button onClick={() => onDelete(editEv.id)}
-              style={{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #fecaca",background:"#fff5f5",color:"#E85D3A",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              style={{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #fecaca",background:"rgba(232,93,58,0.08)",color:"#E85D3A",fontSize:12,fontWeight:600,cursor:"pointer"}}>
               Delete {tab === "task" ? "Task" : "Event"}
             </button>
           )}
@@ -894,10 +1133,10 @@ function WebCreatePanel({ accent, defaultDate, open, editEv, onClose, onSave, on
 }
 
 // ─── MINI CALENDAR ────────────────────────────────────────────────────────────
-function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent }: {
+function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent, theme }: {
   year: number; month: number; selDate: string | null;
   onNav: (d: number) => void; onSelect: (ds: string) => void;
-  events: DesignEvent[]; accent: string;
+  events: DesignEvent[]; accent: string; theme: Theme;
 }) {
   const first = firstDow(year, month);
   const days = daysInMonth(year, month);
@@ -911,23 +1150,23 @@ function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent }: {
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-        <button onClick={() => onNav(-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:"#8a8580",lineHeight:1,padding:"2px 5px"}}>‹</button>
-        <span style={{fontSize:11,fontWeight:600,color:"#1A1714",letterSpacing:".04em"}}>{monthName(month).slice(0,3).toUpperCase()} {year}</span>
-        <button onClick={() => onNav(1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:"#8a8580",lineHeight:1,padding:"2px 5px"}}>›</button>
+        <button onClick={() => onNav(-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:theme.textMute,lineHeight:1,padding:"2px 5px"}}>‹</button>
+        <span style={{fontSize:11,fontWeight:600,color:theme.text,letterSpacing:".04em"}}>{monthName(month).slice(0,3).toUpperCase()} {year}</span>
+        <button onClick={() => onNav(1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:theme.textMute,lineHeight:1,padding:"2px 5px"}}>›</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,textAlign:"center"}}>
-        {DAYS3.map((d) => <div key={d} style={{fontSize:9,color:"#b0ada8",fontWeight:600,padding:"2px 0"}}>{d[0]}</div>)}
+        {DAYS3.map((d) => <div key={d} style={{fontSize:9,color:theme.textFaint,fontWeight:600,padding:"2px 0"}}>{d[0]}</div>)}
         {cells.map((d, i) => {
           if (!d) return <div key={i}/>;
           const ds = `${year}-${p2(month+1)}-${p2(d)}`;
           const isSel = ds === selDate, isToday = ds === todayLocalIso, dotType = dotMap[ds];
-          const dotColor = dotType === "event" ? "#E85D3A" : dotType === "task" ? "#F0A896" : null;
+          const dotColor = dotType === "event" ? accent : dotType === "task" ? accent + "99" : null;
           return (
             <div key={i} onClick={() => onSelect(ds)} style={{
               position:"relative",width:22,height:22,lineHeight:"22px",margin:"0 auto",borderRadius:"50%",
               fontSize:10,cursor:"pointer",fontWeight:isSel||isToday?600:400,
               background:isSel?accent:isToday?accent+"22":"transparent",
-              color:isSel?"#fff":isToday?accent:"#1A1714",
+              color:isSel?"#fff":isToday?accent:theme.text,
             }}>
               {d}
               {dotColor && !isSel && <div style={{position:"absolute",bottom:1,left:"50%",transform:"translateX(-50%)",width:3,height:3,borderRadius:"50%",background:dotColor}}/>}
@@ -940,10 +1179,10 @@ function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent }: {
 }
 
 // ─── MONTH VIEW ───────────────────────────────────────────────────────────────
-function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDoubleClickDay, onClickEvent, accent }: {
+function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDoubleClickDay, onClickEvent, accent, theme }: {
   year: number; month: number; events: DesignEvent[]; selDate: string | null;
   onSelect: (d: string) => void; onDeselect?: () => void;
-  onDoubleClickDay?: (d: string) => void; onClickEvent: (ev: DesignEvent) => void; accent: string;
+  onDoubleClickDay?: (d: string) => void; onClickEvent: (ev: DesignEvent) => void; accent: string; theme: Theme;
 }) {
   const first = firstDow(year, month);
   const days  = daysInMonth(year, month);
@@ -960,9 +1199,9 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",flexShrink:0,borderBottom:"1px solid #E5E2DD"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",flexShrink:0,borderBottom:`1px solid ${theme.border}`}}>
         {["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d) => (
-          <div key={d} style={{padding:"8px 12px",fontSize:10,fontWeight:600,color:"#b0ada8",letterSpacing:".05em"}}>{d.toUpperCase()}</div>
+          <div key={d} style={{padding:"8px 12px",fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".05em"}}>{d.toUpperCase()}</div>
         ))}
       </div>
       <div onClick={(e) => { if (e.target === e.currentTarget) onDeselect?.(); }}
@@ -979,18 +1218,18 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
               onClick={() => isCur && onSelect(ds)}
               onDoubleClick={() => isCur && onDoubleClickDay?.(ds)}
               style={{
-                borderRight:"1px solid #F0EDE9",borderBottom:"1px solid #F0EDE9",
+                borderRight:`1px solid ${theme.borderSoft}`,borderBottom:`1px solid ${theme.borderSoft}`,
                 padding:"7px 8px",cursor:isCur?"pointer":"default",
-                background:isSel?"#FDF9F7":isCur?"#FEFCFA":"#F5F3F0",
+                background:isSel?theme.cellSel:isCur?theme.cellCur:theme.cellOff,
                 transition:"background 0.1s",
-                outline: isSel ? "1px solid #E8DDD9" : "none",
+                outline: isSel ? `1px solid ${theme.borderMid}` : "none",
                 outlineOffset: "-1px",
               }}>
               <div style={{
                 width:24,height:24,lineHeight:"24px",textAlign:"center",borderRadius:"50%",
                 fontSize:12,fontWeight:isToday?700:400,marginBottom:4,
                 background:isToday?accent+"22":"transparent",
-                color:isToday?accent:isCur?"#1A1714":"#C8C4BE",
+                color:isToday?accent:isCur?theme.text:theme.textFaint,
               }}>{cell.d}</div>
               {dayEvs.slice(0, 3).map((ev) => {
                 const c = getCat(ev.cat);
@@ -1005,7 +1244,7 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
                   </div>
                 );
               })}
-              {dayEvs.length > 3 && <div style={{fontSize:9,color:"#b0ada8"}}>+{dayEvs.length - 3} more</div>}
+              {dayEvs.length > 3 && <div style={{fontSize:9,color:theme.textFaint}}>+{dayEvs.length - 3} more</div>}
             </div>
           );
         })}
@@ -1015,8 +1254,8 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
 }
 
 // ─── WEEK VIEW ────────────────────────────────────────────────────────────────
-function WebWeekView({ selDate, events, onClickEvent, accent }: {
-  selDate: string | null; events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string;
+function WebWeekView({ selDate, events, onClickEvent, accent, theme }: {
+  selDate: string | null; events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string; theme: Theme;
 }) {
   const base = selDate ? parseDate(selDate) : new Date();
   const dow = base.getDay();
@@ -1026,14 +1265,14 @@ function WebWeekView({ selDate, events, onClickEvent, accent }: {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",flexShrink:0,borderBottom:"1px solid #E5E2DD",background:"#FAF8F6"}}>
+      <div style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",flexShrink:0,borderBottom:`1px solid ${theme.border}`,background:theme.topbar}}>
         <div/>
         {wk.map((d) => {
           const ds = fmtDate(d); const isToday = ds === todayLocalIso;
           return (
-            <div key={ds} style={{textAlign:"center",padding:"8px 4px",borderLeft:"1px solid #F0EDE9"}}>
-              <div style={{fontSize:10,fontWeight:600,color:"#b0ada8",letterSpacing:".04em"}}>{dayShort(d.getDay()).toUpperCase()}</div>
-              <div style={{width:28,height:28,lineHeight:"28px",borderRadius:"50%",margin:"3px auto 0",fontSize:13,fontWeight:isToday?700:400,background:isToday?accent:"transparent",color:isToday?"#fff":"#1A1714"}}>{d.getDate()}</div>
+            <div key={ds} style={{textAlign:"center",padding:"8px 4px",borderLeft:`1px solid ${theme.borderSoft}`}}>
+              <div style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".04em"}}>{dayShort(d.getDay()).toUpperCase()}</div>
+              <div style={{width:28,height:28,lineHeight:"28px",borderRadius:"50%",margin:"3px auto 0",fontSize:13,fontWeight:isToday?700:400,background:isToday?accent:"transparent",color:isToday?"#fff":theme.text}}>{d.getDate()}</div>
             </div>
           );
         })}
@@ -1043,7 +1282,7 @@ function WebWeekView({ selDate, events, onClickEvent, accent }: {
           <div>
             {hours.map((h) => (
               <div key={h} style={{height:SLOT,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",paddingRight:8,paddingTop:4}}>
-                <span style={{fontSize:10,color:"#b0ada8",whiteSpace:"nowrap"}}>{h===12?"12 PM":h>12?`${h-12} PM`:`${h} AM`}</span>
+                <span style={{fontSize:10,color:theme.textFaint,whiteSpace:"nowrap"}}>{h===12?"12 PM":h>12?`${h-12} PM`:`${h} AM`}</span>
               </div>
             ))}
           </div>
@@ -1051,8 +1290,8 @@ function WebWeekView({ selDate, events, onClickEvent, accent }: {
             const ds = fmtDate(d);
             const dayEvs = events.filter((e) => e.date === ds && e.time);
             return (
-              <div key={ds} style={{borderLeft:"1px solid #F0EDE9",position:"relative"}}>
-                {hours.map((h) => <div key={h} style={{height:SLOT,borderBottom:"1px solid #F9F7F5"}}/>)}
+              <div key={ds} style={{borderLeft:`1px solid ${theme.borderSoft}`,position:"relative"}}>
+                {hours.map((h) => <div key={h} style={{height:SLOT,borderBottom:`1px solid ${theme.borderSoft}`}}/>)}
                 {dayEvs.map((ev) => {
                   const [sh, sm] = ev.time.split(":").map(Number) as [number, number];
                   const [eh, em] = (ev.end || `${sh+1}:00`).split(":").map(Number) as [number, number];
@@ -1083,8 +1322,8 @@ function WebWeekView({ selDate, events, onClickEvent, accent }: {
 }
 
 // ─── AGENDA-ONLY VIEW (full main area) ────────────────────────────────────────
-function WebAgendaView({ events, onClickEvent, accent }: {
-  events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string;
+function WebAgendaView({ events, onClickEvent, accent, theme }: {
+  events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; accent: string; theme: Theme;
 }) {
   const upcoming = [...events].filter((e) => e.date >= todayLocalIso).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const grouped: Record<string, DesignEvent[]> = {};
@@ -1092,7 +1331,7 @@ function WebAgendaView({ events, onClickEvent, accent }: {
 
   return (
     <div style={{flex:1,overflowY:"auto",padding:"8px 28px 28px"}}>
-      {Object.keys(grouped).length === 0 && <div style={{padding:40,textAlign:"center",color:"#b0ada8",fontSize:14}}>No upcoming events</div>}
+      {Object.keys(grouped).length === 0 && <div style={{padding:40,textAlign:"center",color:theme.textFaint,fontSize:14}}>No upcoming events</div>}
       {Object.entries(grouped).map(([date, evs]) => {
         const d = parseDate(date);
         const isToday = date === todayLocalIso;
@@ -1100,9 +1339,9 @@ function WebAgendaView({ events, onClickEvent, accent }: {
         return (
           <div key={date} style={{marginTop:24}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <span style={{fontSize:13,fontWeight:700,color:isToday?accent:"#1A1714"}}>{label}</span>
+              <span style={{fontSize:13,fontWeight:700,color:isToday?accent:theme.text}}>{label}</span>
               {isToday && <span style={{fontSize:10,background:accent+"22",color:accent,borderRadius:999,padding:"2px 8px",fontWeight:600,letterSpacing:".04em"}}>TODAY</span>}
-              <div style={{flex:1,height:1,background:"#E5E2DD"}}/>
+              <div style={{flex:1,height:1,background:theme.border}}/>
             </div>
             {evs.map((ev) => {
               const c = getCat(ev.cat);
@@ -1110,18 +1349,18 @@ function WebAgendaView({ events, onClickEvent, accent }: {
                 <div key={ev.id} onClick={() => onClickEvent(ev)} style={{
                   display:"flex",gap:14,alignItems:"flex-start",padding:"12px 16px",
                   borderRadius:10,marginBottom:6,cursor:"pointer",
-                  background:"#FBF9F7",border:"1px solid #EAE6E1",transition:"border-color 0.15s",
+                  background:theme.cardBg,border:`1px solid ${theme.borderMid}`,transition:"border-color 0.15s",
                 }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent + "55")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#F0EDE9")}>
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = theme.borderMid)}>
                   <div style={{width:3,alignSelf:"stretch",borderRadius:3,background:c.color,flexShrink:0,minHeight:30}}/>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:600,fontSize:14,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
-                    <div style={{fontSize:12,color:"#8a8580"}}>
+                    <div style={{fontWeight:600,fontSize:14,marginBottom:2,color:theme.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
+                    <div style={{fontSize:12,color:theme.textMute}}>
                       {ev.time && `${fmtTime(ev.time)}${ev.end ? ` – ${fmtTime(ev.end)}` : ""}`}
                       {ev.recur && <span style={{marginLeft:8,color:c.color,fontSize:11}}>↻ {ev.recur}</span>}
                     </div>
-                    {ev.desc && <div style={{fontSize:11,color:"#b0ada8",marginTop:4}}>{ev.desc}</div>}
+                    {ev.desc && <div style={{fontSize:11,color:theme.textFaint,marginTop:4}}>{ev.desc}</div>}
                   </div>
                   <span style={{fontSize:11,background:c.color+"18",color:c.color,borderRadius:6,padding:"3px 9px",fontWeight:500,flexShrink:0}}>{c.label}</span>
                 </div>

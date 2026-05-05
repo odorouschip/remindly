@@ -409,10 +409,6 @@ function IOSCalendar({ events, setEvents }) {
     if(m<0){m=11;y--;} if(m>11){m=0;y++;}
     setMonth(m); setYear(y);
   };
-  const goToday = () => {
-    const t = parseDate(TODAY);
-    setMonth(t.getMonth()); setYear(t.getFullYear()); setSelDate(TODAY);
-  };
 
   const filtered = search ? events.filter(e=>e.title.toLowerCase().includes(search.toLowerCase())) : events;
   const dayEvs   = filtered.filter(e=>e.date===selDate);
@@ -426,53 +422,37 @@ function IOSCalendar({ events, setEvents }) {
   return (
     <div style={{ position:'relative', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden', background:T.bg, color:T.text }}>
 
-      {/* Top icon bar (Fantastical-style) */}
+      {/* Single top bar — title/search input on the left, bell + search icons on the right */}
       <div style={{
-        flexShrink:0, padding:'14px 18px 6px',
-        display:'flex', alignItems:'center', justifyContent:'space-between',
+        flexShrink:0, padding:'14px 18px 10px',
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
         background:T.bg,
       }}>
-        <button title="Menu" style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, padding:4, display:'flex' }}>
-          <MenuIcon/>
-        </button>
-        <div style={{ fontSize:14, fontWeight:600, color:T.accent, letterSpacing:'-0.01em' }}>
-          Remindly
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        {tab==='calendar' && (
+          <div style={{ display:'flex', alignItems:'baseline', gap:8, minWidth:0 }}>
+            <div style={{ fontSize:26, fontWeight:700, color:T.text, letterSpacing:'-0.03em', lineHeight:1 }}>{MONTHS[month]}</div>
+            <div style={{ fontSize:26, fontWeight:700, color:T.accent, letterSpacing:'-0.02em', lineHeight:1 }}>{year}</div>
+          </div>
+        )}
+        {tab==='agenda' && (
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, letterSpacing:'-0.03em', lineHeight:1 }}>Upcoming</div>
+        )}
+        {tab==='search' && (
+          <div style={{ position:'relative', flex:1 }}>
+            <svg style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)' }} width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke={T.textMute} strokeWidth="1.4"/><path d="M10 10l2.5 2.5" stroke={T.textMute} strokeWidth="1.4" strokeLinecap="round"/></svg>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search events…"
+              style={{ width:'100%', padding:'9px 12px 9px 32px', borderRadius:10, border:`1px solid ${T.border}`, background:T.surface, fontSize:14, color:T.text, outline:'none' }} autoFocus/>
+          </div>
+        )}
+        <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
           <button title="Notifications" style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, padding:4, display:'flex' }}>
             <BellIcon/>
           </button>
-          <button title="Search" onClick={()=>setTab('search')} style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, padding:4, display:'flex' }}>
+          <button title="Search" onClick={()=>setTab(tab==='search'?'calendar':'search')} style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, padding:4, display:'flex' }}>
             <SearchIconSm/>
           </button>
         </div>
       </div>
-
-      {/* Big month / view header */}
-      {tab==='calendar' && (
-        <div style={{ padding:'4px 18px 10px', display:'flex', alignItems:'baseline', gap:10, flexShrink:0 }}>
-          <div style={{ fontSize:30, fontWeight:700, color:T.text, letterSpacing:'-0.03em', lineHeight:1 }}>{MONTHS[month]}</div>
-          <div style={{ fontSize:30, fontWeight:700, color:T.accent, letterSpacing:'-0.02em', lineHeight:1 }}>{year}</div>
-          <div style={{ flex:1 }}/>
-          <button onClick={()=>navMonth(-1)} style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, fontSize:20, padding:'2px 6px', lineHeight:1 }}>‹</button>
-          <button onClick={goToday} style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, fontSize:12, fontWeight:600, padding:'2px 6px' }}>Today</button>
-          <button onClick={()=>navMonth(1)} style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, fontSize:20, padding:'2px 6px', lineHeight:1 }}>›</button>
-        </div>
-      )}
-      {tab==='agenda' && (
-        <div style={{ padding:'4px 18px 10px', flexShrink:0 }}>
-          <div style={{ fontSize:28, fontWeight:700, color:T.text, letterSpacing:'-0.03em' }}>Upcoming</div>
-        </div>
-      )}
-      {tab==='search' && (
-        <div style={{ padding:'4px 18px 10px', flexShrink:0 }}>
-          <div style={{ position:'relative' }}>
-            <svg style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)' }} width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke={T.textMute} strokeWidth="1.4"/><path d="M10 10l2.5 2.5" stroke={T.textMute} strokeWidth="1.4" strokeLinecap="round"/></svg>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search events…"
-              style={{ width:'100%', padding:'10px 12px 10px 32px', borderRadius:10, border:`1px solid ${T.border}`, background:T.surface, fontSize:14, color:T.text, outline:'none' }} autoFocus/>
-          </div>
-        </div>
-      )}
 
       {tab==='calendar' && (
         <IOSMiniCal year={year} month={month} selDate={selDate}

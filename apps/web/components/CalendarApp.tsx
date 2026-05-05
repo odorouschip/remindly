@@ -4,6 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { LoginScreen } from "./LoginScreen";
+import { SignupScreen, type SignupPrefs } from "./SignupScreen";
 import {
   REMINDER_PRESETS_MINUTES,
   reminderDueAt,
@@ -180,6 +181,7 @@ const THEMES: readonly Theme[] = [
 ];
 const getTheme = (id: string): Theme => THEMES.find((t) => t.id === id) ?? THEMES[0]!;
 const THEME_STORAGE_KEY = "remindly:themeId";
+const PREFS_STORAGE_KEY = "remindly:prefs";
 
 const todayLocalIso = (() => {
   const d = new Date();
@@ -346,6 +348,37 @@ export function CalendarApp() {
     if (error) setStatus(error.message);
   }
 
+  async function handleSignUp(args: {
+    firstName: string; lastName: string; email: string; password: string; prefs: SignupPrefs;
+  }): Promise<{ ok: boolean; needsConfirm: boolean; message?: string }> {
+    if (!supabase) return { ok: false, needsConfirm: false, message: "Supabase not configured." };
+    const { firstName, lastName, email, password, prefs } = args;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim(),
+          timezone: prefs.timezone,
+        },
+      },
+    });
+    if (error) return { ok: false, needsConfirm: false, message: error.message };
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    }
+
+    const id = data.session?.user.id ?? null;
+    if (id) {
+      setUserId(id);
+      void loadEvents(id);
+    }
+    return { ok: true, needsConfirm: !data.session };
+  }
+
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -441,13 +474,20 @@ export function CalendarApp() {
         />
       );
     }
-    // signup / forgot screens — stubs until those designs are ported.
+    if (authView === "signup") {
+      return (
+        <SignupScreen
+          onSignUp={handleSignUp}
+          onOAuth={handleOAuth}
+          onBackToLogin={() => { setStatus(""); setAuthView("login"); }}
+        />
+      );
+    }
+    // forgot password — stub until that design is ported.
     return (
       <main style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans', sans-serif",background:"#FAFAF9",color:"#1A1714",padding:24}}>
         <div style={{maxWidth:400,textAlign:"center"}}>
-          <h2 style={{fontSize:22,fontWeight:700,letterSpacing:"-0.03em",marginBottom:10}}>
-            {authView === "signup" ? "Sign up" : "Reset password"}
-          </h2>
+          <h2 style={{fontSize:22,fontWeight:700,letterSpacing:"-0.03em",marginBottom:10}}>Reset password</h2>
           <p style={{fontSize:13,color:"#8a8580",marginBottom:20,lineHeight:1.5}}>
             This screen is coming soon — we'll wire it up next.
           </p>

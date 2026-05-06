@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { LoginScreen } from "./LoginScreen";
 import { SignupScreen, type SignupPrefs } from "./SignupScreen";
+import { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 import {
   REMINDER_PRESETS_MINUTES,
   reminderDueAt,
@@ -388,6 +389,31 @@ export function CalendarApp() {
     return { ok: true, needsConfirm: !data.session };
   }
 
+  async function handleResetSendCode(email: string): Promise<{ ok: boolean; message?: string }> {
+    if (!supabase) return { ok: false, message: "Supabase not configured." };
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) return { ok: false, message: error.message };
+    return { ok: true };
+  }
+
+  async function handleResetVerifyCode(email: string, code: string): Promise<{ ok: boolean; message?: string }> {
+    if (!supabase) return { ok: false, message: "Supabase not configured." };
+    const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "recovery" });
+    if (error) return { ok: false, message: error.message };
+    return { ok: true };
+  }
+
+  async function handleResetUpdatePassword(newPassword: string): Promise<{ ok: boolean; message?: string }> {
+    if (!supabase) return { ok: false, message: "Supabase not configured." };
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { ok: false, message: error.message };
+    // Sign back out so the user re-authenticates with the new password.
+    await supabase.auth.signOut();
+    setUserId(null);
+    setEvents([]);
+    return { ok: true };
+  }
+
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -492,20 +518,13 @@ export function CalendarApp() {
         />
       );
     }
-    // forgot password — stub until that design is ported.
     return (
-      <main style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans', sans-serif",background:"#FAFAF9",color:"#1A1714",padding:24}}>
-        <div style={{maxWidth:400,textAlign:"center"}}>
-          <h2 style={{fontSize:22,fontWeight:700,letterSpacing:"-0.03em",marginBottom:10}}>Reset password</h2>
-          <p style={{fontSize:13,color:"#8a8580",marginBottom:20,lineHeight:1.5}}>
-            This screen is coming soon — we'll wire it up next.
-          </p>
-          <button onClick={() => { setStatus(""); setAuthView("login"); }}
-            style={{padding:"10px 20px",borderRadius:9,border:"1px solid #E5E2DD",background:"#fff",fontFamily:"inherit",fontSize:13,fontWeight:600,color:"#1A1714",cursor:"pointer"}}>
-            Back to sign in
-          </button>
-        </div>
-      </main>
+      <ForgotPasswordScreen
+        onSendCode={handleResetSendCode}
+        onVerifyCode={handleResetVerifyCode}
+        onUpdatePassword={handleResetUpdatePassword}
+        onBackToLogin={() => { setStatus(""); setAuthView("login"); }}
+      />
     );
   }
 

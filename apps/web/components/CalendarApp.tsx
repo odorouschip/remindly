@@ -51,6 +51,15 @@ const CATS: readonly [Category, Category, Category, Category] = [
 ];
 const getCat = (id: CategoryId): Category => CATS.find((c) => c.id === id) ?? CATS[0];
 
+type CalendarKind = "personal" | "other";
+type SidebarCalendar = { id: string; label: string; color: string; checked: boolean; type: CalendarKind };
+const CALENDARS_INIT: readonly SidebarCalendar[] = [
+  { id: "my",       label: "My Calendar", color: "#5046E5", checked: true,  type: "personal" },
+  { id: "work",     label: "Work",        color: "#E85D3A", checked: true,  type: "personal" },
+  { id: "birthday", label: "Birthdays",   color: "#2DA87E", checked: true,  type: "personal" },
+  { id: "holidays", label: "US Holidays", color: "#C47EDB", checked: false, type: "other"    },
+];
+
 const MONTHS: readonly string[] = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS3: readonly string[]  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const monthName = (m: number): string => MONTHS[m] ?? "";
@@ -680,6 +689,7 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
   const [createOpen, setCreateOpen] = useState(false);
   const [editEv, setEditEv] = useState<DesignEvent | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [calendars, setCalendars] = useState<SidebarCalendar[]>([...CALENDARS_INIT]);
 
   const openEdit = (ev: DesignEvent) => { setEditEv(ev); setCreateOpen(true); };
   const openNew  = (date?: string | null) => { setEditEv(null); setCreateOpen(true); if (date) setSelDate(date); };
@@ -737,7 +747,7 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
           onSelect={(d) => { setSelDate(d); if (gridView === null) setGridView("month"); }}
           events={filtered} accent={accent} theme={theme}/>
 
-        <WebSidebarAgenda events={filtered} onClickEvent={openEdit} theme={theme}/>
+        <WebSidebarCalendars calendars={calendars} setCalendars={setCalendars} theme={theme}/>
 
         <WebCategoriesDropdown theme={theme}/>
 
@@ -841,39 +851,59 @@ function HoverButton({ accent, onClick, children, style = {}, blushRest = false 
   );
 }
 
-// ─── SIDEBAR MINI AGENDA ──────────────────────────────────────────────────────
-function WebSidebarAgenda({ events, onClickEvent, theme }: {
-  events: DesignEvent[]; onClickEvent: (ev: DesignEvent) => void; theme: Theme;
+// ─── SIDEBAR CALENDARS ────────────────────────────────────────────────────────
+function WebSidebarCalendars({ calendars, setCalendars, theme }: {
+  calendars: SidebarCalendar[];
+  setCalendars: (updater: (prev: SidebarCalendar[]) => SidebarCalendar[]) => void;
+  theme: Theme;
 }) {
-  const upcoming = [...events]
-    .filter((e) => e.date >= todayLocalIso)
-    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    .slice(0, 5);
-  return (
-    <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column"}}>
-      <div style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em",marginBottom:8}}>UPCOMING</div>
-      <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
-        {upcoming.length === 0 && <div style={{fontSize:11,color:theme.textFaint,padding:"6px 0"}}>Nothing coming up</div>}
-        {upcoming.map((ev) => {
-          const c = getCat(ev.cat);
-          const d = parseDate(ev.date);
-          const isToday = ev.date === todayLocalIso;
-          return (
-            <div key={ev.id} onClick={() => onClickEvent(ev)} style={{
-              display:"flex",gap:8,alignItems:"center",padding:"6px 8px",borderRadius:7,cursor:"pointer",
-              background:theme.chipBg,transition:"background 0.1s",
-            }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = theme.borderMid)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = theme.chipBg)}>
-              <div style={{width:3,height:28,borderRadius:2,background:c.color,flexShrink:0}}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:600,color:theme.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
-                <div style={{fontSize:10,color:theme.textFaint}}>{isToday ? "Today" : d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}{ev.time && ` · ${fmtTime(ev.time)}`}</div>
-              </div>
-            </div>
-          );
-        })}
+  const [myOpen, setMyOpen] = useState(true);
+  const [otherOpen, setOtherOpen] = useState(true);
+
+  const myCalendars    = calendars.filter((c) => c.type === "personal");
+  const otherCalendars = calendars.filter((c) => c.type === "other");
+
+  const toggleCal = (id: string) =>
+    setCalendars((prev) => prev.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c)));
+
+  const Section = ({ title, open, toggle, items }: {
+    title: string; open: boolean; toggle: () => void; items: SidebarCalendar[];
+  }) => (
+    <div style={{display:"flex",flexDirection:"column",gap:2}}>
+      <div onClick={toggle} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",padding:"3px 0",marginBottom:2}}>
+        <span style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em"}}>{title}</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}>
+          <path d="M2 3.5l3 3 3-3" stroke={theme.textFaint} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </div>
+      {open && items.map((cal) => (
+        <div key={cal.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 4px",borderRadius:6,cursor:"pointer",transition:"background 0.1s"}}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.04)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+          <div onClick={() => toggleCal(cal.id)} style={{
+            width:14,height:14,borderRadius:3,flexShrink:0,cursor:"pointer",
+            background: cal.checked ? cal.color : "transparent",
+            border:`2px solid ${cal.color}`,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            transition:"background 0.15s",
+          }}>
+            {cal.checked && (
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                <path d="M1 4l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <span style={{fontSize:12,color:theme.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cal.label}</span>
+          <div style={{width:6,height:6,borderRadius:"50%",background:cal.color,flexShrink:0,opacity:0.6}}/>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:12,flex:1,minHeight:0}}>
+      <Section title="MY CALENDARS"    open={myOpen}    toggle={() => setMyOpen((o) => !o)}    items={myCalendars}/>
+      <Section title="OTHER CALENDARS" open={otherOpen} toggle={() => setOtherOpen((o) => !o)} items={otherCalendars}/>
     </div>
   );
 }

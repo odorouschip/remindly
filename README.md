@@ -2,7 +2,7 @@
 
 Remindly is a cross-platform calendar and task manager with a polished web app, native iOS app with Live Activities, and a Supabase backend.
 
-![Remindly web app](assets/design_screenshot.jpg)
+![Remindly web app](assets/calendar_screenshot.jpg)
 
 ## What's included
 

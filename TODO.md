@@ -48,6 +48,8 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ### Settings modal
 - [ ] **Account tab** has placeholder inputs (`defaultValue=""`) that don't read or write anything. Wire to Supabase `user_metadata`.
+- [ ] **Profile picture.** Account tab currently shows an "R" initials avatar. Replace with a real avatar upload (Supabase Storage bucket), fallback to initials. Show the avatar in the sidebar header too.
+- [ ] **Make Settings feel like a real app, not a mockup.** Current Account tab is three lonely inputs. Add: change-password flow, connected providers list, sign-out button (currently in sidebar), notification preferences, default view / week-start (already collected at signup but never editable after), delete-account.
 - [ ] **Categories tab** is read-only ("managed inline on each event for now"). Either make it editable (add/rename/delete categories) or delete the tab.
 - [ ] **Import tab** buttons don't import. Build the OAuth flow + ICS upload, or hide the section.
 
@@ -65,6 +67,7 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ### Create panel
 - [ ] "Custom…" reminder offset button doesn't open anything.
+- [ ] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
 - [ ] No location field on events.
 - [ ] No attendees / invitees.
 - [ ] No way to attach a file or note longer than a textarea.
@@ -80,7 +83,24 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ---
 
+## Themes
+
+7 themes exist today: Ivory, Linen, Sage, Ocean, Sunset, Lavender, Midnight (see `THEMES` array in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx)).
+
+- [ ] **Refine the existing 7.** Audit each theme for contrast (especially Sage / Sunset on body text), scene gradients (Linen has none — feels flatter than the others), and chip/card colors. Midnight in particular needs a hover/selected pass.
+- [ ] **More themes.** Ideas: a true monochrome / paper-white, a higher-contrast accessibility theme, seasonal variants, a "focus" minimal theme with no scene gradient.
+- [ ] **System theme preference.** Match the OS light/dark setting on first visit instead of defaulting to Ivory.
+- [ ] **Per-category color customization.** Today the 4 category colors are baked into the `CATS` constant. Let users pick their own.
+- [ ] **Theme preview in settings** could be larger / interactive — currently you only see the swatch dot + a stripe of gradient.
+- [ ] **Custom accent color** independent of theme (Notion-style).
+
+---
+
 ## Bigger picture
+
+### Smart command bar / natural-language input
+- [ ] Add a global command bar (Cmd/Ctrl-K) that does more than search — Notion Calendar / Cron / Fantastical style. Should: search events, jump to dates ("next monday"), create events from natural language ("Lunch with Sam tomorrow at noon"), and run app commands ("switch to week view", "new task").
+- [ ] If natural-language event creation uses an LLM, it should round-trip locally for the simple cases (dates, times, durations) and only call the model for ambiguous input — avoids latency and cost on every keystroke.
 
 ### iOS Live Activities (the headline feature)
 - [ ] Live Activity styling should match the (eventual) new web brand.
@@ -98,6 +118,36 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [ ] Onboarding tour for first sign-in.
 - [ ] Empty states for every major surface (no events, no upcoming, no search matches, etc.).
 - [ ] Error states for network/Supabase failures (currently just the small `status` string at the bottom of auth).
+
+---
+
+## iOS app
+
+The iOS side is significantly less developed than the web side and the entire UI needs a redesign. Most items here are placeholders — flesh them out as direction firms up. Live Activity items live above under "Bigger picture → iOS Live Activities" for now.
+
+### UI redesign (currently unsatisfactory — full overhaul planned)
+- [ ] **Decide the iOS visual direction.** Should it mirror the web (sidebar + theming + 7 themes) or lean into native iOS patterns (NavigationStack, tab bar, native sheets, system colors)? Probably native — but the web brand needs to be visible.
+- [ ] **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
+- [ ] **Rebuild events list / agenda view** with the new design language.
+- [ ] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
+- [ ] **Add month / week views** on iPad / larger phones.
+- [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; verify it covers the 7 web themes (or whichever subset makes sense on iOS).
+
+### Functionality still needed
+- [ ] **Auth UI** — verify the iOS sign-in matches the redesigned web auth (Google / Apple / Microsoft / GitHub buttons, forgot password, signup with preferences).
+- [ ] **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
+- [ ] **Offline editing + sync conflict handling.**
+- [ ] **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
+- [ ] **iCloud / device-local backup** of preferences (theme choice, default view, etc.).
+- [ ] **Calendar widgets** (Home Screen + Lock Screen) beyond the Live Activity.
+- [ ] **Share extension** so events can be created from other apps (e.g., from a Safari page).
+
+### Polish / quality
+- [ ] **App icon** — needs to match the new logo.
+- [ ] **Launch screen** — currently default.
+- [ ] **Onboarding** — first-launch flow asking for notification permission, Live Activity opt-in, calendar imports.
+- [ ] **Dynamic Type** support across all screens.
+- [ ] **VoiceOver** labels for all interactive elements.
 
 ---
 

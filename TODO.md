@@ -21,11 +21,6 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ## UI polish
 
-### High-impact
-- [ ] **Hover states across the app.** Sidebar calendar rows, mini-cal day cells, month-view event chips, week-view event blocks, agenda list items, and the create-panel "Cancel" button all have no hover feedback. App feels static.
-- [ ] **Mini-cal day cells** are 22×22 px — sub-spec for click targets. Bump to ~28+.
-- [ ] **Themed focus rings on inputs.** Create panel + settings inputs/selects/textareas use raw browser focus outlines (or none). Add a `box-shadow: 0 0 0 3px <accent-alpha>` ring like LoginScreen already does.
-
 ### Medium
 - [ ] **`backdropFilter: blur(20px)` overuse.** Applied to sidebar, topbar, agenda panel, create panel — even on themes without a scene gradient (Ivory, Linen) where there's nothing behind to blur. Only apply when `theme.scene` is set.
 - [ ] **Type scale.** ~12 font sizes scattered (9, 10, 11, 12, 13, 13.5, 14, 15, 17, 18, 20, 22, 24) with no pattern. Define a small `fs` constant and standardize.
@@ -151,8 +146,21 @@ The iOS side is significantly less developed than the web side and the entire UI
 
 ---
 
-## Recently done (UI polish pass — 2026-05-28)
+## Recently done
 
+### High-impact UI polish pass — 2026-05-28
+- [x] **Themed focus rings** on inputs/selects/textareas. Added a `--accent` CSS variable that updates with the active theme; global `:focus-visible` rule uses `color-mix` to draw a tinted ring without touching the inline border styles.
+- [x] **Mini-cal day cells** are now responsive (`width:100%` + `aspectRatio:"1/1"`) — ~26 px in the current sidebar, above WCAG AA. Added hover background, bumped weekday letters from 9 → 10 px (were nearly illegible), increased grid gap from 1 → 2 px.
+- [x] **Mini-cal nav arrows** now use the shared `IconButton` (hover bg + color shift).
+- [x] **Topbar nav cluster** (Prev / Today / Next) refactored to a new `OutlinedButton` helper with hover background + color shift.
+- [x] **View toggle buttons** (Month / Week / Agenda) — inactive ones now nudge color toward `textSoft` on hover.
+- [x] **Month-view event chips** hover increases the colored background alpha (15% → 28%) with a 120ms transition.
+- [x] **Week-view event blocks** hover darkens the bg ~14% and grows the colored shadow.
+- [x] **Sign-out button** now uses `OutlinedButton` (hover bg).
+- [x] **Create panel Cancel** uses `OutlinedButton`; **Delete** button gets a hover that intensifies the red bg + border.
+- [x] Note: sidebar calendar rows and right-side agenda list items already had hover before this pass, so they're untouched. The TODO line saying otherwise was inaccurate.
+
+### Earlier UI polish pass — 2026-05-28
 - [x] Swapped raw `‹ › ×` chars for lucide icons across topbar, mini cal, settings modal, create panel.
 - [x] Replaced inline custom SVGs in sidebar (cog / search / two section chevrons) with lucide icons — consistent stroke weight.
 - [x] Added `IconButton` wrapper with real hover state — sidebar cog no longer feels dead.

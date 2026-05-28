@@ -45,6 +45,20 @@ pre {
   font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 }
 
+/* Native date/time picker indicator — softer than the default jet-black */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator,
+input[type="date"]:focus::-webkit-calendar-picker-indicator,
+input[type="time"]:focus::-webkit-calendar-picker-indicator {
+  opacity: 0.9;
+}
+
 /* Supabase-not-configured setup screen */
 .setup-shell {
   min-height: 100vh;

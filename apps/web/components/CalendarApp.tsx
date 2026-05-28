@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Plus, Search, Settings as SettingsIcon, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { LoginScreen } from "./LoginScreen";
@@ -485,7 +485,7 @@ export function CalendarApp() {
   // ── Render branches
   if (!isSupabaseConfigured) {
     return (
-      <main className="shell setup-shell">
+      <main className="setup-shell">
         <section className="setup-panel">
           <CalendarDays aria-hidden />
           <h1>Connect Supabase to start Calender</h1>
@@ -578,7 +578,10 @@ function SettingsModal({ open, onClose, theme, themeId, setThemeId }: {
         <div style={{padding:"16px 22px 0",borderBottom:`1px solid ${theme.border}`,flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
             <span style={{fontSize:16,fontWeight:700,color:theme.text,letterSpacing:"-0.02em"}}>Settings</span>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:theme.textFaint,lineHeight:1,padding:0}}>×</button>
+            <button onClick={onClose} aria-label="Close settings"
+              style={{background:"none",border:"none",cursor:"pointer",color:theme.textFaint,padding:4,display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:6}}>
+              <X size={18} strokeWidth={1.75}/>
+            </button>
           </div>
           <div style={{display:"flex",gap:18}}>
             {tabs.map((t) => (
@@ -742,23 +745,16 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
             </svg>
           </div>
           <span style={{fontWeight:700,fontSize:15,color:theme.text,letterSpacing:"-0.02em",flex:1}}>Remindly</span>
-          <button onClick={() => setShowSettings(true)}
-            title="Settings"
-            style={{background:"none",border:"none",cursor:"pointer",color:theme.textFaint,padding:3,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6}}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M7 1v1.5M7 11.5V13M13 7h-1.5M2.5 7H1M11.24 2.76l-1.06 1.06M3.82 10.18l-1.06 1.06M11.24 11.24l-1.06-1.06M3.82 3.82L2.76 2.76" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
-          </button>
+          <IconButton onClick={() => setShowSettings(true)} title="Settings" theme={theme}>
+            <SettingsIcon size={15} strokeWidth={1.6}/>
+          </IconButton>
         </div>
 
         <div style={{position:"relative"}}>
-          <svg style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",opacity:0.5}} width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <circle cx="5.5" cy="5.5" r="4" stroke={theme.text} strokeWidth="1.4"/>
-            <path d="M9 9l2.5 2.5" stroke={theme.text} strokeWidth="1.4" strokeLinecap="round"/>
-          </svg>
+          <Search size={13} strokeWidth={1.6}
+            style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",color:theme.textMute,pointerEvents:"none"}}/>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…"
-            style={{width:"100%",padding:"7px 8px 7px 26px",borderRadius:7,border:`1px solid ${theme.inputBorder}`,fontSize:12,background:theme.inputBg,color:theme.text,outline:"none"}}/>
+            style={{width:"100%",padding:"7px 8px 7px 28px",borderRadius:7,border:`1px solid ${theme.inputBorder}`,fontSize:12,background:theme.inputBg,color:theme.text,outline:"none"}}/>
         </div>
 
         <WebMiniCal year={year} month={month} selDate={selDate}
@@ -784,15 +780,21 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
           <div onClick={(e) => { e.stopPropagation(); deselect(); }}
             style={{display:"flex",alignItems:"center",padding:"14px 24px",borderBottom:`1px solid ${theme.border}`,gap:16,flexShrink:0,background:theme.topbar,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={() => navMonth(-1)} style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:theme.textSoft}}>‹</button>
+              <button onClick={() => navMonth(-1)} aria-label="Previous month"
+                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"5px 7px",cursor:"pointer",color:theme.textSoft,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+                <ChevronLeft size={14} strokeWidth={1.75}/>
+              </button>
               <button onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelDate(todayLocalIso); }}
                 style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:500,color:theme.textSoft}}>Today</button>
-              <button onClick={() => navMonth(1)} style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:13,color:theme.textSoft}}>›</button>
+              <button onClick={() => navMonth(1)} aria-label="Next month"
+                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"5px 7px",cursor:"pointer",color:theme.textSoft,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+                <ChevronRight size={14} strokeWidth={1.75}/>
+              </button>
             </div>
             <h2 style={{fontSize:17,fontWeight:600,letterSpacing:"-0.02em",flex:1,margin:0,color:theme.text}}>{monthName(month)} {year}</h2>
-            <HoverButton accent={accent} blushRest onClick={() => openNew()}
-              style={{padding:"6px 14px",borderRadius:7,border:"none",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:15,lineHeight:1}}>+</span> New
+            <HoverButton accent={accent} onClick={() => openNew()}
+              style={{padding:"6px 12px 6px 10px",borderRadius:7,border:"none",fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+              <Plus size={14} strokeWidth={2.25}/> New
             </HoverButton>
             <div style={{display:"flex",background:theme.chipBg,borderRadius:8,padding:3,gap:2}}>
               {(["month","week"] as const).map((v) => (
@@ -853,19 +855,37 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
 }
 
 // ─── HOVER BUTTON ─────────────────────────────────────────────────────────────
-function HoverButton({ accent, onClick, children, style = {}, blushRest = false }: {
-  accent: string; onClick?: () => void; children: ReactNode; style?: CSSProperties; blushRest?: boolean;
+function HoverButton({ accent, onClick, children, style = {} }: {
+  accent: string; onClick?: () => void; children: ReactNode; style?: CSSProperties;
 }) {
   const [hov, setHov] = useState(false);
-  const restBg = blushRest ? "#F0A896" : accent;
   return (
     <button onClick={onClick}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         ...style,
-        background: hov ? darken(accent, 22) : restBg,
+        background: hov ? darken(accent, 22) : accent,
         color: "#fff",
         transition: "background 0.18s, box-shadow 0.18s",
+      }}>{children}</button>
+  );
+}
+
+// ─── ICON BUTTON ──────────────────────────────────────────────────────────────
+function IconButton({ onClick, children, title, theme, size = 26 }: {
+  onClick?: () => void; children: ReactNode; title?: string; theme: Theme; size?: number;
+}) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} title={title} aria-label={title}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        width: size, height: size, padding: 0,
+        background: hov ? theme.chipBg : "transparent",
+        border: "none", borderRadius: 6, cursor: "pointer",
+        color: hov ? theme.text : theme.textMute,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        transition: "background 0.15s, color 0.15s",
       }}>{children}</button>
   );
 }
@@ -891,9 +911,8 @@ function WebSidebarCalendars({ calendars, setCalendars, theme }: {
     <div style={{display:"flex",flexDirection:"column",gap:2}}>
       <div onClick={toggle} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",padding:"3px 0",marginBottom:2}}>
         <span style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em"}}>{title}</span>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}>
-          <path d="M2 3.5l3 3 3-3" stroke={theme.textFaint} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <ChevronDown size={12} strokeWidth={1.75}
+          style={{color:theme.textFaint,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}/>
       </div>
       {open && items.map((cal) => (
         <div key={cal.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 4px",borderRadius:6,cursor:"pointer",transition:"background 0.1s"}}
@@ -936,9 +955,8 @@ function WebCategoriesDropdown({ theme }: { theme: Theme }) {
         display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom:open?8:0,
       }}>
         <span style={{fontSize:10,fontWeight:600,color:theme.textFaint,letterSpacing:".08em"}}>CATEGORIES</span>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}>
-          <path d="M2 3.5l3 3 3-3" stroke={theme.textFaint} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <ChevronDown size={12} strokeWidth={1.75}
+          style={{color:theme.textFaint,transform:open?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}/>
       </div>
       {open && (
         <div style={{display:"flex",flexDirection:"column",gap:5}}>
@@ -1095,7 +1113,10 @@ function WebCreatePanel({ accent, theme, defaultDate, open, editEv, onClose, onS
             <span style={{fontWeight:700,fontSize:15,color:theme.text,letterSpacing:"-0.02em"}}>
               {isEdit ? (tab === "task" ? "Edit Task" : "Edit Event") : (tab === "task" ? "New Task" : "New Event")}
             </span>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:theme.textFaint,lineHeight:1,padding:2}}>×</button>
+            <button onClick={onClose} aria-label="Close panel"
+              style={{background:"none",border:"none",cursor:"pointer",color:theme.textFaint,padding:4,display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:6}}>
+              <X size={16} strokeWidth={1.75}/>
+            </button>
           </div>
           <div style={{display:"flex",background:theme.chipBg,borderRadius:8,padding:3,gap:2,marginBottom:16}}>
             {(["task","event"] as const).map((t) => (
@@ -1239,9 +1260,15 @@ function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent, the
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-        <button onClick={() => onNav(-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:theme.textMute,lineHeight:1,padding:"2px 5px"}}>‹</button>
+        <button onClick={() => onNav(-1)} aria-label="Previous month"
+          style={{background:"none",border:"none",cursor:"pointer",color:theme.textMute,padding:"2px 4px",display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:4}}>
+          <ChevronLeft size={13} strokeWidth={1.75}/>
+        </button>
         <span style={{fontSize:11,fontWeight:600,color:theme.text,letterSpacing:".04em"}}>{monthName(month).slice(0,3).toUpperCase()} {year}</span>
-        <button onClick={() => onNav(1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:15,color:theme.textMute,lineHeight:1,padding:"2px 5px"}}>›</button>
+        <button onClick={() => onNav(1)} aria-label="Next month"
+          style={{background:"none",border:"none",cursor:"pointer",color:theme.textMute,padding:"2px 4px",display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:4}}>
+          <ChevronRight size={13} strokeWidth={1.75}/>
+        </button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,textAlign:"center"}}>
         {DAYS3.map((d) => <div key={d} style={{fontSize:9,color:theme.textFaint,fontWeight:600,padding:"2px 0"}}>{d[0]}</div>)}

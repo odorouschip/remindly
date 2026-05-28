@@ -96,6 +96,7 @@ type Theme = {
   text: string; textSoft: string; textMute: string; textFaint: string;
   chipBg: string; cardBg: string;
   swatch: [string, string, string];
+  dark?: boolean;
 };
 
 const THEMES: readonly Theme[] = [
@@ -187,6 +188,7 @@ const THEMES: readonly Theme[] = [
     text:"#F0F0F5", textSoft:"#C8CAD4", textMute:"#888B9A", textFaint:"#5A5D6E",
     chipBg:"rgba(255,255,255,0.08)", cardBg:"rgba(255,255,255,0.05)",
     swatch:["#1A1C2A","#5060A8","#7B92F0"],
+    dark: true,
   },
 ];
 const getTheme = (id: string): Theme => THEMES.find((t) => t.id === id) ?? THEMES[0]!;
@@ -297,6 +299,11 @@ export function CalendarApp() {
     const stored = typeof window !== "undefined" ? window.localStorage.getItem(THEME_STORAGE_KEY) : null;
     if (stored && THEMES.some((t) => t.id === stored)) setThemeIdState(stored);
   }, []);
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.colorScheme = theme.dark ? "dark" : "light";
+    }
+  }, [theme.dark]);
   const setThemeId = (id: string) => {
     setThemeIdState(id);
     if (typeof window !== "undefined") window.localStorage.setItem(THEME_STORAGE_KEY, id);
@@ -632,7 +639,7 @@ function SettingsModal({ open, onClose, theme, themeId, setThemeId }: {
                           {isSel && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                         <div style={{minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:700,color:t.text,letterSpacing:"-0.01em"}}>{t.name}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:t.text}}>{t.name}</div>
                           <div style={{fontSize:10,color:t.textMute,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.subtitle}</div>
                         </div>
                       </div>
@@ -1150,13 +1157,6 @@ function WebCreatePanel({ accent, theme, defaultDate, open, editEv, onClose, onS
                 <select value={recur} onChange={(e) => setRecur(e.target.value as RecurLabel)} style={{...inputSt,cursor:"pointer"}}>
                   {(["","Daily","Weekly","Monthly","Yearly"] as const).map((r) => <option key={r} value={r}>{r || "Does not repeat"}</option>)}
                 </select>
-              </div>
-              <div style={{display:"flex",gap:5,marginTop:2}}>
-                {CATS.map((c) => (
-                  <div key={c.id} onClick={() => setCat(c.id)} style={{
-                    flex:1,height:5,borderRadius:99,background:c.color,opacity:cat===c.id?1:0.2,cursor:"pointer",transition:"opacity 0.15s",
-                  }}/>
-                ))}
               </div>
               <div>
                 <label style={labelSt}>NOTES</label>

@@ -301,9 +301,11 @@ export function CalendarApp() {
   }, []);
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.style.colorScheme = theme.dark ? "dark" : "light";
+      const root = document.documentElement;
+      root.style.colorScheme = theme.dark ? "dark" : "light";
+      root.style.setProperty("--accent", theme.accent);
     }
-  }, [theme.dark]);
+  }, [theme.dark, theme.accent]);
   const setThemeId = (id: string) => {
     setThemeIdState(id);
     if (typeof window !== "undefined") window.localStorage.setItem(THEME_STORAGE_KEY, id);
@@ -773,10 +775,10 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
 
         <WebCategoriesDropdown theme={theme}/>
 
-        <button onClick={() => void onSignOut()}
-          style={{marginTop:"auto",padding:"7px 10px",borderRadius:7,border:`1px solid ${theme.inputBorder}`,background:"transparent",color:theme.textMute,fontSize:11,fontWeight:600,cursor:"pointer"}}>
+        <OutlinedButton theme={theme} onClick={() => void onSignOut()}
+          style={{marginTop:"auto",padding:"7px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>
           Sign out
-        </button>
+        </OutlinedButton>
       </aside>
 
       {/* Main + right panels */}
@@ -787,16 +789,19 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
           <div onClick={(e) => { e.stopPropagation(); deselect(); }}
             style={{display:"flex",alignItems:"center",padding:"14px 24px",borderBottom:`1px solid ${theme.border}`,gap:16,flexShrink:0,background:theme.topbar,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={() => navMonth(-1)} aria-label="Previous month"
-                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"5px 7px",cursor:"pointer",color:theme.textSoft,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+              <OutlinedButton theme={theme} onClick={() => navMonth(-1)} ariaLabel="Previous month"
+                style={{padding:"5px 7px"}}>
                 <ChevronLeft size={14} strokeWidth={1.75}/>
-              </button>
-              <button onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelDate(todayLocalIso); }}
-                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:500,color:theme.textSoft}}>Today</button>
-              <button onClick={() => navMonth(1)} aria-label="Next month"
-                style={{background:"none",border:`1px solid ${theme.inputBorder}`,borderRadius:6,padding:"5px 7px",cursor:"pointer",color:theme.textSoft,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+              </OutlinedButton>
+              <OutlinedButton theme={theme}
+                onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelDate(todayLocalIso); }}
+                style={{padding:"4px 10px",fontSize:12,fontWeight:500}}>
+                Today
+              </OutlinedButton>
+              <OutlinedButton theme={theme} onClick={() => navMonth(1)} ariaLabel="Next month"
+                style={{padding:"5px 7px"}}>
                 <ChevronRight size={14} strokeWidth={1.75}/>
-              </button>
+              </OutlinedButton>
             </div>
             <h2 style={{fontSize:17,fontWeight:600,letterSpacing:"-0.02em",flex:1,margin:0,color:theme.text}}>{monthName(month)} {year}</h2>
             <HoverButton accent={accent} onClick={() => openNew()}
@@ -804,22 +809,31 @@ function WebCalendar({ theme, themeId, setThemeId, events, onSave, onDelete, onS
               <Plus size={14} strokeWidth={2.25}/> New
             </HoverButton>
             <div style={{display:"flex",background:theme.chipBg,borderRadius:8,padding:3,gap:2}}>
-              {(["month","week"] as const).map((v) => (
-                <button key={v} onClick={() => toggleGrid(v)} style={{
+              {(["month","week"] as const).map((v) => {
+                const active = gridView === v;
+                return (
+                  <button key={v} onClick={() => toggleGrid(v)}
+                    onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = theme.textSoft; }}
+                    onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = theme.textMute; }}
+                    style={{
+                      padding:"4px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",
+                      background:active?theme.cardBg:"transparent",
+                      color:active?theme.text:theme.textMute,
+                      boxShadow:active?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                      transition:"background 0.15s, color 0.15s, box-shadow 0.15s",textTransform:"capitalize",
+                    }}>{v}</button>
+                );
+              })}
+              <button onClick={() => setAgendaOpen((o) => !o)}
+                onMouseEnter={(e) => { if (!agendaOpen) e.currentTarget.style.color = theme.textSoft; }}
+                onMouseLeave={(e) => { if (!agendaOpen) e.currentTarget.style.color = theme.textMute; }}
+                style={{
                   padding:"4px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",
-                  background:gridView===v?theme.cardBg:"transparent",
-                  color:gridView===v?theme.text:theme.textMute,
-                  boxShadow:gridView===v?"0 1px 3px rgba(0,0,0,0.1)":"none",
-                  transition:"all 0.15s",textTransform:"capitalize",
-                }}>{v}</button>
-              ))}
-              <button onClick={() => setAgendaOpen((o) => !o)} style={{
-                padding:"4px 12px",borderRadius:6,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",
-                background:agendaOpen?theme.cardBg:"transparent",
-                color:agendaOpen?theme.text:theme.textMute,
-                boxShadow:agendaOpen?"0 1px 3px rgba(0,0,0,0.1)":"none",
-                transition:"all 0.15s",
-              }}>Agenda</button>
+                  background:agendaOpen?theme.cardBg:"transparent",
+                  color:agendaOpen?theme.text:theme.textMute,
+                  boxShadow:agendaOpen?"0 1px 3px rgba(0,0,0,0.1)":"none",
+                  transition:"background 0.15s, color 0.15s, box-shadow 0.15s",
+                }}>Agenda</button>
             </div>
           </div>
 
@@ -893,6 +907,26 @@ function IconButton({ onClick, children, title, theme, size = 26 }: {
         color: hov ? theme.text : theme.textMute,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         transition: "background 0.15s, color 0.15s",
+      }}>{children}</button>
+  );
+}
+
+// ─── OUTLINED BUTTON ──────────────────────────────────────────────────────────
+function OutlinedButton({ theme, onClick, children, ariaLabel, style = {} }: {
+  theme: Theme; onClick?: () => void; children: ReactNode; ariaLabel?: string; style?: CSSProperties;
+}) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} aria-label={ariaLabel}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? theme.chipBg : "transparent",
+        border: `1px solid ${theme.inputBorder}`,
+        borderRadius: 6, cursor: "pointer",
+        color: hov ? theme.text : theme.textSoft,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        transition: "background 0.15s, color 0.15s, border-color 0.15s",
+        ...style,
       }}>{children}</button>
   );
 }
@@ -1221,10 +1255,10 @@ function WebCreatePanel({ accent, theme, defaultDate, open, editEv, onClose, onS
 
         <div style={{padding:"12px 18px 16px",borderTop:`1px solid ${theme.border}`,display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={onClose}
-              style={{flex:1,padding:"9px 0",borderRadius:8,border:`1px solid ${theme.inputBorder}`,background:"transparent",color:theme.textSoft,fontSize:13,fontWeight:500,cursor:"pointer"}}>
+            <OutlinedButton theme={theme} onClick={onClose}
+              style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:500}}>
               Cancel
-            </button>
+            </OutlinedButton>
             <HoverButton onClick={handleSave} accent={accent}
               style={{flex:2,padding:"9px 0",borderRadius:8,border:"none",fontSize:13,fontWeight:600,cursor:"pointer"}}>
               {isEdit ? "Save Changes" : (tab === "task" ? "Add Task" : "Create Event")}
@@ -1232,7 +1266,9 @@ function WebCreatePanel({ accent, theme, defaultDate, open, editEv, onClose, onS
           </div>
           {isEdit && editEv && (
             <button onClick={() => onDelete(editEv.id)}
-              style={{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #fecaca",background:"rgba(232,93,58,0.08)",color:"#E85D3A",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(232,93,58,0.16)"; e.currentTarget.style.borderColor = "#fbb6b6"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(232,93,58,0.08)"; e.currentTarget.style.borderColor = "#fecaca"; }}
+              style={{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #fecaca",background:"rgba(232,93,58,0.08)",color:"#E85D3A",fontSize:12,fontWeight:600,cursor:"pointer",transition:"background 0.15s, border-color 0.15s"}}>
               Delete {tab === "task" ? "Task" : "Event"}
             </button>
           )}
@@ -1260,32 +1296,37 @@ function WebMiniCal({ year, month, selDate, onNav, onSelect, events, accent, the
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-        <button onClick={() => onNav(-1)} aria-label="Previous month"
-          style={{background:"none",border:"none",cursor:"pointer",color:theme.textMute,padding:"2px 4px",display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:4}}>
+        <IconButton theme={theme} onClick={() => onNav(-1)} title="Previous month" size={22}>
           <ChevronLeft size={13} strokeWidth={1.75}/>
-        </button>
+        </IconButton>
         <span style={{fontSize:11,fontWeight:600,color:theme.text,letterSpacing:".04em"}}>{monthName(month).slice(0,3).toUpperCase()} {year}</span>
-        <button onClick={() => onNav(1)} aria-label="Next month"
-          style={{background:"none",border:"none",cursor:"pointer",color:theme.textMute,padding:"2px 4px",display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:4}}>
+        <IconButton theme={theme} onClick={() => onNav(1)} title="Next month" size={22}>
           <ChevronRight size={13} strokeWidth={1.75}/>
-        </button>
+        </IconButton>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,textAlign:"center"}}>
-        {DAYS3.map((d) => <div key={d} style={{fontSize:9,color:theme.textFaint,fontWeight:600,padding:"2px 0"}}>{d[0]}</div>)}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,textAlign:"center"}}>
+        {DAYS3.map((d) => <div key={d} style={{fontSize:10,color:theme.textFaint,fontWeight:600,padding:"2px 0"}}>{d[0]}</div>)}
         {cells.map((d, i) => {
           if (!d) return <div key={i}/>;
           const ds = `${year}-${p2(month+1)}-${p2(d)}`;
           const isSel = ds === selDate, isToday = ds === todayLocalIso, dotType = dotMap[ds];
           const dotColor = dotType === "event" ? accent : dotType === "task" ? accent + "99" : null;
+          const restBg = isSel ? accent : isToday ? accent+"22" : "transparent";
           return (
-            <div key={i} onClick={() => onSelect(ds)} style={{
-              position:"relative",width:22,height:22,lineHeight:"22px",margin:"0 auto",borderRadius:"50%",
-              fontSize:10,cursor:"pointer",fontWeight:isSel||isToday?600:400,
-              background:isSel?accent:isToday?accent+"22":"transparent",
-              color:isSel?"#fff":isToday?accent:theme.text,
-            }}>
+            <div key={i} onClick={() => onSelect(ds)}
+              onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = isToday ? accent+"33" : theme.chipBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = restBg; }}
+              style={{
+                position:"relative",width:"100%",aspectRatio:"1/1",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                borderRadius:"50%",
+                fontSize:11,cursor:"pointer",fontWeight:isSel||isToday?600:400,
+                background:restBg,
+                color:isSel?"#fff":isToday?accent:theme.text,
+                transition:"background 0.12s",
+              }}>
               {d}
-              {dotColor && !isSel && <div style={{position:"absolute",bottom:1,left:"50%",transform:"translateX(-50%)",width:3,height:3,borderRadius:"50%",background:dotColor}}/>}
+              {dotColor && !isSel && <div style={{position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:3,height:3,borderRadius:"50%",background:dotColor}}/>}
             </div>
           );
         })}
@@ -1350,11 +1391,15 @@ function WebMonthView({ year, month, events, selDate, onSelect, onDeselect, onDo
               {dayEvs.slice(0, 3).map((ev) => {
                 const c = getCat(ev.cat);
                 return (
-                  <div key={ev.id} onClick={(e) => { e.stopPropagation(); onClickEvent(ev); }} style={{
-                    fontSize:10,borderRadius:"0 3px 3px 0",padding:"2px 5px",marginBottom:2,
-                    borderLeft:`2px solid ${c.color}`,background:c.color+"15",color:c.color,
-                    fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",cursor:"pointer",
-                  }}>
+                  <div key={ev.id} onClick={(e) => { e.stopPropagation(); onClickEvent(ev); }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = c.color+"28"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = c.color+"15"; }}
+                    style={{
+                      fontSize:10,borderRadius:"0 3px 3px 0",padding:"2px 5px",marginBottom:2,
+                      borderLeft:`2px solid ${c.color}`,background:c.color+"15",color:c.color,
+                      fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",cursor:"pointer",
+                      transition:"background 0.12s",
+                    }}>
                     {ev.time && <span style={{opacity:.7,marginRight:3}}>{fmtTime(ev.time).replace(" AM","").replace(" PM","")}</span>}
                     {ev.title}
                   </div>
@@ -1414,15 +1459,21 @@ function WebWeekView({ selDate, events, onClickEvent, accent, theme }: {
                   const topFrac = (sh - 7) + sm / 60;
                   const durFrac = (eh + em / 60) - (sh + sm / 60);
                   const c = getCat(ev.cat);
+                  const restShadow = `0 1px 4px ${c.color}55`;
+                  const hoverShadow = `0 4px 12px ${c.color}88`;
                   return (
-                    <div key={ev.id} onClick={() => onClickEvent(ev)} style={{
-                      position:"absolute",top:topFrac*SLOT+1,left:2,right:2,
-                      height:Math.max(durFrac*SLOT-2,20),zIndex:1,
-                      background:c.color,color:"#fff",borderRadius:5,
-                      padding:"3px 6px",fontSize:10,fontWeight:500,
-                      cursor:"pointer",overflow:"hidden",
-                      boxShadow:`0 1px 4px ${c.color}55`,
-                    }}>
+                    <div key={ev.id} onClick={() => onClickEvent(ev)}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = darken(c.color, 14); e.currentTarget.style.boxShadow = hoverShadow; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = c.color; e.currentTarget.style.boxShadow = restShadow; }}
+                      style={{
+                        position:"absolute",top:topFrac*SLOT+1,left:2,right:2,
+                        height:Math.max(durFrac*SLOT-2,20),zIndex:1,
+                        background:c.color,color:"#fff",borderRadius:5,
+                        padding:"3px 6px",fontSize:10,fontWeight:500,
+                        cursor:"pointer",overflow:"hidden",
+                        boxShadow:restShadow,
+                        transition:"background 0.15s, box-shadow 0.15s",
+                      }}>
                       <div style={{fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.title}</div>
                       <div style={{opacity:.8,fontSize:9}}>{fmtTime(ev.time)}</div>
                     </div>

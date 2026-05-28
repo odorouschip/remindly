@@ -45,6 +45,13 @@ pre {
   font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 }
 
+/* Themed focus ring — only on keyboard focus, picks up the active theme accent */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #888) 22%, transparent);
+}
+
 /* Native date/time picker indicator — softer than the default jet-black */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {

@@ -38,7 +38,9 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ## Bugs / dev warnings
 
-- [ ] **React warning on theme switch: shorthand/longhand `background` conflict.** The `WebCalendar` root div at [CalendarApp.tsx:745](apps/web/components/CalendarApp.tsx#L745) sets `background: theme.bg` (shorthand) alongside `backgroundImage`, `backgroundSize: "cover"`, `backgroundAttachment: "fixed"` (longhand). When `theme.bg` changes on theme switch, the shorthand resets all background-related properties to their initial values and React's longhand reapply collides — Next.js dev warns this can cause styling bugs. Fix: replace `background: theme.bg` with `backgroundColor: theme.bg` so the shorthand doesn't collide. Logs two console errors per theme switch (one each for `backgroundAttachment` and `backgroundSize`).
+- [ ] **`%%META%%` JSON sentinel leaks into the description for some events.** Visible in the Upcoming side panel and the full Agenda view: events like "Independence Day", "Labor Day", "Columbus Day", "Veterans Day", "NYC Trip Day 2/3" all show their description as raw `%%META%%{"cat":"personal","isTask":false}` text. Root cause: `META_SENTINEL = "\n\n%%META%%"` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) requires the leading `\n\n`, but these rows in the DB store the sentinel without the leading newlines. `unpackNotes` does `indexOf(META_SENTINEL)`, finds -1, returns the full raw `notes` value as `desc`. Fix options: (a) make `unpackNotes` match `%%META%%` with or without leading whitespace, (b) run a one-time SQL backfill to normalize stored notes, (c) both.
+- [ ] **React warning on theme switch: shorthand/longhand `background` conflict.** The `WebCalendar` root div at [CalendarApp.tsx:745](apps/web/components/CalendarApp.tsx#L745) sets `background: theme.bg` (shorthand) alongside `backgroundImage`, `backgroundSize: "cover"`, `backgroundAttachment: "fixed"` (longhand). When `theme.bg` changes on theme switch, the shorthand resets all background-related properties to their initial values and React's longhand reapply collides — Next.js dev warns this can cause styling bugs. Fix: replace `background: theme.bg` with `backgroundColor: theme.bg` so the shorthand doesn't collide. Logs two console errors per theme switch (one each for `backgroundAttachment` and `backgroundSize`). **Confirmed reproducing in the signed-in audit on 2026-05-29.**
+- [ ] **Stale service worker breaks dev assets after a code reload.** Observed during the audit: after editing source and reloading, the SW from a previous session intercepted `_next/static/css/app/layout.css`, `_next/static/chunks/webpack.js`, `main-app.js`, `app-pages-internals.js`, `app/layout.js`, `app/page.js`, `manifest.webmanifest`, and `favicon.ico` — all 8 returned `net::ERR_FAILED` because the SW's `fetch(...).catch(() => caches.match(...))` returns `undefined` for un-cached URLs, which rejects `respondWith`. The page wouldn't hydrate until I unregistered the SW manually. Either remove the SW until it has a real strategy (already in PWA section) or scope its fetch handler to non-`_next/*` paths so dev assets pass through.
 
 ---
 
@@ -46,6 +48,7 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ### Sidebar
 - [ ] **Sidebar "MY CALENDARS" / "OTHER CALENDARS" filter does nothing.** Toggling "US Holidays" / "Work" doesn't actually hide events. Either remove until real calendars exist, or implement filtering by an event's calendar_id.
+- [ ] **Only the 14×14 checkbox is clickable, not the row.** Clicking on "US Holidays" / "My Calendar" / "Work" / "Birthdays" label or anywhere else in the row does nothing — only the small checkbox itself toggles. Move the onClick to the outer row div so the whole strip is a click target.
 - [ ] **Categories dropdown** in sidebar duplicates Settings → Categories tab. Pick one.
 
 ### Settings modal
@@ -66,15 +69,21 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [ ] **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
 - [ ] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
 - [ ] **Week-view day-number headers aren't clickable.** Clicking "Mon 3" in the header should jump to the day view (when day view exists).
+- [ ] **Week-view events outside 7am–11pm render at negative top / below grid instead of being hidden or moved.** `topFrac = (sh - 7) + sm/60` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) — a 6am event renders with `top: -51px` (above the visible grid), a 11pm event renders below. Caught in audit: a 6am event appears as a partial colored block at the top of the Thursday column with no label visible. Either clip these, scroll them into view, or stack them in an "earlier"/"later" overflow row.
+- [ ] **Month-view "today" highlight is only on the day-number circle, not the whole column or cell.** Week view also only marks the day-number, not the column — most calendars tint the entire today column for stronger visual anchor.
+- [ ] **All three view toggles can be off simultaneously** → "Pick a view above" dead state. Month/Week aren't mutually exclusive (re-clicking the active one toggles it off); Agenda is overloaded (side panel when grid view is on, full view when no grid view). Reasonable redesign: Month / Week / Day / Agenda as a true mutually-exclusive radio set with Agenda always available as a separate toggle for the side panel.
+- [ ] **No way to view past events as a list.** Upcoming side panel filters `e.date >= todayLocalIso`; Agenda-only view does the same. A user who searches for "conference" and the matching events are in the past sees an empty Upcoming with no hint that the matches exist. Add a "show past" toggle on Agenda, or a separate Past view.
 
 ### Search
 - [ ] Filters silently — no result count, no "clear" button, no empty state when no matches.
 - [ ] No keyboard shortcut to focus the search input.
 
 ### Create panel
-- [ ] "Custom…" reminder offset button doesn't open anything.
+- [ ] **Default tab is "Task", not "Event".** Clicking + New opens a Task form. Most calendar users want to create events, not tasks. Default should be Event (or remember the user's last choice).
+- [ ] "Custom…" reminder offset button selects a "custom" option but doesn't open any UI to actually pick the custom offset. Confirmed in audit.
 - [ ] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
 - [ ] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
+- [ ] **All-day-like events render as "8:00 PM – 7:59 PM" instead of "All day".** Confirmed in audit: holiday rows (Independence Day, Labor Day, Columbus Day, Veterans Day) are stored ~00:00–23:59 UTC and the UI renders them in local TZ raw as "8:00 PM – 7:59 PM" with no awareness of `is_all_day`. The Upcoming panel, Agenda view, and event chip all need to check `is_all_day` (or detect ~24h span) and render "All day" instead of the literal timed range.
 - [ ] **No way to mark a task complete.** Tasks store the title with a `" ✓"` suffix on create ([CalendarApp.tsx](apps/web/components/CalendarApp.tsx) `handleSave` for the task tab) but there's no toggle / checkbox in the UI to flip the state later.
 - [ ] No location field on events.
 - [ ] No attendees / invitees.

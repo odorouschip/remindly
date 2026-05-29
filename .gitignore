@@ -23,3 +23,5 @@ xcuserdata/
 DerivedData/
 supabase/.branches/
 supabase/.temp/
+.playwright-mcp/
+.claude/

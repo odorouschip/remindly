@@ -71,7 +71,9 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
     if (date) setSelDate(date);
     setPanel({ open: true, editing: null });
   };
-  const openEvent = (ev: CalEvent) => setPanel({ open: true, editing: ev });
+  // Occurrences of a repeating event are copies; edit the stored series instead.
+  const openEvent = (ev: CalEvent) =>
+    setPanel({ open: true, editing: events.find((e) => e.id === ev.id) ?? ev });
   const closePanel = () => setPanel({ open: false, editing: null });
 
   const toggleCat = (id: CategoryId) => setHiddenCats((prev) => {

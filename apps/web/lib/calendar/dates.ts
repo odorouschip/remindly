@@ -54,6 +54,12 @@ export function minutesOf(t: string): number {
   return h * 60 + m;
 }
 
+/** Minutes since midnight → "HH:MM", clamped to the same day. */
+export function fromMinutes(n: number): string {
+  const m = Math.min(Math.max(n, 0), 24 * 60 - 1);
+  return `${p2(Math.floor(m / 60))}:${p2(m % 60)}`;
+}
+
 /** "9:30 AM" */
 export function fmtTime(t: string): string {
   if (!t) return "";

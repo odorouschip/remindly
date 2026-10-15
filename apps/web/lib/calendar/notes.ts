@@ -1,21 +1,28 @@
 // Fields the schema has no columns for yet (category, task flag, priority,
 // remind, "Yearly") are packed into events.notes after a sentinel. The iOS
 // app uses the same scheme — see apps/ios/Calender/CalendarMetadata.swift.
+//
+// Layout: `<description>\n\n%%META%%<json>`, or just `%%META%%<json>` when
+// there's no description (iOS writes it that way), so match the bare sentinel.
 
-const META_SENTINEL = "\n\n%%META%%";
+const SENTINEL = "%%META%%";
 
 export function packNotes(desc: string, meta: Record<string, unknown>): string {
-  return `${desc.trim()}${META_SENTINEL}${JSON.stringify(meta)}`;
+  const trimmed = desc.trim();
+  const blob = `${SENTINEL}${JSON.stringify(meta)}`;
+  return trimmed ? `${trimmed}\n\n${blob}` : blob;
 }
 
 export function unpackNotes(notes: string | null): { desc: string; meta: Record<string, unknown> } {
   if (!notes) return { desc: "", meta: {} };
-  const idx = notes.indexOf(META_SENTINEL);
+  const idx = notes.lastIndexOf(SENTINEL);
   if (idx < 0) return { desc: notes, meta: {} };
+  const desc = notes.slice(0, idx).trim();
   try {
-    const meta = JSON.parse(notes.slice(idx + META_SENTINEL.length)) as Record<string, unknown>;
-    return { desc: notes.slice(0, idx), meta };
+    const meta: unknown = JSON.parse(notes.slice(idx + SENTINEL.length));
+    return { desc, meta: meta && typeof meta === "object" ? (meta as Record<string, unknown>) : {} };
   } catch {
-    return { desc: notes, meta: {} };
+    // A corrupt blob still shouldn't leak into the description.
+    return { desc, meta: {} };
   }
 }

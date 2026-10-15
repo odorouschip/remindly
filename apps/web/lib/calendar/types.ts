@@ -8,13 +8,17 @@ export type CalEvent = {
   id: string;            // "" until saved
   title: string;
   date: string;          // YYYY-MM-DD
-  time: string;          // HH:MM, "" for tasks
-  end: string;           // HH:MM, "" for tasks
+  time: string;          // HH:MM, "" when all-day
+  end: string;           // HH:MM, "" when all-day
+  allDay: boolean;       // always true for tasks
   cat: CategoryId;
   recur: RecurLabel;
+  recurUntil: string;    // YYYY-MM-DD, last day it can repeat; "" = forever
   isTask: boolean;
   desc: string;
   remind?: RemindKey | undefined;
+  /** Offset for remind === "custom". */
+  remindMinutes?: number | undefined;
   priority?: Priority | undefined;
 };
 

@@ -125,3 +125,7 @@
   font-size: var(--fs-xs);
   color: var(--text-3);
 }
+
+/* All-day events read as a block rather than a timed dot. */
+.event[data-allday] { background: color-mix(in srgb, var(--c) 14%, var(--bg)); }
+.event[data-allday]:hover { background: color-mix(in srgb, var(--c) 22%, var(--bg)); }

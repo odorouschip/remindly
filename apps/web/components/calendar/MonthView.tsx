@@ -1,5 +1,6 @@
 import { CircleCheck } from "lucide-react";
 import { WEEKDAYS, fmtTimeShort, monthGrid, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
 import { displayTitle, sortByStart, type CalEvent } from "@/lib/calendar/types";
 import { catStyle } from "./catStyle";
 import styles from "./MonthView.module.css";
@@ -20,7 +21,8 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
   const today = todayIso();
   const cells = monthGrid(year, month);
   const byDate = new Map<string, CalEvent[]>();
-  for (const ev of [...events].sort(sortByStart)) {
+  const from = toIsoDate(cells[0]!), to = toIsoDate(cells[cells.length - 1]!);
+  for (const ev of occurrencesBetween(events, from, to).sort(sortByStart)) {
     const list = byDate.get(ev.date);
     if (list) list.push(ev);
     else byDate.set(ev.date, [ev]);
@@ -45,13 +47,14 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
                 {d.getDate() === 1 && d.getMonth() !== month ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : d.getDate()}
               </span>
               {dayEvents.slice(0, MAX_PER_DAY).map((ev) => (
-                <button key={ev.id} type="button" className={styles.event} style={catStyle(ev.cat)}
+                <button key={occurrenceKey(ev)} type="button" className={styles.event} style={catStyle(ev.cat)}
+                  data-allday={(ev.allDay && !ev.isTask) || undefined}
                   onClick={(e) => { e.stopPropagation(); onOpenEvent(ev); }}
                   onDoubleClick={(e) => e.stopPropagation()}>
                   <span className={styles.lead}>
                     {ev.isTask
                       ? <CircleCheck size={12} strokeWidth={2} className={styles.taskIcon} />
-                      : <span className={styles.dot} />}
+                      : !ev.allDay && <span className={styles.dot} />}
                     <span className={styles.eventTitle}>{displayTitle(ev)}</span>
                   </span>
                   {ev.time && <span className={styles.eventTime}>{fmtTimeShort(ev.time)}</span>}

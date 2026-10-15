@@ -134,3 +134,31 @@ select.control { cursor: pointer; appearance: none; }
   flex-shrink: 0;
 }
 .spacer { flex: 1; }
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--sp-3);
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.inline .control { flex: 1; min-width: 0; }
+.amount { flex: 0 0 56px !important; }
+
+.muted {
+  text-align: left;
+  color: var(--text-3);
+}
+
+.error {
+  margin: var(--sp-1) 0 0;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--danger);
+}
+.control + .inline { margin-top: var(--sp-1); }

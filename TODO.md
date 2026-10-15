@@ -167,8 +167,9 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 ## Bigger picture
 
 ### Smart command bar / natural-language input
-- [ ] Add a global command bar (Cmd/Ctrl-K) that does more than search — Notion Calendar / Cron / Fantastical style. Should: search events, jump to dates ("next monday"), create events from natural language ("Lunch with Sam tomorrow at noon"), and run app commands ("switch to week view", "new task").
-- [ ] If natural-language event creation uses an LLM, it should round-trip locally for the simple cases (dates, times, durations) and only call the model for ambiguous input — avoids latency and cost on every keystroke.
+- [x] Add a global command bar (Cmd/Ctrl-K) that does more than search — Notion Calendar / Cron / Fantastical style. Should: search events, jump to dates ("next monday"), create events from natural language ("Lunch with Sam tomorrow at noon"), and run app commands ("switch to week view", "new task").
+- [ ] **Next: AI fallback.** The local parser ([quickAdd.ts](apps/web/lib/calendar/quickAdd.ts)) handles dates, times, ranges, durations, repeats, #category and task prefixes. Phrases it can't place ("the friday after thanksgiving", "every other week") should go to a model through a server route — needs the self-hosted server or a Supabase Edge Function for the API key.
+- [x] If natural-language event creation uses an LLM, it should round-trip locally for the simple cases (dates, times, durations) and only call the model for ambiguous input — avoids latency and cost on every keystroke.
 
 ### iOS Live Activities (the headline feature)
 - [ ] Live Activity styling should match the (eventual) new web brand.
@@ -224,6 +225,11 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Command bar — 2026-10-15
+- [x] ⌘K / Ctrl+K (or "Quick add" in the sidebar) opens a command bar: create events/tasks from a phrase, jump to a date, find events (past ones too), switch views/theme, open settings.
+- [x] Local natural-language parser with tests ([quickAdd.ts](apps/web/lib/calendar/quickAdd.ts), [test/quickAdd.test.ts](apps/web/test/quickAdd.test.ts)): "lunch with Sam fri at noon", "gym every monday 6-7pm #health", "task: pay rent nov 1", "dinner 10/20 at 7", "trip in 2 weeks".
+- [x] Creating from the bar saves immediately, jumps to the day and shows a confirmation; "Add details first…" opens it in the editor instead.
 
 ### Day panel, tasks, icons — 2026-10-15
 - [x] Clicking a day shows its schedule in the right-side panel (replaces "Upcoming"), with "Coming up" for the next two weeks and a + to add an event that day ([DayPanel.tsx](apps/web/components/calendar/DayPanel.tsx)).

@@ -1,9 +1,11 @@
+import { CalendarDays, CircleCheck, Columns3, LayoutGrid, List, Monitor, Moon, PanelRight, Plus, Settings, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { addDays, parseIsoDate, toIsoDate, todayIso } from "@/lib/calendar/dates";
-import type { CalEvent, CategoryId } from "@/lib/calendar/types";
+import { addDays, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { displayTitle, type CalEvent, type CategoryId } from "@/lib/calendar/types";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
 import { Button } from "@/components/ui/controls";
 import { AgendaList } from "./AgendaList";
+import { CommandBar, type CommandAction } from "./CommandBar";
 import { DayPanel } from "./DayPanel";
 import { EventPanel } from "./EventPanel";
 import { MonthView } from "./MonthView";
@@ -17,12 +19,13 @@ type WorkspaceProps = {
   events: CalEvent[];
   account: Account;
   notice: string | null;
+  onNotify: (message: string) => void;
   onSave: (ev: CalEvent) => void;
   onDelete: (id: string) => void;
   onSignOut: () => void;
 };
 
-export function Workspace({ events, account, notice, onSave, onDelete, onSignOut }: WorkspaceProps) {
+export function Workspace({ events, account, notice, onNotify, onSave, onDelete, onSignOut }: WorkspaceProps) {
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -40,13 +43,23 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
   }>({ open: false, editing: null, session: 0 });
   const [showSettings, setShowSettings] = useState(false);
   const [themePref, setThemePref] = useState<ThemePref>("system");
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [modKey, setModKey] = useState("Ctrl");
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setThemePref(readThemePref()), []);
+  useEffect(() => {
+    setThemePref(readThemePref());
+    if (/Mac|iPhone|iPad/.test(navigator.userAgent)) setModKey("⌘");
+  }, []);
 
-  // "/" focuses search, like most Notion-style apps.
+  // ⌘K / Ctrl+K opens the command bar; "/" focuses search, like most Notion-style apps.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandOpen((o) => !o);
+        return;
+      }
       const target = e.target as HTMLElement;
       if (e.key !== "/" || target.closest("input, textarea, select, [contenteditable]")) return;
       e.preventDefault();
@@ -99,6 +112,37 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
   const visible = events.filter((e) =>
     !hiddenCats.has(e.cat) && (!query || e.title.toLowerCase().includes(query)));
 
+  const setTheme = (p: ThemePref) => { setThemePref(p); applyThemePref(p); };
+  const jumpTo = (date: string) => {
+    goToDate(date);
+    if (view === "agenda") setView("month");
+  };
+
+  const commandActions: CommandAction[] = [
+    { id: "new-event", label: "New event", icon: <Plus size={16} strokeWidth={1.75} />, keywords: "create add", run: () => openNew() },
+    { id: "new-task", label: "New task", icon: <CircleCheck size={16} strokeWidth={1.75} />, keywords: "create add todo",
+      run: () => openEvent({
+        id: "", title: "", date: selDate ?? todayIso(), time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "",
+        isTask: true, done: false, desc: "", remind: "1-day", priority: "medium",
+      }) },
+    { id: "today", label: "Go to today", icon: <CalendarDays size={16} strokeWidth={1.75} />, run: () => jumpTo(todayIso()) },
+    { id: "view-month", label: "Month view", icon: <LayoutGrid size={16} strokeWidth={1.75} />, keywords: "switch show", run: () => setView("month") },
+    { id: "view-week", label: "Week view", icon: <Columns3 size={16} strokeWidth={1.75} />, keywords: "switch show", run: () => setView("week") },
+    { id: "view-agenda", label: "Agenda view", icon: <List size={16} strokeWidth={1.75} />, keywords: "switch show list", run: () => setView("agenda") },
+    { id: "day-panel", label: dayPanelOpen ? "Hide day panel" : "Show day panel", icon: <PanelRight size={16} strokeWidth={1.75} />,
+      keywords: "toggle sidebar", run: () => setDayPanelOpen((o) => !o) },
+    { id: "theme-light", label: "Light theme", icon: <Sun size={16} strokeWidth={1.75} />, keywords: "appearance mode", run: () => setTheme("light") },
+    { id: "theme-dark", label: "Dark theme", icon: <Moon size={16} strokeWidth={1.75} />, keywords: "appearance mode", run: () => setTheme("dark") },
+    { id: "theme-system", label: "Match system theme", icon: <Monitor size={16} strokeWidth={1.75} />, keywords: "appearance mode auto", run: () => setTheme("system") },
+    { id: "settings", label: "Settings", icon: <Settings size={16} strokeWidth={1.75} />, keywords: "preferences account", run: () => setShowSettings(true) },
+  ];
+
+  const createFromCommand = (draft: CalEvent) => {
+    onSave(draft);
+    jumpTo(draft.date);
+    onNotify(`Added “${displayTitle(draft)}” · ${relativeDayLabel(draft.date)}`);
+  };
+
   const showDayPanel = dayPanelOpen && view !== "agenda" && !panel.open;
   const today = todayIso();
   // While searching, list every match including past ones.
@@ -114,7 +158,8 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
         onNavMonth={navMonth}
         onSelectDate={(ds) => { goToDate(ds); if (view === "agenda") setView("month"); }}
         hiddenCats={hiddenCats} onToggleCat={toggleCat}
-        account={account} onOpenSettings={() => setShowSettings(true)} onSignOut={onSignOut} />
+        account={account} onOpenSettings={() => setShowSettings(true)} onSignOut={onSignOut}
+        onOpenCommand={() => setCommandOpen(true)} modKey={modKey} />
 
       <main className={styles.main}>
         <Toolbar year={cursor.year} month={cursor.month} view={view} onView={setView}
@@ -165,8 +210,12 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
         onDelete={(id) => { onDelete(id); closePanel(); }} />
 
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)}
-        themePref={themePref} onThemePref={(p) => { setThemePref(p); applyThemePref(p); }}
+        themePref={themePref} onThemePref={setTheme}
         account={account} onSignOut={onSignOut} />
+
+      <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} events={events} actions={commandActions}
+        onCreate={createFromCommand} onEditDraft={openEvent} onGoToDate={jumpTo}
+        onOpenEvent={(ev) => { jumpTo(ev.date); openEvent(ev); }} />
 
       {notice && <div className={styles.toast} role="status">{notice}</div>}
     </div>

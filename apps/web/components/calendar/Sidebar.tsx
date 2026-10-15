@@ -1,4 +1,4 @@
-import { Check, LogOut, Search, Settings, X } from "lucide-react";
+import { Check, LogOut, Search, Settings, Sparkles, X } from "lucide-react";
 import type { RefObject } from "react";
 import { IconButton } from "@/components/ui/controls";
 import { CATEGORIES, type CategoryId } from "@/lib/calendar/types";
@@ -23,9 +23,13 @@ type SidebarProps = {
   account: Account;
   onOpenSettings: () => void;
   onSignOut: () => void;
+  onOpenCommand: () => void;
+  /** "⌘" on Apple devices, "Ctrl" elsewhere. */
+  modKey: string;
 };
 
 export function Sidebar(props: SidebarProps) {
+  const { onOpenCommand, modKey } = props;
   const { search, onSearch, searchRef, hiddenCats, onToggleCat, account } = props;
 
   return (
@@ -47,6 +51,12 @@ export function Sidebar(props: SidebarProps) {
           ? <IconButton label="Clear search" size={20} onClick={() => onSearch("")}><X size={12} strokeWidth={2} /></IconButton>
           : <kbd className={styles.kbd}>/</kbd>}
       </label>
+
+      <button type="button" className={styles.quick} onClick={onOpenCommand}>
+        <Sparkles size={14} strokeWidth={1.75} className={styles.searchIcon} />
+        <span>Quick add</span>
+        <kbd className={styles.kbd}>{modKey === "⌘" ? "⌘K" : "Ctrl K"}</kbd>
+      </button>
 
       <MiniCalendar year={props.year} month={props.month} selDate={props.selDate}
         onNav={props.onNavMonth} onSelect={props.onSelectDate} />

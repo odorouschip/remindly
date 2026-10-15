@@ -212,6 +212,7 @@ export function CalendarApp() {
       events={events}
       account={{ email: session?.email ?? null, demo: DEMO_MODE }}
       notice={notice}
+      onNotify={showNotice}
       onSave={(ev) => void handleSave(ev)}
       onDelete={(id) => void handleDelete(id)}
       onSignOut={() => void handleSignOut()}

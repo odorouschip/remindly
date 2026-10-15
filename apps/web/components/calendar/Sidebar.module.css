@@ -121,3 +121,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.quick {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 30px;
+  margin-top: calc(-1 * var(--sp-4));
+  padding: 0 var(--sp-1) 0 var(--sp-3);
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: var(--fs-md);
+  color: var(--text-2);
+  text-align: left;
+  transition: background 0.12s;
+}
+.quick span { flex: 1; }
+.quick:hover { background: var(--bg-hover); color: var(--text); }

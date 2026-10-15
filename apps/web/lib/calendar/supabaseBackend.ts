@@ -57,6 +57,7 @@ export function rowToEvent(row: EventWithReminders): CalEvent {
     recur,
     recurUntil: row.repeat_until ? isoToLocalParts(row.repeat_until).date : "",
     isTask,
+    done: isTask && meta.done === true,
     desc,
     remind: meta.remind as RemindKey | undefined,
     remindMinutes: typeof meta.remindMin === "number" ? meta.remindMin : undefined,
@@ -66,7 +67,7 @@ export function rowToEvent(row: EventWithReminders): CalEvent {
 
 function reminderOffsets(ev: CalEvent): number[] {
   if (ev.isTask) {
-    if (!ev.remind) return [];
+    if (!ev.remind || ev.done) return [];
     const minutes = ev.remind === "custom" ? ev.remindMinutes : REMIND_TO_MIN[ev.remind];
     return minutes === undefined ? [] : [minutes];
   }
@@ -99,6 +100,7 @@ export function createSupabaseBackend(supabase: SupabaseClient<Database>, userId
       const meta = {
         cat: ev.cat,
         isTask: ev.isTask,
+        ...(ev.isTask && ev.done ? { done: true } : {}),
         ...(ev.priority ? { priority: ev.priority } : {}),
         ...(ev.remind   ? { remind: ev.remind } : {}),
         ...(ev.remind === "custom" && ev.remindMinutes !== undefined ? { remindMin: ev.remindMinutes } : {}),

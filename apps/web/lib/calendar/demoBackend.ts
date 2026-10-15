@@ -6,12 +6,12 @@ import type { CalEvent } from "./types";
 function seedEvents(): CalEvent[] {
   const day = (offset: number) => toIsoDate(addDays(new Date(), offset));
   const ev = (offset: number, title: string, time: string, end: string, cat: CalEvent["cat"], extra: Partial<CalEvent> = {}): CalEvent => ({
-    id: "", title, date: day(offset), time, end, allDay: false, cat, recur: "", recurUntil: "", isTask: false, desc: "", ...extra,
+    id: "", title, date: day(offset), time, end, allDay: false, cat, recur: "", recurUntil: "", isTask: false, done: false, desc: "", ...extra,
   });
   const allDay = (offset: number, title: string, cat: CalEvent["cat"], extra: Partial<CalEvent> = {}): CalEvent =>
     ev(offset, title, "", "", cat, { allDay: true, ...extra });
   const task = (offset: number, title: string, priority: CalEvent["priority"], extra: Partial<CalEvent> = {}): CalEvent => ({
-    id: "", title: `${title} ✓`, date: day(offset), time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "", isTask: true,
+    id: "", title: `${title} ✓`, date: day(offset), time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "", isTask: true, done: false,
     desc: "", remind: "1-day", priority, ...extra,
   });
 
@@ -20,6 +20,7 @@ function seedEvents(): CalEvent[] {
     ev(-9, "Quarterly review", "10:00", "11:30", "work"),
     ev(-26, "Book club", "19:00", "20:30", "social", { recur: "Monthly", desc: "Chapters 8–12" }),
     ev(-2, "Haircut", "16:00", "16:45", "personal"),
+    task(-1, "Order air filters", "low", { done: true }),
     ev(-1, "Climbing", "18:30", "20:00", "health"),
     ev(-3, "Standup", "09:30", "09:45", "work", { recur: "Daily", recurUntil: day(9) }),
     ev(0, "Lunch with Sam", "12:30", "13:30", "social"),

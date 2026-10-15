@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { addDays, parseIsoDate, toIsoDate, todayIso } from "@/lib/calendar/dates";
 import type { CalEvent, CategoryId } from "@/lib/calendar/types";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
+import { Button } from "@/components/ui/controls";
 import { AgendaList } from "./AgendaList";
+import { DayPanel } from "./DayPanel";
 import { EventPanel } from "./EventPanel";
 import { MonthView } from "./MonthView";
 import { SettingsModal } from "./SettingsModal";
@@ -27,10 +29,15 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
   });
   const [selDate, setSelDate] = useState<string | null>(todayIso);
   const [view, setView] = useState<ViewMode>("month");
-  const [upcomingOpen, setUpcomingOpen] = useState(true);
+  const [dayPanelOpen, setDayPanelOpen] = useState(true);
+  // How many days before today the Agenda view reaches back ("Show earlier").
+  const [agendaBack, setAgendaBack] = useState(0);
   const [search, setSearch] = useState("");
   const [hiddenCats, setHiddenCats] = useState<ReadonlySet<CategoryId>>(new Set());
-  const [panel, setPanel] = useState<{ open: boolean; editing: CalEvent | null }>({ open: false, editing: null });
+  // `session` changes on every open so the editor resets even if it's already showing.
+  const [panel, setPanel] = useState<{
+    open: boolean; editing: CalEvent | null; date?: string | undefined; time?: string | undefined; session: number;
+  }>({ open: false, editing: null, session: 0 });
   const [showSettings, setShowSettings] = useState(false);
   const [themePref, setThemePref] = useState<ThemePref>("system");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -67,14 +74,19 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
     else navMonth(delta);
   };
 
-  const openNew = (date?: string) => {
+  const openNew = (date?: string, time?: string) => {
     if (date) setSelDate(date);
-    setPanel({ open: true, editing: null });
+    setPanel((p) => ({ open: true, editing: null, date: date ?? selDate ?? todayIso(), time, session: p.session + 1 }));
   };
   // Occurrences of a repeating event are copies; edit the stored series instead.
+  const seriesOf = (ev: CalEvent) => events.find((e) => e.id === ev.id) ?? ev;
   const openEvent = (ev: CalEvent) =>
-    setPanel({ open: true, editing: events.find((e) => e.id === ev.id) ?? ev });
-  const closePanel = () => setPanel({ open: false, editing: null });
+    setPanel((p) => ({ open: true, editing: seriesOf(ev), session: p.session + 1 }));
+  const closePanel = () => setPanel((p) => ({ ...p, open: false, editing: null }));
+  const toggleDone = (ev: CalEvent) => {
+    const series = seriesOf(ev);
+    onSave({ ...series, done: !series.done });
+  };
 
   const toggleCat = (id: CategoryId) => setHiddenCats((prev) => {
     const next = new Set(prev);
@@ -87,7 +99,12 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
   const visible = events.filter((e) =>
     !hiddenCats.has(e.cat) && (!query || e.title.toLowerCase().includes(query)));
 
-  const showUpcoming = upcomingOpen && view !== "agenda" && !panel.open;
+  const showDayPanel = dayPanelOpen && view !== "agenda" && !panel.open;
+  const today = todayIso();
+  // While searching, list every match including past ones.
+  const agendaFrom = query
+    ? visible.reduce((min, e) => (e.date < min ? e.date : min), today)
+    : toIsoDate(addDays(parseIsoDate(today), -agendaBack));
 
   return (
     <div className={styles.workspace}>
@@ -102,12 +119,15 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
       <main className={styles.main}>
         <Toolbar year={cursor.year} month={cursor.month} view={view} onView={setView}
           onNav={nav} onToday={() => goToDate(todayIso())}
-          upcomingOpen={upcomingOpen} onToggleUpcoming={() => setUpcomingOpen((o) => !o)}
+          dayPanelOpen={dayPanelOpen} onToggleDayPanel={() => setDayPanelOpen((o) => !o)}
           onNew={() => openNew()} />
 
         {query && (
           <div className={styles.searchBar}>
             {visible.length === 0 ? "No matches" : `${visible.length} ${visible.length === 1 ? "match" : "matches"}`} for “{search.trim()}”
+            {view !== "agenda" && visible.length > 0 && (
+              <button type="button" onClick={() => setView("agenda")}>Show as list</button>
+            )}
             <button type="button" onClick={() => setSearch("")}>Clear</button>
           </div>
         )}
@@ -118,26 +138,28 @@ export function Workspace({ events, account, notice, onSave, onDelete, onSignOut
               onSelect={goToDate} onCreate={openNew} onOpenEvent={openEvent} />
           )}
           {view === "week" && (
-            <WeekView selDate={selDate} events={visible} onSelect={goToDate} onOpenEvent={openEvent} />
+            <WeekView selDate={selDate} events={visible} onSelect={goToDate} onOpenEvent={openEvent} onCreate={openNew} />
           )}
           {view === "agenda" && (
             <div className={styles.scroll}>
-              <AgendaList events={visible} onOpenEvent={openEvent} />
+              {!query && (
+                <div className={styles.earlier}>
+                  <Button variant="ghost" size="sm" onClick={() => setAgendaBack((d) => d + 30)}>Show earlier</Button>
+                </div>
+              )}
+              <AgendaList events={visible} from={agendaFrom} onOpenEvent={openEvent} onToggleDone={toggleDone} />
             </div>
           )}
         </div>
       </main>
 
-      <aside className={styles.upcoming} data-open={showUpcoming || undefined} inert={!showUpcoming}>
-        <div className={styles.upcomingInner}>
-          <h2 className={styles.upcomingTitle}>Upcoming</h2>
-          <div className={styles.scroll}>
-            <AgendaList events={visible} onOpenEvent={openEvent} compact />
-          </div>
-        </div>
+      <aside className={styles.dayPanel} data-open={showDayPanel || undefined} inert={!showDayPanel}>
+        <DayPanel date={selDate ?? today} events={visible}
+          onOpenEvent={openEvent} onToggleDone={toggleDone} onCreate={openNew} />
       </aside>
 
-      <EventPanel open={panel.open} editing={panel.editing} defaultDate={selDate ?? todayIso()}
+      <EventPanel open={panel.open} editing={panel.editing} session={panel.session}
+        defaultDate={panel.date ?? selDate ?? today} defaultTime={panel.time}
         onClose={closePanel}
         onSave={(ev) => { onSave(ev); closePanel(); }}
         onDelete={(id) => { onDelete(id); closePanel(); }} />

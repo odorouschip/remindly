@@ -15,6 +15,8 @@ export type CalEvent = {
   recur: RecurLabel;
   recurUntil: string;    // YYYY-MM-DD, last day it can repeat; "" = forever
   isTask: boolean;
+  /** Tasks only. */
+  done: boolean;
   desc: string;
   remind?: RemindKey | undefined;
   /** Offset for remind === "custom". */

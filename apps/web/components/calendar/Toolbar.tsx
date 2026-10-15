@@ -18,12 +18,12 @@ type ToolbarProps = {
   onView: (view: ViewMode) => void;
   onNav: (delta: number) => void;
   onToday: () => void;
-  upcomingOpen: boolean;
-  onToggleUpcoming: () => void;
+  dayPanelOpen: boolean;
+  onToggleDayPanel: () => void;
   onNew: () => void;
 };
 
-export function Toolbar({ year, month, view, onView, onNav, onToday, upcomingOpen, onToggleUpcoming, onNew }: ToolbarProps) {
+export function Toolbar({ year, month, view, onView, onNav, onToday, dayPanelOpen, onToggleDayPanel, onNew }: ToolbarProps) {
   const unit = view === "week" ? "week" : "month";
 
   return (
@@ -48,7 +48,7 @@ export function Toolbar({ year, month, view, onView, onNav, onToday, upcomingOpe
 
       <Segmented ariaLabel="Calendar view" options={VIEW_OPTIONS} value={view} onChange={onView} />
       {view !== "agenda" && (
-        <IconButton label={upcomingOpen ? "Hide upcoming" : "Show upcoming"} pressed={upcomingOpen} onClick={onToggleUpcoming}>
+        <IconButton label={dayPanelOpen ? "Hide day panel" : "Show day panel"} pressed={dayPanelOpen} onClick={onToggleDayPanel}>
           <PanelRight size={16} strokeWidth={1.75} />
         </IconButton>
       )}

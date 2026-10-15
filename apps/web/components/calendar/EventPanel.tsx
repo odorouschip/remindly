@@ -39,13 +39,17 @@ type EventPanelProps = {
   open: boolean;
   /** The event being edited, or null when creating. */
   editing: CalEvent | null;
+  /** Changes on every open, so the form resets even when it's already showing. */
+  session: number;
   defaultDate: string;
+  /** Start time for a new event, e.g. from clicking a week-view slot. */
+  defaultTime?: string | undefined;
   onClose: () => void;
   onSave: (ev: CalEvent) => void;
   onDelete: (id: string) => void;
 };
 
-export function EventPanel({ open, editing, defaultDate, onClose, onSave, onDelete }: EventPanelProps) {
+export function EventPanel({ open, editing, session, defaultDate, defaultTime, onClose, onSave, onDelete }: EventPanelProps) {
   const isEdit = Boolean(editing?.id);
 
   const [kind, setKind] = useState<Kind>("event");
@@ -69,8 +73,9 @@ export function EventPanel({ open, editing, defaultDate, onClose, onSave, onDele
     setKind(ev?.isTask ? "task" : "event");
     setTitle(ev ? displayTitle(ev) : "");
     setDate(ev?.date || defaultDate);
-    setTime(ev?.time || "09:00");
-    setEnd(ev?.end || "10:00");
+    const start = ev?.time || defaultTime || "09:00";
+    setTime(start);
+    setEnd(ev?.end || fromMinutes(minutesOf(start) + 60));
     setAllDay(Boolean(ev?.allDay && !ev.isTask));
     setCat(ev?.cat ?? "work");
     setRecur(ev?.recur ?? "");
@@ -83,7 +88,7 @@ export function EventPanel({ open, editing, defaultDate, onClose, onSave, onDele
     const id = window.setTimeout(() => titleRef.current?.focus(), 60);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editing?.id]);
+  }, [open, editing?.id, session]);
 
   // Moving the start keeps the event's length, like most calendars.
   const changeStart = (next: string) => {
@@ -111,12 +116,12 @@ export function EventPanel({ open, editing, defaultDate, onClose, onSave, onDele
     if (kind === "event") {
       onSave({
         id, title: t, date, time: allDay ? "" : time, end: allDay ? "" : end, allDay,
-        cat, recur, recurUntil: recur ? recurUntil : "", isTask: false, desc,
+        cat, recur, recurUntil: recur ? recurUntil : "", isTask: false, done: false, desc,
       });
     } else {
       onSave({
         id, title: `${t} ✓`, date, time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "",
-        isTask: true, desc, remind, priority,
+        isTask: true, done: editing?.isTask ? editing.done : false, desc, remind, priority,
         ...(remind === "custom" ? { remindMinutes: customMinutes } : {}),
       });
     }

@@ -1,9 +1,9 @@
-import { CircleCheck } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { fmtTimeRangeShort, fmtTimeShort, hourLabel, minutesOf, parseIsoDate, toIsoDate, todayIso, weekOf, weekdayShort } from "@/lib/calendar/dates";
+import { fromMinutes, fmtTimeRangeShort, fmtTimeShort, hourLabel, minutesOf, parseIsoDate, toIsoDate, todayIso, weekOf, weekdayShort } from "@/lib/calendar/dates";
 import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
 import { displayTitle, type CalEvent } from "@/lib/calendar/types";
 import { catStyle } from "./catStyle";
+import { TaskMark } from "./TaskCheck";
 import styles from "./WeekView.module.css";
 
 const HOUR_PX = 48;
@@ -25,9 +25,11 @@ type WeekViewProps = {
   events: CalEvent[];
   onSelect: (date: string) => void;
   onOpenEvent: (ev: CalEvent) => void;
+  /** Clicking an empty slot: the day plus the half hour that was clicked. */
+  onCreate: (date: string, time: string) => void;
 };
 
-export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent }: WeekViewProps) {
+export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, onCreate }: WeekViewProps) {
   const now = useNow();
   const today = todayIso();
   const days = weekOf(selDate ? parseIsoDate(selDate) : new Date());
@@ -64,9 +66,10 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent }: 
             return (
               <div key={ds} className={styles.allDayCol}>
                 {allDayOn(ds).map((ev) => (
-                  <button key={occurrenceKey(ev)} type="button" className={styles.allDayItem} style={catStyle(ev.cat)} onClick={() => onOpenEvent(ev)}>
-                    {ev.isTask && <CircleCheck size={12} strokeWidth={2} />}
-                    <span>{displayTitle(ev)}</span>
+                  <button key={occurrenceKey(ev)} type="button" className={styles.allDayItem} style={catStyle(ev.cat)} onClick={() => onOpenEvent(ev)}
+                    data-done={ev.done || undefined}>
+                    {ev.isTask && <TaskMark done={ev.done} />}
+                    <span className={styles.allDayTitle}>{displayTitle(ev)}</span>
                   </button>
                 ))}
               </div>
@@ -86,7 +89,11 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent }: 
             const ds = toIsoDate(d);
             const isToday = ds === today;
             return (
-              <div key={ds} className={styles.col} data-today={isToday || undefined}>
+              <div key={ds} className={styles.col} data-today={isToday || undefined}
+                onClick={(e) => {
+                  if (e.target !== e.currentTarget) return; // clicks on events open them instead
+                  onCreate(ds, fromMinutes(Math.floor((e.nativeEvent.offsetY / HOUR_PX) * 2) * 30));
+                }}>
                 {events.filter((e) => e.date === ds && !e.allDay).map((ev) => {
                   const start = minutesOf(ev.time);
                   const end = ev.end ? minutesOf(ev.end) : start + 60;

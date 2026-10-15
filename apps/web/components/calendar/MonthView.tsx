@@ -1,8 +1,8 @@
-import { CircleCheck } from "lucide-react";
 import { WEEKDAYS, fmtTimeShort, monthGrid, toIsoDate, todayIso } from "@/lib/calendar/dates";
 import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
 import { displayTitle, sortByStart, type CalEvent } from "@/lib/calendar/types";
 import { catStyle } from "./catStyle";
+import { TaskMark } from "./TaskCheck";
 import styles from "./MonthView.module.css";
 
 const MAX_PER_DAY = 3;
@@ -49,11 +49,12 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
               {dayEvents.slice(0, MAX_PER_DAY).map((ev) => (
                 <button key={occurrenceKey(ev)} type="button" className={styles.event} style={catStyle(ev.cat)}
                   data-allday={(ev.allDay && !ev.isTask) || undefined}
+                  data-done={ev.done || undefined}
                   onClick={(e) => { e.stopPropagation(); onOpenEvent(ev); }}
                   onDoubleClick={(e) => e.stopPropagation()}>
                   <span className={styles.lead}>
                     {ev.isTask
-                      ? <CircleCheck size={12} strokeWidth={2} className={styles.taskIcon} />
+                      ? <TaskMark done={ev.done} />
                       : !ev.allDay && <span className={styles.dot} />}
                     <span className={styles.eventTitle}>{displayTitle(ev)}</span>
                   </span>

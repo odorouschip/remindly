@@ -90,11 +90,7 @@
   background: var(--c);
   flex-shrink: 0;
 }
-.taskIcon {
-  color: var(--c);
-  flex-shrink: 0;
-  margin: 0 -3px;
-}
+.event[data-done] .eventTitle { color: var(--text-3); text-decoration: line-through; }
 
 .lead {
   flex: 0 1 auto;

@@ -26,7 +26,7 @@ describe("notes metadata", () => {
 
 const base: CalEvent = {
   id: "e1", title: "T", date: "2026-01-31", time: "09:00", end: "10:00", allDay: false,
-  cat: "work", recur: "", recurUntil: "", isTask: false, desc: "",
+  cat: "work", recur: "", recurUntil: "", isTask: false, done: false, desc: "",
 };
 const dates = (ev: Partial<CalEvent>, from: string, to: string) =>
   occurrencesBetween([{ ...base, ...ev }], from, to).map((e) => e.date);

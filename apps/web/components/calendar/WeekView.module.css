@@ -78,8 +78,7 @@
   font-weight: 500;
   text-align: left;
 }
-.allDayItem svg { color: var(--c); flex-shrink: 0; }
-.allDayItem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.allDayTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .allDayItem:hover { background: color-mix(in srgb, var(--c) 22%, var(--bg)); }
 
 .scroll {
@@ -171,3 +170,5 @@
   border-radius: 50%;
   background: var(--today);
 }
+
+.allDayItem[data-done] .allDayTitle { color: var(--text-3); text-decoration: line-through; }

@@ -2,6 +2,7 @@ import { Check, LogOut, Search, Settings, X } from "lucide-react";
 import type { RefObject } from "react";
 import { IconButton } from "@/components/ui/controls";
 import { CATEGORIES, type CategoryId } from "@/lib/calendar/types";
+import { Logo } from "@/components/ui/Logo";
 import { catStyle } from "./catStyle";
 import { MiniCalendar } from "./MiniCalendar";
 import styles from "./Sidebar.module.css";
@@ -30,12 +31,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
-        <div className={styles.logo} aria-hidden>
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
-            <path d="M1 6h12M4 1v3M10 1v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
-        </div>
+        <Logo />
         <span className={styles.brandName}>Remindly</span>
         <IconButton label="Settings" onClick={props.onOpenSettings}>
           <Settings size={15} strokeWidth={1.75} />

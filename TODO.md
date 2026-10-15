@@ -38,7 +38,7 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ## Bugs / dev warnings
 
-- [ ] **`%%META%%` JSON sentinel leaks into the description for some events.** Visible in the Upcoming side panel and the full Agenda view: events like "Independence Day", "Labor Day", "Columbus Day", "Veterans Day", "NYC Trip Day 2/3" all show their description as raw `%%META%%{"cat":"personal","isTask":false}` text. Root cause: `META_SENTINEL = "\n\n%%META%%"` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) requires the leading `\n\n`, but these rows in the DB store the sentinel without the leading newlines. `unpackNotes` does `indexOf(META_SENTINEL)`, finds -1, returns the full raw `notes` value as `desc`. Fix options: (a) make `unpackNotes` match `%%META%%` with or without leading whitespace, (b) run a one-time SQL backfill to normalize stored notes, (c) both.
+- [x] **`%%META%%` JSON sentinel leaks into the description for some events.** Visible in the Upcoming side panel and the full Agenda view: events like "Independence Day", "Labor Day", "Columbus Day", "Veterans Day", "NYC Trip Day 2/3" all show their description as raw `%%META%%{"cat":"personal","isTask":false}` text. Root cause: `META_SENTINEL = "\n\n%%META%%"` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) requires the leading `\n\n`, but these rows in the DB store the sentinel without the leading newlines. `unpackNotes` does `indexOf(META_SENTINEL)`, finds -1, returns the full raw `notes` value as `desc`. Fix options: (a) make `unpackNotes` match `%%META%%` with or without leading whitespace, (b) run a one-time SQL backfill to normalize stored notes, (c) both.
 - [x] **React warning on theme switch: shorthand/longhand `background` conflict.** The `WebCalendar` root div at [CalendarApp.tsx:745](apps/web/components/CalendarApp.tsx#L745) sets `background: theme.bg` (shorthand) alongside `backgroundImage`, `backgroundSize: "cover"`, `backgroundAttachment: "fixed"` (longhand). When `theme.bg` changes on theme switch, the shorthand resets all background-related properties to their initial values and React's longhand reapply collides — Next.js dev warns this can cause styling bugs. Fix: replace `background: theme.bg` with `backgroundColor: theme.bg` so the shorthand doesn't collide. Logs two console errors per theme switch (one each for `backgroundAttachment` and `backgroundSize`). **Confirmed reproducing in the signed-in audit on 2026-05-29.**
 - [x] **Stale service worker breaks dev assets after a code reload.** Observed during the audit: after editing source and reloading, the SW from a previous session intercepted `_next/static/css/app/layout.css`, `_next/static/chunks/webpack.js`, `main-app.js`, `app-pages-internals.js`, `app/layout.js`, `app/page.js`, `manifest.webmanifest`, and `favicon.ico` — all 8 returned `net::ERR_FAILED` because the SW's `fetch(...).catch(() => caches.match(...))` returns `undefined` for un-cached URLs, which rejects `respondWith`. The page wouldn't hydrate until I unregistered the SW manually. Either remove the SW until it has a real strategy (already in PWA section) or scope its fetch handler to non-`_next/*` paths so dev assets pass through.
 
@@ -64,7 +64,7 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [ ] **Drag-and-drop to reschedule** events between days/times.
 - [ ] **Drag-to-resize** events in week view.
 - [ ] **Multi-day events** — currently every event is bound to one date.
-- [ ] **Repeating events** — repeat rule is stored but the views don't expand recurrences into the grid; only the original instance shows.
+- [x] **Repeating events** — repeat rule is stored but the views don't expand recurrences into the grid; only the original instance shows.
 - [x] **Month-view overflow days are dead.** The grid shows the last few days of the previous month and the first few of the next (grayed) for layout, but `onClick` and `onDoubleClick` both gate on `isCur` (`isCur && onSelect(ds)`) so clicking them does nothing. Expected behavior: clicking should navigate to that month and select the day.
 - [ ] **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
 - [ ] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
@@ -80,10 +80,10 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 ### Create panel
 - [x] **Default tab is "Task", not "Event".** Clicking + New opens a Task form. Most calendar users want to create events, not tasks. Default should be Event (or remember the user's last choice).
-- [ ] "Custom…" reminder offset button selects a "custom" option but doesn't open any UI to actually pick the custom offset. Confirmed in audit.
-- [ ] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
-- [ ] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
-- [ ] **All-day-like events render as "8:00 PM – 7:59 PM" instead of "All day".** Confirmed in audit: holiday rows (Independence Day, Labor Day, Columbus Day, Veterans Day) are stored ~00:00–23:59 UTC and the UI renders them in local TZ raw as "8:00 PM – 7:59 PM" with no awareness of `is_all_day`. The Upcoming panel, Agenda view, and event chip all need to check `is_all_day` (or detect ~24h span) and render "All day" instead of the literal timed range.
+- [x] "Custom…" reminder offset button selects a "custom" option but doesn't open any UI to actually pick the custom offset. Confirmed in audit.
+- [x] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
+- [x] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
+- [x] **All-day-like events render as "8:00 PM – 7:59 PM" instead of "All day".** Confirmed in audit: holiday rows (Independence Day, Labor Day, Columbus Day, Veterans Day) are stored ~00:00–23:59 UTC and the UI renders them in local TZ raw as "8:00 PM – 7:59 PM" with no awareness of `is_all_day`. The Upcoming panel, Agenda view, and event chip all need to check `is_all_day` (or detect ~24h span) and render "All day" instead of the literal timed range.
 - [ ] **No way to mark a task complete.** Tasks store the title with a `" ✓"` suffix on create ([CalendarApp.tsx](apps/web/components/CalendarApp.tsx) `handleSave` for the task tab) but there's no toggle / checkbox in the UI to flip the state later.
 - [ ] No location field on events.
 - [ ] No attendees / invitees.
@@ -133,6 +133,7 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [ ] **Backups.** Verify the Supabase project has point-in-time recovery turned on (requires Pro plan); document the restore procedure.
 
 ### Edge function (dispatch-reminders)
+- [ ] **Repeating events only get server reminders for their first occurrence.** The web app now expands repeats in every view, but reminder rows (`due_at`) are written once per event from `starts_at`, so APNs/Live Activity reminders fire for the first instance only. The dispatcher needs to compute the next occurrence (e.g. reuse `expandOccurrences` from `@calender/shared`) or a job needs to roll reminders forward.
 - [ ] **`delivered_at` is set even when every APNs send fails.** [dispatch-reminders/index.ts](supabase/functions/dispatch-reminders/index.ts) (~line 96) updates `delivered_at = now()` unconditionally after the device loop, regardless of `sendResults`. If APNs is unreachable, every token is stale, or there are zero devices for the user, the reminder is silently marked delivered and lost. Fix: only mark delivered if at least one send returned `ok: true` (or branch into a retry/backoff path).
 - [ ] **APNs JWT is regenerated for every reminder.** `createApnsJwt()` is called inside `dispatchReminder` (per-reminder), but JWTs are valid ~50 minutes and re-use is encouraged by Apple. Move JWT creation to the top of the cron invocation and reuse across all reminders in the batch.
 - [ ] **Only `platform = 'ios'` devices are queried** (`.eq("platform", "ios")` in `dispatchReminder`). If web push or another platform is ever added, those device rows will silently never receive reminders.
@@ -144,12 +145,12 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 
 ## Auth screens
 
-- [ ] **Terms / Privacy links** are `#` placeholders ([LoginScreen.tsx](apps/web/components/LoginScreen.tsx) footer + Signup step 1).
+- [x] **Terms / Privacy links** are `#` placeholders ([LoginScreen.tsx](apps/web/components/LoginScreen.tsx) footer + Signup step 1).
 - [ ] **OAuth buttons** call `signInWithOAuth` but Google/Apple/Microsoft/GitHub providers need to actually be configured in Supabase.
-- [ ] **OAuth failure strands the user on a Supabase JSON error page.** Confirmed in audit: clicking "Continue with Google" with the provider not enabled redirects the browser to `https://<project>.supabase.co/auth/v1/authorize?...` which responds with raw JSON `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`. The user is now on Supabase's domain with no way back. Fix: pass `options: { skipBrowserRedirect: true }` to `signInWithOAuth`, then `window.location.assign(data.url)` only after a sanity check, OR (simpler) hide buttons whose provider isn't enabled.
-- [ ] **OAuth button labels wrap into 3 lines on narrow screens.** At ≤375px width the 2-column grid + "Continue with Google" label wraps as `Continue / with / Google`. Either collapse to single-column on narrow widths or shorten labels to "Google" / "Apple" / etc. at small breakpoints.
-- [ ] **Brand panel design differs across the three auth screens.** Login = decorative circles + calendar preview card. Signup = circles + feature pills + tagline. Forgot Password = lock icon card + circles + tagline. Three different visual identities for the same product. Pick one brand-panel layout and reuse it.
-- [ ] **Signup → preferences step** stores `defaultView`, `weekStart`, etc. in localStorage but the calendar app doesn't read them back yet.
+- [x] **OAuth failure strands the user on a Supabase JSON error page.** Confirmed in audit: clicking "Continue with Google" with the provider not enabled redirects the browser to `https://<project>.supabase.co/auth/v1/authorize?...` which responds with raw JSON `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`. The user is now on Supabase's domain with no way back. Fix: pass `options: { skipBrowserRedirect: true }` to `signInWithOAuth`, then `window.location.assign(data.url)` only after a sanity check, OR (simpler) hide buttons whose provider isn't enabled.
+- [x] **OAuth button labels wrap into 3 lines on narrow screens.** At ≤375px width the 2-column grid + "Continue with Google" label wraps as `Continue / with / Google`. Either collapse to single-column on narrow widths or shorten labels to "Google" / "Apple" / etc. at small breakpoints.
+- [x] **Brand panel design differs across the three auth screens.** Login = decorative circles + calendar preview card. Signup = circles + feature pills + tagline. Forgot Password = lock icon card + circles + tagline. Three different visual identities for the same product. Pick one brand-panel layout and reuse it.
+- [x] **Signup → preferences step** stores `defaultView`, `weekStart`, etc. in localStorage but the calendar app doesn't read them back yet.
 - [ ] **Forgot password** OTP flow works but the email Supabase sends is the default template — customize it.
 
 ---
@@ -227,6 +228,18 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Bug fixes + auth screens — 2026-10-14
+- [x] `%%META%%` no longer leaks into descriptions: [notes.ts](apps/web/lib/calendar/notes.ts) matches the sentinel with or without the leading blank lines (iOS writes it bare) and never shows a corrupt blob.
+- [x] All-day events: real "All day" switch on events; rows flagged `is_all_day` or spanning a full day render as "All day" on the right date (UTC-midnight imports no longer slide to the previous evening). All-day events get no midnight countdown reminders.
+- [x] Repeating events expand in month, week, agenda and Upcoming ([recurrence.ts](apps/web/lib/calendar/recurrence.ts)); monthly/yearly skip months without that day. Opening an occurrence edits the series. New "Ends" field writes `repeat_until`.
+- [x] "Custom…" task reminder opens an amount + unit picker (stored as `remindMin` in the meta blob; iOS ignores it safely).
+- [x] Event editor blocks end-before-start (the DB check constraint used to reject it with a raw error) and moving the start keeps the duration.
+- [x] Unit tests for notes parsing, recurrence and row mapping ([apps/web/test](apps/web/test)); `npm test` runs them.
+- [x] Auth screens rebuilt Notion-style in [components/auth/](apps/web/components/auth): one centered column, light/dark, shared logo. Removed things that never worked: "Remember me", `#` Terms/Privacy links, signup preferences + import step, password strength meter.
+- [x] OAuth buttons only show for providers listed in `NEXT_PUBLIC_AUTH_PROVIDERS` (see [.env.example](apps/web/.env.example)), so nobody lands on Supabase's JSON error page.
+- [x] Password reset: verifying the code no longer drops you into the calendar before you've set the new password.
+- [x] Network failures show "Couldn't reach the server…" instead of "Failed to fetch".
 
 ### Notion-style redesign + refactor — 2026-10-14
 - [x] Split the 1,541-line `CalendarApp.tsx` into [components/calendar/](apps/web/components/calendar/) (one file + CSS module per piece) and shared [components/ui/controls.tsx](apps/web/components/ui/controls.tsx) (`Button`, `IconButton`, `Segmented`). All hover states are CSS now, not JS handlers.

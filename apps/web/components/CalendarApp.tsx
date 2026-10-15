@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LoginScreen } from "./LoginScreen";
-import { SignupScreen, type SignupPrefs } from "./SignupScreen";
-import { ForgotPasswordScreen } from "./ForgotPasswordScreen";
+import type { OAuthProvider } from "./auth/AuthLayout";
+import { ForgotPasswordScreen } from "./auth/ForgotPasswordScreen";
+import { LoginScreen } from "./auth/LoginScreen";
+import { SignupScreen } from "./auth/SignupScreen";
 import { Workspace } from "./calendar/Workspace";
 import type { CalendarBackend } from "@/lib/calendar/backend";
 import { createDemoBackend } from "@/lib/calendar/demoBackend";
@@ -11,14 +12,15 @@ import { createSupabaseBackend } from "@/lib/calendar/supabaseBackend";
 import type { CalEvent } from "@/lib/calendar/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-type OAuthProvider = "google" | "apple" | "azure" | "github";
-
-const PREFS_STORAGE_KEY = "remindly:prefs";
-
 /** Without Supabase keys (or with NEXT_PUBLIC_DEMO_MODE=true) the app runs on sample data. */
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true" || !isSupabaseConfigured;
 
 type Session = { userId: string; email: string | null };
+
+/** Supabase passes the browser's raw network errors through ("Failed to fetch"). */
+function authMessage(message: string): string {
+  return /fetch|network/i.test(message) ? "Couldn't reach the server. Check your connection and try again." : message;
+}
 
 export function CalendarApp() {
   const supabase = useMemo(() => (DEMO_MODE ? null : getSupabaseBrowserClient()), []);
@@ -26,8 +28,11 @@ export function CalendarApp() {
   const [authView, setAuthView] = useState<"login" | "signup" | "forgot">("login");
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(DEMO_MODE);
-  const [status, setStatus] = useState("");
+  const [authError, setAuthError] = useState("");
   const [isAuthWorking, setIsAuthWorking] = useState(false);
+  // Verifying a reset code signs the user in; stay on the reset screen until
+  // they've chosen a new password instead of dropping into the calendar.
+  const [recovering, setRecovering] = useState(false);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<number | undefined>(undefined);
@@ -89,10 +94,10 @@ export function CalendarApp() {
   async function handleSignIn(email: string, password: string) {
     if (!supabase) return;
     setIsAuthWorking(true);
-    setStatus("Signing in…");
+    setAuthError("");
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      setStatus(error ? error.message : "Signed in.");
+      if (error) setAuthError(authMessage(error.message));
     } finally {
       setIsAuthWorking(false);
     }
@@ -100,60 +105,55 @@ export function CalendarApp() {
 
   async function handleOAuth(provider: OAuthProvider) {
     if (!supabase) return;
-    setStatus(`Redirecting to ${provider}…`);
+    setAuthError("");
     const redirectTo = typeof window !== "undefined" ? window.location.origin : "";
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       ...(redirectTo ? { options: { redirectTo } } : {}),
     });
-    if (error) setStatus(error.message);
+    if (error) setAuthError(authMessage(error.message));
   }
 
-  async function handleSignUp(args: {
-    firstName: string; lastName: string; email: string; password: string; prefs: SignupPrefs;
-  }): Promise<{ ok: boolean; needsConfirm: boolean; message?: string }> {
+  async function handleSignUp({ name, email, password }: { name: string; email: string; password: string }):
+    Promise<{ ok: boolean; needsConfirm: boolean; message?: string }> {
     if (!supabase) return { ok: false, needsConfirm: false, message: "Supabase not configured." };
-    const { firstName, lastName, email, password, prefs } = args;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
-          timezone: prefs.timezone,
-        },
+        data: { full_name: name, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
       },
     });
-    if (error) return { ok: false, needsConfirm: false, message: error.message };
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
-    }
+    if (error) return { ok: false, needsConfirm: false, message: authMessage(error.message) };
     return { ok: true, needsConfirm: !data.session };
   }
 
   async function handleResetSendCode(email: string): Promise<{ ok: boolean; message?: string }> {
     if (!supabase) return { ok: false, message: "Supabase not configured." };
     const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: authMessage(error.message) };
     return { ok: true };
   }
 
   async function handleResetVerifyCode(email: string, code: string): Promise<{ ok: boolean; message?: string }> {
     if (!supabase) return { ok: false, message: "Supabase not configured." };
+    // Set before verifying: the session arrives via onAuthStateChange mid-await.
+    setRecovering(true);
     const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "recovery" });
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+      setRecovering(false);
+      return { ok: false, message: authMessage(error.message) };
+    }
     return { ok: true };
   }
 
   async function handleResetUpdatePassword(newPassword: string): Promise<{ ok: boolean; message?: string }> {
     if (!supabase) return { ok: false, message: "Supabase not configured." };
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) return { ok: false, message: error.message };
+    if (error) return { ok: false, message: authMessage(error.message) };
     // Sign back out so the user re-authenticates with the new password.
     await supabase.auth.signOut();
+    setRecovering(false);
     return { ok: true };
   }
 
@@ -165,15 +165,25 @@ export function CalendarApp() {
   // Blank until we know whether there's a session, so the login screen doesn't flash.
   if (!authReady) return null;
 
-  if (!DEMO_MODE && !session) {
+  const backToLogin = () => {
+    setAuthError("");
+    setAuthView("login");
+    // Abandoning a reset after the code was verified would leave a live session.
+    if (recovering) {
+      setRecovering(false);
+      void supabase?.auth.signOut();
+    }
+  };
+
+  if (!DEMO_MODE && (!session || recovering)) {
     if (authView === "login") {
       return (
         <LoginScreen
           onSignIn={handleSignIn}
           onOAuth={handleOAuth}
-          onForgotPassword={() => { setStatus(""); setAuthView("forgot"); }}
-          onSignUp={() => { setStatus(""); setAuthView("signup"); }}
-          status={status}
+          onForgotPassword={() => { setAuthError(""); setAuthView("forgot"); }}
+          onSignUp={() => { setAuthError(""); setAuthView("signup"); }}
+          error={authError}
           isWorking={isAuthWorking}
         />
       );
@@ -183,7 +193,7 @@ export function CalendarApp() {
         <SignupScreen
           onSignUp={handleSignUp}
           onOAuth={handleOAuth}
-          onBackToLogin={() => { setStatus(""); setAuthView("login"); }}
+          onBackToLogin={backToLogin}
         />
       );
     }
@@ -192,7 +202,7 @@ export function CalendarApp() {
         onSendCode={handleResetSendCode}
         onVerifyCode={handleResetVerifyCode}
         onUpdatePassword={handleResetUpdatePassword}
-        onBackToLogin={() => { setStatus(""); setAuthView("login"); }}
+        onBackToLogin={backToLogin}
       />
     );
   }

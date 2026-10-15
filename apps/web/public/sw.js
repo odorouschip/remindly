@@ -1,4 +1,4 @@
-const CACHE_NAME = "calender-shell-v1";
+const CACHE_NAME = "remindly-shell-v2";
 const SHELL_ASSETS = ["/", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

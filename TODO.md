@@ -2,20 +2,18 @@
 
 Living document. Check things off as they're done; add new items freely. Loosely ordered by priority within each section.
 
+Items marked *(release only)* aren't needed while Remindly is a personal tool. They're kept for a possible public launch.
+
 ---
 
 ## Branding & assets
 
-- [ ] **New logo.** Current is a generic orange rounded-square with a calendar grid SVG inside. Used in:
-  - Sidebar header — [apps/web/components/CalendarApp.tsx](apps/web/components/CalendarApp.tsx) (the inline SVG inside the `Remindly` heading)
-  - Login brand panel — [apps/web/components/LoginScreen.tsx](apps/web/components/LoginScreen.tsx)
-  - Signup + Forgot Password brand panels — [apps/web/components/SignupScreen.tsx](apps/web/components/SignupScreen.tsx), [apps/web/components/ForgotPasswordScreen.tsx](apps/web/components/ForgotPasswordScreen.tsx)
-  - Supabase-not-configured setup screen uses lucide `<CalendarDays>` as a placeholder
-- [ ] **Real import provider logos.** Settings → Import currently shows letters "G", "O", "Y" and a blank circle for Apple (see `IMPORT_SOURCES` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx)). The real SVG icons already exist in [LoginScreen.tsx](apps/web/components/LoginScreen.tsx) (`GoogleIcon`, `AppleIcon`, `MicrosoftIcon`, `GitHubIcon`) — extract them and add a `YahooIcon`.
-- [ ] **Favicon** — missing entirely. `/favicon.ico` 404s on every page load (visible in the console at runtime); no file in [apps/web/public/](apps/web/public/).
-- [ ] **PWA manifest icons** — [apps/web/app/manifest.ts](apps/web/app/manifest.ts) only declares a single `/icon.svg` with `sizes: "any"`. iOS Home Screen and Android splash screens won't use SVG — need explicit 192×192 and 512×512 PNGs (and ideally an `apple-touch-icon` set).
-- [ ] **Manifest brand name mismatches the UI.** [manifest.ts](apps/web/app/manifest.ts) declares `name: "Calender"` and `short_name: "Calender"`, while the in-app brand is "Remindly". An installed PWA would show "Calender" on the home screen. Pick one and align everywhere (including page title in [layout.tsx](apps/web/app/layout.tsx) which is also "Calender").
-- [ ] **Manifest `theme_color` vs `<meta theme-color>` mismatch.** [manifest.ts](apps/web/app/manifest.ts) sets `theme_color: "#1f3d36"` (forest green — leftover from the dead globals.css palette), while [layout.tsx](apps/web/app/layout.tsx) sets `themeColor: "#f4f0e8"` (paper). Different surfaces (browser chrome vs installed PWA) will tint differently. Pick one or compute both from the active theme.
+- [ ] **New logo.** Current mark is a generic calendar glyph on a dark rounded square. It lives in one place — [components/ui/Logo.tsx](apps/web/components/ui/Logo.tsx) — plus the generated icons ([public/icon.svg](apps/web/public/icon.svg), `icon-192.png`, `icon-512.png`, [app/apple-icon.png](apps/web/app/apple-icon.png)).
+- [x] *(Moot — the Import tab is gone until imports exist.)* **Real import provider logos.** Settings → Import currently shows letters "G", "O", "Y" and a blank circle for Apple (see `IMPORT_SOURCES` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx)). The real SVG icons already exist in [LoginScreen.tsx](apps/web/components/LoginScreen.tsx) (`GoogleIcon`, `AppleIcon`, `MicrosoftIcon`, `GitHubIcon`) — extract them and add a `YahooIcon`.
+- [x] **Favicon** — missing entirely. `/favicon.ico` 404s on every page load (visible in the console at runtime); no file in [apps/web/public/](apps/web/public/).
+- [x] **PWA manifest icons** — [apps/web/app/manifest.ts](apps/web/app/manifest.ts) only declares a single `/icon.svg` with `sizes: "any"`. iOS Home Screen and Android splash screens won't use SVG — need explicit 192×192 and 512×512 PNGs (and ideally an `apple-touch-icon` set).
+- [x] **Manifest brand name mismatches the UI.** [manifest.ts](apps/web/app/manifest.ts) declares `name: "Calender"` and `short_name: "Calender"`, while the in-app brand is "Remindly". An installed PWA would show "Calender" on the home screen. Pick one and align everywhere (including page title in [layout.tsx](apps/web/app/layout.tsx) which is also "Calender").
+- [x] **Manifest `theme_color` vs `<meta theme-color>` mismatch.** [manifest.ts](apps/web/app/manifest.ts) sets `theme_color: "#1f3d36"` (forest green — leftover from the dead globals.css palette), while [layout.tsx](apps/web/app/layout.tsx) sets `themeColor: "#f4f0e8"` (paper). Different surfaces (browser chrome vs installed PWA) will tint differently. Pick one or compute both from the active theme.
 - [ ] **iOS app icon** — needs to match the new logo.
 
 ---
@@ -52,9 +50,9 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [x] **Categories dropdown** in sidebar duplicates Settings → Categories tab. Pick one.
 
 ### Settings modal
-- [ ] **Account tab** has placeholder inputs (`defaultValue=""`) that don't read or write anything. Wire to Supabase `user_metadata`.
-- [ ] **Profile picture.** Account tab currently shows an "R" initials avatar. Replace with a real avatar upload (Supabase Storage bucket), fallback to initials. Show the avatar in the sidebar header too.
-- [ ] **Make Settings feel like a real app, not a mockup.** Current Account tab is three lonely inputs. Add: change-password flow, connected providers list, sign-out button (currently in sidebar), notification preferences, default view / week-start (already collected at signup but never editable after), delete-account.
+- [x] **Account tab** has placeholder inputs (`defaultValue=""`) that don't read or write anything. Wire to Supabase `user_metadata`.
+- [ ] *(release only)* **Profile picture.** Account tab currently shows an "R" initials avatar. Replace with a real avatar upload (Supabase Storage bucket), fallback to initials. Show the avatar in the sidebar header too.
+- [ ] *(release only)* **Make Settings feel like a real app, not a mockup.** Current Account tab is three lonely inputs. Add: change-password flow, connected providers list, sign-out button (currently in sidebar), notification preferences, default view / week-start (already collected at signup but never editable after), delete-account.
 - [x] **Categories tab** is read-only ("managed inline on each event for now"). Either make it editable (add/rename/delete categories) or delete the tab.
 - [x] **Import tab** buttons don't import. Build the OAuth flow + ICS upload, or hide the section.
 
@@ -66,13 +64,13 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [ ] **Multi-day events** — currently every event is bound to one date.
 - [x] **Repeating events** — repeat rule is stored but the views don't expand recurrences into the grid; only the original instance shows.
 - [x] **Month-view overflow days are dead.** The grid shows the last few days of the previous month and the first few of the next (grayed) for layout, but `onClick` and `onDoubleClick` both gate on `isCur` (`isCur && onSelect(ds)`) so clicking them does nothing. Expected behavior: clicking should navigate to that month and select the day.
-- [ ] **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
-- [ ] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
-- [ ] **Week-view day-number headers aren't clickable.** Clicking "Mon 3" in the header should jump to the day view (when day view exists).
+- [x] *(Single click now shows that day in the side panel, which has a + button; double-click still creates.)* **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
+- [x] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
+- [x] **Week-view day-number headers aren't clickable.** Clicking "Mon 3" in the header should jump to the day view (when day view exists).
 - [x] **Week-view events outside 7am–11pm render at negative top / below grid instead of being hidden or moved.** `topFrac = (sh - 7) + sm/60` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) — a 6am event renders with `top: -51px` (above the visible grid), a 11pm event renders below. Caught in audit: a 6am event appears as a partial colored block at the top of the Thursday column with no label visible. Either clip these, scroll them into view, or stack them in an "earlier"/"later" overflow row.
 - [ ] **Month-view "today" highlight is only on the day-number circle, not the whole column or cell.** Week view also only marks the day-number, not the column — most calendars tint the entire today column for stronger visual anchor.
 - [x] **All three view toggles can be off simultaneously** → "Pick a view above" dead state. Month/Week aren't mutually exclusive (re-clicking the active one toggles it off); Agenda is overloaded (side panel when grid view is on, full view when no grid view). Reasonable redesign: Month / Week / Day / Agenda as a true mutually-exclusive radio set with Agenda always available as a separate toggle for the side panel.
-- [ ] **No way to view past events as a list.** Upcoming side panel filters `e.date >= todayLocalIso`; Agenda-only view does the same. A user who searches for "conference" and the matching events are in the past sees an empty Upcoming with no hint that the matches exist. Add a "show past" toggle on Agenda, or a separate Past view.
+- [x] **No way to view past events as a list.** Upcoming side panel filters `e.date >= todayLocalIso`; Agenda-only view does the same. A user who searches for "conference" and the matching events are in the past sees an empty Upcoming with no hint that the matches exist. Add a "show past" toggle on Agenda, or a separate Past view.
 
 ### Search
 - [x] Filters silently — no result count, no "clear" button, no empty state when no matches.
@@ -84,9 +82,9 @@ Living document. Check things off as they're done; add new items freely. Loosely
 - [x] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
 - [x] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
 - [x] **All-day-like events render as "8:00 PM – 7:59 PM" instead of "All day".** Confirmed in audit: holiday rows (Independence Day, Labor Day, Columbus Day, Veterans Day) are stored ~00:00–23:59 UTC and the UI renders them in local TZ raw as "8:00 PM – 7:59 PM" with no awareness of `is_all_day`. The Upcoming panel, Agenda view, and event chip all need to check `is_all_day` (or detect ~24h span) and render "All day" instead of the literal timed range.
-- [ ] **No way to mark a task complete.** Tasks store the title with a `" ✓"` suffix on create ([CalendarApp.tsx](apps/web/components/CalendarApp.tsx) `handleSave` for the task tab) but there's no toggle / checkbox in the UI to flip the state later.
+- [x] **No way to mark a task complete.** Tasks store the title with a `" ✓"` suffix on create ([CalendarApp.tsx](apps/web/components/CalendarApp.tsx) `handleSave` for the task tab) but there's no toggle / checkbox in the UI to flip the state later.
 - [ ] No location field on events.
-- [ ] No attendees / invitees.
+- [ ] *(release only)* No attendees / invitees.
 - [ ] No way to attach a file or note longer than a textarea.
 
 ---
@@ -97,18 +95,18 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 
 ### Schema additions (prerequisites for features above)
 - [ ] **Calendars table.** Sidebar pretends "My Calendar", "Work", "Birthdays", "US Holidays" exist but nothing is stored. Add `public.calendars` (id, user_id, name, color, kind: personal/shared/holiday, is_visible). Add a `calendar_id` FK on `events`. Backfill existing rows into a default "My Calendar" per user. This is the prerequisite for the sidebar filter feature in Functional gaps.
-- [ ] **Categories as a real column (or table).** Today `cat` (work/personal/health/social) is packed into `notes` as `%%META%%` JSON — see `packNotes` / `unpackNotes` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx). Move to a real `category` column on `events`. If categories should be user-customizable (per Themes section), promote to a `categories` table instead.
+- [ ] **Categories as a real column (or table).** Today `cat` (work/personal/health/social) is packed into `notes` as `%%META%%` JSON — see `packNotes` / `unpackNotes` in [notes.ts](apps/web/lib/calendar/notes.ts). Move to a real `category` column on `events`. If categories should be user-customizable (per Themes section), promote to a `categories` table instead.
 - [ ] **Priority + `is_task` as real columns.** Both also currently in the meta JSON. Move to real columns so they're queryable (e.g., "show me all high-priority tasks").
-- [ ] **Profiles table.** No place to store display name, avatar URL, theme preference, week_start, default_view. Two options: (a) shove into `auth.users.user_metadata` (simplest, JSON blob, no extra table); (b) create `public.profiles` mirrored from `auth.users` via a trigger (Supabase convention, queryable, RLS-friendly). Recommend **(b)** — needed anyway for avatar URL (Storage bucket) and to read another user's display name if sharing ever happens.
+- [ ] *(release only)* **Profiles table.** No place to store display name, avatar URL, theme preference, week_start, default_view. Two options: (a) shove into `auth.users.user_metadata` (simplest, JSON blob, no extra table); (b) create `public.profiles` mirrored from `auth.users` via a trigger (Supabase convention, queryable, RLS-friendly). Recommend **(b)** — needed anyway for avatar URL (Storage bucket) and to read another user's display name if sharing ever happens.
 - [ ] **Import source tracking.** When calendar imports work, events need `source` (google/apple/outlook/ics/manual), `external_id` (for sync dedup), `last_synced_at`. Add columns to `events`, or a separate `event_external_links` table if one event can sync from multiple sources.
 
 ### Data integrity / schema cleanup
-- [ ] **"Yearly" recurrence is invisible to SQL.** `RECUR_TO_DB` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) maps `Yearly → "none"` and stashes the actual frequency in the meta JSON. Any query like `where repeat_frequency = 'yearly'` will find nothing. Either add `'yearly'` to the `repeat_frequency` CHECK constraint and store it, or remove the Yearly option until recurrence expansion handles it properly.
+- [ ] **"Yearly" recurrence is invisible to SQL.** `RECUR_TO_DB` in [supabaseBackend.ts](apps/web/lib/calendar/supabaseBackend.ts) maps `Yearly → "none"` and stashes the actual frequency in the meta JSON. Any query like `where repeat_frequency = 'yearly'` will find nothing. Either add `'yearly'` to the `repeat_frequency` CHECK constraint and store it, or remove the Yearly option until recurrence expansion handles it properly.
 - [ ] **`is_archived` column is dead.** Defined in [the init migration](supabase/migrations/202604300001_init.sql) but never read or written by the web app. Either build an archive flow (events that don't show but aren't deleted) or drop the column in a follow-up migration.
 - [ ] **`devices.platform` enforces `'ios' | 'web'` but no web row ever gets created.** When/if web push is added, need a flow to register the browser as a device.
 
 ### US Holidays — pick an approach
-- [ ] **Decision: Option A (shared) vs Option B (per-user copy).** Recommend **A**.
+- [ ] *(release only)* **Decision: Option A (shared) vs Option B (per-user copy).** Recommend **A**.
 
   **Option A — shared read-only holidays table.** Create a `public.holidays` row per holiday tied to a special `calendars` row with no `user_id`. Public-read RLS so any authenticated user can SELECT. Calendar UI fetches user events UNION holidays (or two queries merged client-side) when the "US Holidays" toggle is on.
   - Pros: single source of truth, update once per year, no per-user storage bloat, trivially extends to UK / Canada / religious calendars.
@@ -121,22 +119,22 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [ ] **If B wins:** build the on-signup `handle_new_user()` trigger and an admin script to refresh holiday rows each year.
 
 ### Recurrence storage
-- [ ] **Decide expansion strategy.** Today `events` stores `repeat_frequency` + `repeat_until` but the views never expand the rule into instances — only the original date renders (tracked in Functional gaps → Calendar views). Three approaches: (a) expand client-side on read from the single stored row, (b) generate occurrence rows in a database view, (c) materialize the next N occurrences into a separate table via a job. **(a) is the simplest start** — defer (c) until performance forces it.
+- [x] **Decide expansion strategy.** Today `events` stores `repeat_frequency` + `repeat_until` but the views never expand the rule into instances — only the original date renders (tracked in Functional gaps → Calendar views). Three approaches: (a) expand client-side on read from the single stored row, (b) generate occurrence rows in a database view, (c) materialize the next N occurrences into a separate table via a job. **(a) is the simplest start** — defer (c) until performance forces it.
 - [ ] **Exceptions table.** Once recurrence is expanded, users will want to move or delete a single instance of a repeating event. Add `recurrence_exceptions` (event_id, occurrence_date, action: cancelled / modified, override_event_id).
 
 ### Search
-- [ ] **Server-side search** (deferred). Today search is `events.filter()` over the locally loaded list — fine for small datasets, breaks once a user has 1000+ events. Add a `tsvector` index on `title || notes` and an RPC. Not urgent.
+- [ ] *(release only)* **Server-side search** (deferred). Today search is `events.filter()` over the locally loaded list — fine for small datasets, breaks once a user has 1000+ events. Add a `tsvector` index on `title || notes` and an RPC. Not urgent.
 
 ### Maintenance
-- [ ] **Soft-delete purge job.** `deleted_at` is set but never cleaned. Add a scheduled function to permanently delete rows where `deleted_at < now() - interval '30 days'`.
+- [ ] *(release only)* **Soft-delete purge job.** `deleted_at` is set but never cleaned. Add a scheduled function to permanently delete rows where `deleted_at < now() - interval '30 days'`.
 - [ ] **Migration discipline.** Right now everything lives in `202604300001_init.sql`. Future schema changes should land as new timestamped migrations — never edit a shipped one.
 - [ ] **Backups.** Verify the Supabase project has point-in-time recovery turned on (requires Pro plan); document the restore procedure.
 
 ### Edge function (dispatch-reminders)
 - [ ] **Repeating events only get server reminders for their first occurrence.** The web app now expands repeats in every view, but reminder rows (`due_at`) are written once per event from `starts_at`, so APNs/Live Activity reminders fire for the first instance only. The dispatcher needs to compute the next occurrence (e.g. reuse `expandOccurrences` from `@calender/shared`) or a job needs to roll reminders forward.
 - [ ] **`delivered_at` is set even when every APNs send fails.** [dispatch-reminders/index.ts](supabase/functions/dispatch-reminders/index.ts) (~line 96) updates `delivered_at = now()` unconditionally after the device loop, regardless of `sendResults`. If APNs is unreachable, every token is stale, or there are zero devices for the user, the reminder is silently marked delivered and lost. Fix: only mark delivered if at least one send returned `ok: true` (or branch into a retry/backoff path).
-- [ ] **APNs JWT is regenerated for every reminder.** `createApnsJwt()` is called inside `dispatchReminder` (per-reminder), but JWTs are valid ~50 minutes and re-use is encouraged by Apple. Move JWT creation to the top of the cron invocation and reuse across all reminders in the batch.
-- [ ] **Only `platform = 'ios'` devices are queried** (`.eq("platform", "ios")` in `dispatchReminder`). If web push or another platform is ever added, those device rows will silently never receive reminders.
+- [ ] *(release only)* **APNs JWT is regenerated for every reminder.** `createApnsJwt()` is called inside `dispatchReminder` (per-reminder), but JWTs are valid ~50 minutes and re-use is encouraged by Apple. Move JWT creation to the top of the cron invocation and reuse across all reminders in the batch.
+- [ ] *(release only)* **Only `platform = 'ios'` devices are queried** (`.eq("platform", "ios")` in `dispatchReminder`). If web push or another platform is ever added, those device rows will silently never receive reminders.
 - [ ] **`live_activity_runs` has no dedup.** Each successful Live Activity start `INSERT`s a row; if the same event has multiple reminders that all fire near each other (e.g., 1-day, 30-min, at-time), multiple runs are created. Add a unique constraint on `(event_id, device_id, phase)` or check before insert.
 - [ ] **APNs token rotation.** `devices.apns_device_token` + `activity_push_to_start_token` are stored but there's no flow for invalidating stale tokens when APNs returns `Unregistered` / `BadDeviceToken`.
 - [ ] **Idempotency.** If the 1-minute cron double-fires (or misses then re-runs), make sure the same reminder isn't dispatched twice. The `delivered_at` column is the natural latch — verify the function actually checks + sets it atomically.
@@ -146,24 +144,22 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 ## Auth screens
 
 - [x] **Terms / Privacy links** are `#` placeholders ([LoginScreen.tsx](apps/web/components/LoginScreen.tsx) footer + Signup step 1).
-- [ ] **OAuth buttons** call `signInWithOAuth` but Google/Apple/Microsoft/GitHub providers need to actually be configured in Supabase.
+- [ ] *(release only)* **OAuth buttons** call `signInWithOAuth` but Google/Apple/Microsoft/GitHub providers need to actually be configured in Supabase.
 - [x] **OAuth failure strands the user on a Supabase JSON error page.** Confirmed in audit: clicking "Continue with Google" with the provider not enabled redirects the browser to `https://<project>.supabase.co/auth/v1/authorize?...` which responds with raw JSON `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`. The user is now on Supabase's domain with no way back. Fix: pass `options: { skipBrowserRedirect: true }` to `signInWithOAuth`, then `window.location.assign(data.url)` only after a sanity check, OR (simpler) hide buttons whose provider isn't enabled.
 - [x] **OAuth button labels wrap into 3 lines on narrow screens.** At ≤375px width the 2-column grid + "Continue with Google" label wraps as `Continue / with / Google`. Either collapse to single-column on narrow widths or shorten labels to "Google" / "Apple" / etc. at small breakpoints.
 - [x] **Brand panel design differs across the three auth screens.** Login = decorative circles + calendar preview card. Signup = circles + feature pills + tagline. Forgot Password = lock icon card + circles + tagline. Three different visual identities for the same product. Pick one brand-panel layout and reuse it.
 - [x] **Signup → preferences step** stores `defaultView`, `weekStart`, etc. in localStorage but the calendar app doesn't read them back yet.
-- [ ] **Forgot password** OTP flow works but the email Supabase sends is the default template — customize it.
+- [ ] *(release only)* **Forgot password** OTP flow works but the email Supabase sends is the default template — customize it.
 
 ---
 
 ## Themes
 
-7 themes exist today: Ivory, Linen, Sage, Ocean, Sunset, Lavender, Midnight (see `THEMES` array in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx)).
+Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css)). The 7 colorful themes were dropped in the Notion-style redesign; they could come back as options later.
 
-- [ ] **Refine the existing 7.** Audit each theme for contrast (especially Sage / Sunset on body text), scene gradients (Linen has none — feels flatter than the others), and chip/card colors. Midnight in particular needs a hover/selected pass.
-- [ ] **More themes.** Ideas: a true monochrome / paper-white, a higher-contrast accessibility theme, seasonal variants, a "focus" minimal theme with no scene gradient.
-- [x] **System theme preference.** Match the OS light/dark setting on first visit instead of defaulting to Ivory.
-- [ ] **Per-category color customization.** Today the 4 category colors are baked into the `CATS` constant. Let users pick their own.
-- [ ] **Theme preview in settings** could be larger / interactive — currently you only see the swatch dot + a stripe of gradient.
+- [ ] **More themes.** Bring back some colorful options, or add a high-contrast / accessibility theme.
+- [x] **System theme preference.** Match the OS light/dark setting on first visit.
+- [ ] **Per-category color customization.** The 4 category colors are `--cat-*` tokens in [globals.css](apps/web/app/globals.css). Let users pick their own.
 - [ ] **Custom accent color** independent of theme (Notion-style).
 
 ---
@@ -182,16 +178,16 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 ### Cross-platform sync
 - [ ] Conflict resolution when web and iOS edit the same event while one is offline.
 - [ ] Apple Calendar / Google Calendar / Outlook one-way mirror in.
-- [ ] Share-calendar-with-another-user (longer term).
+- [ ] *(release only)* Share-calendar-with-another-user (longer term).
 
 ### PWA story
 - [ ] **Service worker has no real strategy.** [apps/web/public/sw.js](apps/web/public/sw.js) pre-caches `/` and `/icon.svg`, then does network-first with cache fallback. But `/` is a Server Component HTML that depends on auth state, so cached HTML is mostly useless. No JS/CSS/asset caching, no offline event store. Either commit to a real offline-first design (cache the app shell properly, queue mutations while offline, sync on reconnect) or take the SW out until the design is ready — right now it's vaporware that adds confusion.
 - [ ] **App shell route.** If the SW is going to work, the calendar app needs a stable shell route that doesn't depend on session — `/app` or similar, with auth checked client-side after hydration.
 
 ### Quality bar before public
-- [ ] Marketing site.
-- [ ] Real Privacy Policy + Terms of Service.
-- [ ] Onboarding tour for first sign-in.
+- [ ] *(release only)* Marketing site.
+- [ ] *(release only)* Real Privacy Policy + Terms of Service.
+- [ ] *(release only)* Onboarding tour for first sign-in.
 - [ ] Empty states for every major surface (no events, no upcoming, no search matches, etc.).
 - [ ] Error states for network/Supabase failures (currently just the small `status` string at the bottom of auth).
 
@@ -207,11 +203,11 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [ ] **Rebuild events list / agenda view** with the new design language.
 - [ ] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
 - [ ] **Add month / week views** on iPad / larger phones.
-- [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; verify it covers the 7 web themes (or whichever subset makes sense on iOS).
+- [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
 
 ### Functionality still needed
-- [ ] **Auth UI** — verify the iOS sign-in matches the redesigned web auth (Google / Apple / Microsoft / GitHub buttons, forgot password, signup with preferences).
-- [ ] **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
+- [ ] **Auth UI** — match the web's simplified auth (email + password, forgot password with code, optional provider buttons).
+- [ ] *(release only)* **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
 - [ ] **Offline editing + sync conflict handling.**
 - [ ] **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
 - [ ] **iCloud / device-local backup** of preferences (theme choice, default view, etc.).
@@ -221,13 +217,21 @@ The iOS side is significantly less developed than the web side and the entire UI
 ### Polish / quality
 - [ ] **App icon** — needs to match the new logo.
 - [ ] **Launch screen** — currently default.
-- [ ] **Onboarding** — first-launch flow asking for notification permission, Live Activity opt-in, calendar imports.
-- [ ] **Dynamic Type** support across all screens.
-- [ ] **VoiceOver** labels for all interactive elements.
+- [ ] *(release only)* **Onboarding** — first-launch flow asking for notification permission, Live Activity opt-in, calendar imports.
+- [ ] *(release only)* **Dynamic Type** support across all screens.
+- [ ] *(release only)* **VoiceOver** labels for all interactive elements.
 
 ---
 
 ## Recently done
+
+### Day panel, tasks, icons — 2026-10-15
+- [x] Clicking a day shows its schedule in the right-side panel (replaces "Upcoming"), with "Coming up" for the next two weeks and a + to add an event that day ([DayPanel.tsx](apps/web/components/calendar/DayPanel.tsx)).
+- [x] Clicking an empty week-view slot opens a new event at that half hour.
+- [x] Tasks have a completion checkbox (stored as `done` in the meta blob; done tasks get no reminders).
+- [x] Agenda has "Show earlier"; searching lists past matches too, and "Show as list" jumps from month/week to them.
+- [x] New icon set (SVG favicon, Apple touch icon, 192/512 PNGs); manifest renamed to Remindly with matching colors.
+- [x] Tagged items only needed for a public release.
 
 ### Bug fixes + auth screens — 2026-10-14
 - [x] `%%META%%` no longer leaks into descriptions: [notes.ts](apps/web/lib/calendar/notes.ts) matches the sentinel with or without the leading blank lines (iOS writes it bare) and never shows a corrupt blob.

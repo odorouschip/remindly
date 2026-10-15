@@ -1,0 +1,30 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 56px;
+  padding: 0 var(--sp-5) 0 var(--sp-7);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-width: 170px;
+}
+.year {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.nav > :first-child { margin-right: var(--sp-1); }
+
+.spacer { flex: 1; }

@@ -1,12 +1,134 @@
+/* DM Sans is still used by the auth screens, which hardcode it inline. */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
 
+/* ─── Design tokens ────────────────────────────────────────────────────────────
+   Light is the default. Dark applies when the user picks it (data-theme="dark")
+   or when they pick "System" (no data-theme) and the OS is in dark mode. */
 :root {
-  --paper: #f4f0e8;
-  --paper-strong: #fffaf0;
-  --ink: #18231f;
-  --forest: #1f3d36;
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-sidebar: #f8f8f7;
+  --bg-hover: rgba(55, 53, 47, 0.06);
+  --bg-active: rgba(55, 53, 47, 0.1);
+  --bg-input: rgba(242, 241, 238, 0.7);
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(15, 15, 15, 0.4);
+
+  --border: rgba(55, 53, 47, 0.09);
+  --border-strong: rgba(55, 53, 47, 0.16);
+
+  --text: #37352f;
+  --text-2: rgba(55, 53, 47, 0.68);
+  --text-3: rgba(55, 53, 47, 0.48);
+  --text-4: rgba(55, 53, 47, 0.3);
+
+  --primary: #2383e2;
+  --primary-hover: #0077d4;
+  --on-primary: #ffffff;
+  --today: #eb5757;
+  --danger: #d44c47;
+  --focus: rgba(35, 131, 226, 0.45);
+
+  --cat-work: #337ea9;
+  --cat-personal: #9065b0;
+  --cat-health: #448361;
+  --cat-social: #d9730d;
+
+  --shadow-pop: 0 0 0 1px rgba(15, 15, 15, 0.05), 0 3px 6px rgba(15, 15, 15, 0.1), 0 9px 24px rgba(15, 15, 15, 0.2);
+  --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
+
+  /* Type scale */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 12px;
+  --sp-5: 16px;
+  --sp-6: 20px;
+  --sp-7: 24px;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #191919;
+  --bg-sidebar: #202020;
+  --bg-hover: rgba(255, 255, 255, 0.055);
+  --bg-active: rgba(255, 255, 255, 0.09);
+  --bg-input: rgba(255, 255, 255, 0.055);
+  --bg-elevated: #252525;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  --border: rgba(255, 255, 255, 0.094);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text: rgba(255, 255, 255, 0.86);
+  --text-2: rgba(255, 255, 255, 0.6);
+  --text-3: rgba(255, 255, 255, 0.44);
+  --text-4: rgba(255, 255, 255, 0.26);
+
+  --today: #f0645d;
+  --danger: #e5625c;
+  --focus: rgba(35, 131, 226, 0.6);
+
+  --cat-work: #529cca;
+  --cat-personal: #a782d8;
+  --cat-health: #4dab9a;
+  --cat-social: #ffa344;
+
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #191919;
+    --bg-sidebar: #202020;
+    --bg-hover: rgba(255, 255, 255, 0.055);
+    --bg-active: rgba(255, 255, 255, 0.09);
+    --bg-input: rgba(255, 255, 255, 0.055);
+    --bg-elevated: #252525;
+    --bg-overlay: rgba(0, 0, 0, 0.6);
+
+    --border: rgba(255, 255, 255, 0.094);
+    --border-strong: rgba(255, 255, 255, 0.16);
+
+    --text: rgba(255, 255, 255, 0.86);
+    --text-2: rgba(255, 255, 255, 0.6);
+    --text-3: rgba(255, 255, 255, 0.44);
+    --text-4: rgba(255, 255, 255, 0.26);
+
+    --today: #f0645d;
+    --danger: #e5625c;
+    --focus: rgba(35, 131, 226, 0.6);
+
+    --cat-work: #529cca;
+    --cat-personal: #a782d8;
+    --cat-health: #4dab9a;
+    --cat-social: #ffa344;
+
+    --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
@@ -14,20 +136,23 @@
 html, body {
   margin: 0;
   min-height: 100vh;
-  color: var(--ink);
-  font-family: "DM Sans", "Aptos", "Segoe UI", sans-serif;
-  background: var(--paper);
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: var(--fs-base);
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1cec9; border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
 
 button,
 input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
 }
 
 button {
@@ -42,20 +167,18 @@ button:disabled {
 
 code,
 pre {
-  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 
-/* Themed focus ring — only on keyboard focus, picks up the active theme accent */
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #888) 22%, transparent);
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus);
 }
 
 /* Native date/time picker indicator — softer than the default jet-black */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -63,43 +186,5 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator,
 input[type="time"]:hover::-webkit-calendar-picker-indicator,
 input[type="date"]:focus::-webkit-calendar-picker-indicator,
 input[type="time"]:focus::-webkit-calendar-picker-indicator {
-  opacity: 0.9;
-}
-
-/* Supabase-not-configured setup screen */
-.setup-shell {
-  min-height: 100vh;
-  width: min(620px, calc(100% - 32px));
-  margin: 0 auto;
-  display: grid;
-  place-items: center;
-}
-
-.setup-panel {
-  width: 100%;
-  background: rgba(255, 250, 240, 0.78);
-  border: 1px solid rgba(31, 61, 54, 0.16);
-  box-shadow: 0 20px 60px rgba(24, 35, 31, 0.12);
-  padding: 28px;
-  border-radius: 12px;
-}
-
-.setup-panel svg {
-  width: 44px;
-  height: 44px;
-  color: var(--forest);
-}
-
-.setup-panel h1 {
-  margin: 18px 0 10px;
-  font-size: 32px;
-  line-height: 1.1;
-}
-
-.setup-panel pre {
-  overflow: auto;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--paper-strong);
-  padding: 16px;
+  opacity: 0.85;
 }

@@ -1,0 +1,127 @@
+.month {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.weekdays > div {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  text-align: right;
+}
+
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--sp-1) var(--sp-1) var(--sp-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+  user-select: none;
+  transition: background 0.12s;
+}
+.cell:nth-child(7n) { border-right: 0; }
+.cell[data-outside] { background: color-mix(in srgb, var(--bg-sidebar) 60%, transparent); }
+.cell[data-selected] { background: var(--bg-hover); }
+
+.dayNum {
+  align-self: flex-end;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--sp-2);
+  margin-bottom: 2px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.cell[data-outside] .dayNum { color: var(--text-4); }
+.dayNum[data-today] {
+  background: var(--today);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* The row wraps and clips to one line: if the time doesn't fit beside the
+   title it drops to the hidden second line instead of being cut in half. */
+.event {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: var(--sp-2);
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--fs-sm);
+  text-align: left;
+  transition: background 0.12s;
+}
+.event:hover { background: var(--bg-hover); }
+.cell[data-outside] .event { opacity: 0.6; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+.taskIcon {
+  color: var(--c);
+  flex-shrink: 0;
+  margin: 0 -3px;
+}
+
+.lead {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.eventTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.eventTime {
+  margin-left: auto;
+  line-height: 22px;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.more {
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}

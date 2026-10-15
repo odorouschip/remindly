@@ -1,0 +1,109 @@
+.full {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-7) var(--sp-7);
+}
+.compact {
+  padding: 0 var(--sp-3) var(--sp-5);
+}
+
+.group + .group { margin-top: var(--sp-5); }
+
+.dayLabel {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+.full .dayLabel {
+  font-size: var(--fs-base);
+  color: var(--text);
+  padding-bottom: var(--sp-3);
+  margin-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--border);
+}
+.dayLabel[data-today] { color: var(--today); }
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  transition: background 0.12s;
+}
+.row:hover { background: var(--bg-hover); }
+.full .row { padding: var(--sp-3); gap: var(--sp-4); }
+
+.time {
+  width: 64px;
+  flex-shrink: 0;
+  padding-top: 1px;
+  font-size: var(--fs-md);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  width: 3px;
+  align-self: stretch;
+  min-height: 16px;
+  border-radius: 2px;
+  background: var(--c);
+  flex-shrink: 0;
+}
+.taskIcon {
+  color: var(--c);
+  flex-shrink: 0;
+  margin: 1px -5px 0 -5px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.full .title { font-size: var(--fs-base); }
+.recur { color: var(--text-3); flex-shrink: 0; }
+.meta {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.desc {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 48px var(--sp-5);
+  text-align: center;
+}
+.emptyTitle {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-base);
+  font-weight: 500;
+}
+.emptyHint {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--text-3);
+}

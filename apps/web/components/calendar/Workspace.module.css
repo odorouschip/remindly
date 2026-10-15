@@ -1,0 +1,87 @@
+.workspace {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-7);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-md);
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.searchBar button {
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 500;
+}
+.searchBar button:hover { background: var(--bg-hover); }
+
+.upcoming {
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-left: 1px solid transparent;
+  transition: width 0.25s var(--ease), border-color 0.25s;
+}
+.upcoming[data-open] {
+  width: 280px;
+  border-left-color: var(--border);
+}
+.upcomingInner {
+  width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.upcomingTitle {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 var(--sp-6);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-7);
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font-size: var(--fs-md);
+  box-shadow: var(--shadow-pop);
+}

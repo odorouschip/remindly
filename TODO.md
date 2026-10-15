@@ -23,15 +23,15 @@ Living document. Check things off as they're done; add new items freely. Loosely
 ## UI polish
 
 ### Medium
-- [ ] **`backdropFilter: blur(20px)` overuse.** Applied to sidebar, topbar, agenda panel, create panel — even on themes without a scene gradient (Ivory, Linen) where there's nothing behind to blur. Only apply when `theme.scene` is set.
-- [ ] **Type scale.** ~12 font sizes scattered (9, 10, 11, 12, 13, 13.5, 14, 15, 17, 18, 20, 22, 24) with no pattern. Define a small `fs` constant and standardize.
-- [ ] **Spacing scale.** Same problem with paddings — define an `sp` constant (4 / 6 / 8 / 12 / 16 / 20 / 24).
-- [ ] **`accent + "22"` hex-alpha tint shorthand.** Used ~20 places. Centralize into a `tint(color, level)` helper.
-- [ ] **Button consistency.** The topbar "New" button, create-panel "Cancel" / "Add Task" buttons, and settings modal "Done" button are three different inline-style approaches. Should share one `Button` component.
+- [x] **`backdropFilter: blur(20px)` overuse.** Applied to sidebar, topbar, agenda panel, create panel — even on themes without a scene gradient (Ivory, Linen) where there's nothing behind to blur. Only apply when `theme.scene` is set.
+- [x] **Type scale.** ~12 font sizes scattered (9, 10, 11, 12, 13, 13.5, 14, 15, 17, 18, 20, 22, 24) with no pattern. Define a small `fs` constant and standardize.
+- [x] **Spacing scale.** Same problem with paddings — define an `sp` constant (4 / 6 / 8 / 12 / 16 / 20 / 24).
+- [x] **`accent + "22"` hex-alpha tint shorthand.** Used ~20 places. Centralize into a `tint(color, level)` helper.
+- [x] **Button consistency.** The topbar "New" button, create-panel "Cancel" / "Add Task" buttons, and settings modal "Done" button are three different inline-style approaches. Should share one `Button` component.
 
 ### Low
-- [ ] Mini-cal weekday letters at 9px are nearly illegible.
-- [ ] "Pick a view above" empty state (when all view toggles are off) could be friendlier.
+- [x] Mini-cal weekday letters at 9px are nearly illegible.
+- [x] "Pick a view above" empty state (when all view toggles are off) could be friendlier.
 - [ ] Right-side agenda panel auto-hides when create panel opens — feels jumpy; revisit.
 
 ---
@@ -39,47 +39,47 @@ Living document. Check things off as they're done; add new items freely. Loosely
 ## Bugs / dev warnings
 
 - [ ] **`%%META%%` JSON sentinel leaks into the description for some events.** Visible in the Upcoming side panel and the full Agenda view: events like "Independence Day", "Labor Day", "Columbus Day", "Veterans Day", "NYC Trip Day 2/3" all show their description as raw `%%META%%{"cat":"personal","isTask":false}` text. Root cause: `META_SENTINEL = "\n\n%%META%%"` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) requires the leading `\n\n`, but these rows in the DB store the sentinel without the leading newlines. `unpackNotes` does `indexOf(META_SENTINEL)`, finds -1, returns the full raw `notes` value as `desc`. Fix options: (a) make `unpackNotes` match `%%META%%` with or without leading whitespace, (b) run a one-time SQL backfill to normalize stored notes, (c) both.
-- [ ] **React warning on theme switch: shorthand/longhand `background` conflict.** The `WebCalendar` root div at [CalendarApp.tsx:745](apps/web/components/CalendarApp.tsx#L745) sets `background: theme.bg` (shorthand) alongside `backgroundImage`, `backgroundSize: "cover"`, `backgroundAttachment: "fixed"` (longhand). When `theme.bg` changes on theme switch, the shorthand resets all background-related properties to their initial values and React's longhand reapply collides — Next.js dev warns this can cause styling bugs. Fix: replace `background: theme.bg` with `backgroundColor: theme.bg` so the shorthand doesn't collide. Logs two console errors per theme switch (one each for `backgroundAttachment` and `backgroundSize`). **Confirmed reproducing in the signed-in audit on 2026-05-29.**
-- [ ] **Stale service worker breaks dev assets after a code reload.** Observed during the audit: after editing source and reloading, the SW from a previous session intercepted `_next/static/css/app/layout.css`, `_next/static/chunks/webpack.js`, `main-app.js`, `app-pages-internals.js`, `app/layout.js`, `app/page.js`, `manifest.webmanifest`, and `favicon.ico` — all 8 returned `net::ERR_FAILED` because the SW's `fetch(...).catch(() => caches.match(...))` returns `undefined` for un-cached URLs, which rejects `respondWith`. The page wouldn't hydrate until I unregistered the SW manually. Either remove the SW until it has a real strategy (already in PWA section) or scope its fetch handler to non-`_next/*` paths so dev assets pass through.
+- [x] **React warning on theme switch: shorthand/longhand `background` conflict.** The `WebCalendar` root div at [CalendarApp.tsx:745](apps/web/components/CalendarApp.tsx#L745) sets `background: theme.bg` (shorthand) alongside `backgroundImage`, `backgroundSize: "cover"`, `backgroundAttachment: "fixed"` (longhand). When `theme.bg` changes on theme switch, the shorthand resets all background-related properties to their initial values and React's longhand reapply collides — Next.js dev warns this can cause styling bugs. Fix: replace `background: theme.bg` with `backgroundColor: theme.bg` so the shorthand doesn't collide. Logs two console errors per theme switch (one each for `backgroundAttachment` and `backgroundSize`). **Confirmed reproducing in the signed-in audit on 2026-05-29.**
+- [x] **Stale service worker breaks dev assets after a code reload.** Observed during the audit: after editing source and reloading, the SW from a previous session intercepted `_next/static/css/app/layout.css`, `_next/static/chunks/webpack.js`, `main-app.js`, `app-pages-internals.js`, `app/layout.js`, `app/page.js`, `manifest.webmanifest`, and `favicon.ico` — all 8 returned `net::ERR_FAILED` because the SW's `fetch(...).catch(() => caches.match(...))` returns `undefined` for un-cached URLs, which rejects `respondWith`. The page wouldn't hydrate until I unregistered the SW manually. Either remove the SW until it has a real strategy (already in PWA section) or scope its fetch handler to non-`_next/*` paths so dev assets pass through.
 
 ---
 
 ## Functional gaps (currently mockup-y)
 
 ### Sidebar
-- [ ] **Sidebar "MY CALENDARS" / "OTHER CALENDARS" filter does nothing.** Toggling "US Holidays" / "Work" doesn't actually hide events. Either remove until real calendars exist, or implement filtering by an event's calendar_id.
-- [ ] **Only the 14×14 checkbox is clickable, not the row.** Clicking on "US Holidays" / "My Calendar" / "Work" / "Birthdays" label or anywhere else in the row does nothing — only the small checkbox itself toggles. Move the onClick to the outer row div so the whole strip is a click target.
-- [ ] **Categories dropdown** in sidebar duplicates Settings → Categories tab. Pick one.
+- [x] **Sidebar "MY CALENDARS" / "OTHER CALENDARS" filter does nothing.** Toggling "US Holidays" / "Work" doesn't actually hide events. Either remove until real calendars exist, or implement filtering by an event's calendar_id.
+- [x] **Only the 14×14 checkbox is clickable, not the row.** Clicking on "US Holidays" / "My Calendar" / "Work" / "Birthdays" label or anywhere else in the row does nothing — only the small checkbox itself toggles. Move the onClick to the outer row div so the whole strip is a click target.
+- [x] **Categories dropdown** in sidebar duplicates Settings → Categories tab. Pick one.
 
 ### Settings modal
 - [ ] **Account tab** has placeholder inputs (`defaultValue=""`) that don't read or write anything. Wire to Supabase `user_metadata`.
 - [ ] **Profile picture.** Account tab currently shows an "R" initials avatar. Replace with a real avatar upload (Supabase Storage bucket), fallback to initials. Show the avatar in the sidebar header too.
 - [ ] **Make Settings feel like a real app, not a mockup.** Current Account tab is three lonely inputs. Add: change-password flow, connected providers list, sign-out button (currently in sidebar), notification preferences, default view / week-start (already collected at signup but never editable after), delete-account.
-- [ ] **Categories tab** is read-only ("managed inline on each event for now"). Either make it editable (add/rename/delete categories) or delete the tab.
-- [ ] **Import tab** buttons don't import. Build the OAuth flow + ICS upload, or hide the section.
+- [x] **Categories tab** is read-only ("managed inline on each event for now"). Either make it editable (add/rename/delete categories) or delete the tab.
+- [x] **Import tab** buttons don't import. Build the OAuth flow + ICS upload, or hide the section.
 
 ### Calendar views
-- [ ] **Week view is fixed 7am–11pm.** Events outside that range silently disappear. Make it 24h, fit-to-events, or scrollable/zoomable.
+- [x] **Week view is fixed 7am–11pm.** Events outside that range silently disappear. Make it 24h, fit-to-events, or scrollable/zoomable.
 - [ ] **No day view** — standard calendar pattern; missing.
 - [ ] **Drag-and-drop to reschedule** events between days/times.
 - [ ] **Drag-to-resize** events in week view.
 - [ ] **Multi-day events** — currently every event is bound to one date.
 - [ ] **Repeating events** — repeat rule is stored but the views don't expand recurrences into the grid; only the original instance shows.
-- [ ] **Month-view overflow days are dead.** The grid shows the last few days of the previous month and the first few of the next (grayed) for layout, but `onClick` and `onDoubleClick` both gate on `isCur` (`isCur && onSelect(ds)`) so clicking them does nothing. Expected behavior: clicking should navigate to that month and select the day.
+- [x] **Month-view overflow days are dead.** The grid shows the last few days of the previous month and the first few of the next (grayed) for layout, but `onClick` and `onDoubleClick` both gate on `isCur` (`isCur && onSelect(ds)`) so clicking them does nothing. Expected behavior: clicking should navigate to that month and select the day.
 - [ ] **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
 - [ ] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
 - [ ] **Week-view day-number headers aren't clickable.** Clicking "Mon 3" in the header should jump to the day view (when day view exists).
-- [ ] **Week-view events outside 7am–11pm render at negative top / below grid instead of being hidden or moved.** `topFrac = (sh - 7) + sm/60` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) — a 6am event renders with `top: -51px` (above the visible grid), a 11pm event renders below. Caught in audit: a 6am event appears as a partial colored block at the top of the Thursday column with no label visible. Either clip these, scroll them into view, or stack them in an "earlier"/"later" overflow row.
+- [x] **Week-view events outside 7am–11pm render at negative top / below grid instead of being hidden or moved.** `topFrac = (sh - 7) + sm/60` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) — a 6am event renders with `top: -51px` (above the visible grid), a 11pm event renders below. Caught in audit: a 6am event appears as a partial colored block at the top of the Thursday column with no label visible. Either clip these, scroll them into view, or stack them in an "earlier"/"later" overflow row.
 - [ ] **Month-view "today" highlight is only on the day-number circle, not the whole column or cell.** Week view also only marks the day-number, not the column — most calendars tint the entire today column for stronger visual anchor.
-- [ ] **All three view toggles can be off simultaneously** → "Pick a view above" dead state. Month/Week aren't mutually exclusive (re-clicking the active one toggles it off); Agenda is overloaded (side panel when grid view is on, full view when no grid view). Reasonable redesign: Month / Week / Day / Agenda as a true mutually-exclusive radio set with Agenda always available as a separate toggle for the side panel.
+- [x] **All three view toggles can be off simultaneously** → "Pick a view above" dead state. Month/Week aren't mutually exclusive (re-clicking the active one toggles it off); Agenda is overloaded (side panel when grid view is on, full view when no grid view). Reasonable redesign: Month / Week / Day / Agenda as a true mutually-exclusive radio set with Agenda always available as a separate toggle for the side panel.
 - [ ] **No way to view past events as a list.** Upcoming side panel filters `e.date >= todayLocalIso`; Agenda-only view does the same. A user who searches for "conference" and the matching events are in the past sees an empty Upcoming with no hint that the matches exist. Add a "show past" toggle on Agenda, or a separate Past view.
 
 ### Search
-- [ ] Filters silently — no result count, no "clear" button, no empty state when no matches.
-- [ ] No keyboard shortcut to focus the search input.
+- [x] Filters silently — no result count, no "clear" button, no empty state when no matches.
+- [x] No keyboard shortcut to focus the search input.
 
 ### Create panel
-- [ ] **Default tab is "Task", not "Event".** Clicking + New opens a Task form. Most calendar users want to create events, not tasks. Default should be Event (or remember the user's last choice).
+- [x] **Default tab is "Task", not "Event".** Clicking + New opens a Task form. Most calendar users want to create events, not tasks. Default should be Event (or remember the user's last choice).
 - [ ] "Custom…" reminder offset button selects a "custom" option but doesn't open any UI to actually pick the custom offset. Confirmed in audit.
 - [ ] **Repeat end date.** When a repeat option is selected (Daily / Weekly / Monthly / Yearly), show an "Ends on" date input so the recurrence isn't open-ended forever. The DB column `repeat_until` already exists in the events table; just unused in the UI.
 - [ ] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
@@ -160,7 +160,7 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 
 - [ ] **Refine the existing 7.** Audit each theme for contrast (especially Sage / Sunset on body text), scene gradients (Linen has none — feels flatter than the others), and chip/card colors. Midnight in particular needs a hover/selected pass.
 - [ ] **More themes.** Ideas: a true monochrome / paper-white, a higher-contrast accessibility theme, seasonal variants, a "focus" minimal theme with no scene gradient.
-- [ ] **System theme preference.** Match the OS light/dark setting on first visit instead of defaulting to Ivory.
+- [x] **System theme preference.** Match the OS light/dark setting on first visit instead of defaulting to Ivory.
 - [ ] **Per-category color customization.** Today the 4 category colors are baked into the `CATS` constant. Let users pick their own.
 - [ ] **Theme preview in settings** could be larger / interactive — currently you only see the swatch dot + a stripe of gradient.
 - [ ] **Custom accent color** independent of theme (Notion-style).
@@ -227,6 +227,19 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Notion-style redesign + refactor — 2026-10-14
+- [x] Split the 1,541-line `CalendarApp.tsx` into [components/calendar/](apps/web/components/calendar/) (one file + CSS module per piece) and shared [components/ui/controls.tsx](apps/web/components/ui/controls.tsx) (`Button`, `IconButton`, `Segmented`). All hover states are CSS now, not JS handlers.
+- [x] Design tokens (colors, type scale, spacing, radii) live in [globals.css](apps/web/app/globals.css) as CSS variables. Category tints use `color-mix()`.
+- [x] Dropped the 7 themes for **Light / Dark / System** (Settings → Appearance). No flash on load — an inline script in [layout.tsx](apps/web/app/layout.tsx) applies the saved choice before paint. Inter replaces DM Sans in the app (auth screens still use DM Sans).
+- [x] Storage goes through one interface — [lib/calendar/backend.ts](apps/web/lib/calendar/backend.ts) — with a Supabase implementation and an in-memory **demo backend**. With no Supabase keys (or `NEXT_PUBLIC_DEMO_MODE=true`) the app runs on sample data dated around today. A self-hosted API later = one more backend.
+- [x] Month view: neutral text + category dot instead of colored text on tinted chips; red "today" marker; times drop out cleanly when a cell is too narrow.
+- [x] Week view: full 24h, opens scrolled to 7 AM, tasks in an "All day" row, current-time line, prev/next moves by week.
+- [x] View switch is a real Month / Week / Agenda radio; the Upcoming panel has its own toggle.
+- [x] Sidebar: fake "My calendars / Other calendars" removed; Categories is now a working filter. Account row at the bottom.
+- [x] Settings trimmed to what works (Appearance, Account info). Import and Categories tabs removed until they're real.
+- [x] Event panel: Notion-style property rows, Escape closes, Enter saves.
+- [x] Page title is "Remindly"; service worker only registers in production builds.
 
 ### High-impact UI polish pass — 2026-05-28
 - [x] **Themed focus rings** on inputs/selects/textareas. Added a `--accent` CSS variable that updates with the active theme; global `:focus-visible` rule uses `color-mix` to draw a tinted ring without touching the inline border styles.

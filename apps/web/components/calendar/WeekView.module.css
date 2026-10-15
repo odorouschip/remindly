@@ -1,0 +1,173 @@
+.week {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  --gutter: 56px;
+}
+
+.header, .allDay, .body {
+  display: grid;
+  grid-template-columns: var(--gutter) repeat(7, minmax(0, 1fr));
+}
+
+.header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.dayHead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  height: 44px;
+  background: transparent;
+  border-radius: 0;
+  transition: background 0.12s;
+}
+.dayHead:hover { background: var(--bg-hover); }
+.dayName {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.dayNum {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 var(--sp-1);
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-base);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.dayNum[data-today] {
+  background: var(--today);
+  color: #fff;
+  font-weight: 600;
+}
+
+.allDay {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.gutterLabel {
+  padding: var(--sp-2) var(--sp-3) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  text-align: right;
+}
+.allDayCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-1);
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+.allDayItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 22px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c) 14%, var(--bg));
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: left;
+}
+.allDayItem svg { color: var(--c); flex-shrink: 0; }
+.allDayItem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.allDayItem:hover { background: color-mix(in srgb, var(--c) 22%, var(--bg)); }
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.body { position: relative; }
+
+.gutter { position: relative; }
+.hourLabel {
+  position: absolute;
+  right: var(--sp-3);
+  transform: translateY(-50%);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.col {
+  position: relative;
+  border-left: 1px solid var(--border);
+  background-image: linear-gradient(var(--border) 1px, transparent 1px);
+  background-size: 100% 48px; /* one line per hour — keep in sync with HOUR_PX */
+}
+
+.event {
+  position: absolute;
+  left: 2px;
+  right: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 3px var(--sp-2);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c) 16%, var(--bg));
+  box-shadow: inset 3px 0 0 var(--c);
+  text-align: left;
+  font-size: var(--fs-sm);
+  transition: background 0.12s;
+}
+.event:hover { background: color-mix(in srgb, var(--c) 24%, var(--bg)); }
+/* One-line events wrap and clip, so a time that doesn't fit drops out of view whole. */
+.event[data-short] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: var(--sp-2);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 20px;
+}
+.eventTitle {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eventTime {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.nowLine {
+  position: absolute;
+  left: -1px;
+  right: 0;
+  height: 2px;
+  background: var(--today);
+  z-index: 2;
+  pointer-events: none;
+}
+.nowLine::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--today);
+}

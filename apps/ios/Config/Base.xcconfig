@@ -1,0 +1,8 @@
+// Shared build settings for the Remindly app target.
+// Supabase keys come from Secrets.xcconfig (gitignored). Create it with
+// `apps/ios/scripts/sync-secrets.sh`, which copies them from apps/web/.env.local.
+
+SUPABASE_HOST =
+SUPABASE_ANON_KEY =
+
+#include? "Secrets.xcconfig"

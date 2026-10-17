@@ -83,7 +83,7 @@ describe("live activity state", () => {
     expect(createLiveActivityState(baseEvent, "2026-05-01T13:50:00.000Z")).toMatchObject({
       phase: "upcoming",
       urgency: "soon",
-      deepLinkUrl: "calender://events/event-1",
+      deepLinkUrl: "remindly://events/event-1",
     });
   });
 });

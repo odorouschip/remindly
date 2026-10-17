@@ -151,7 +151,7 @@ export function createLiveActivityState(
     endsAt: event.endsAt,
     phase: getCountdownPhase(nowIso, event.startsAt, event.endsAt),
     urgency: getUrgencyLevel(nowIso, event.startsAt),
-    deepLinkUrl: `calender://events/${event.id}`,
+    deepLinkUrl: `remindly://events/${event.id}`,
   };
 }
 

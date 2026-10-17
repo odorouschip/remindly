@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-struct CalenderActivityAttributes: ActivityAttributes {
+struct RemindlyActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
         var eventId: String
         var title: String
@@ -16,7 +16,7 @@ struct CalenderActivityAttributes: ActivityAttributes {
     var title: String
 }
 
-extension CalenderActivityAttributes.ContentState {
+extension RemindlyActivityAttributes.ContentState {
     var startsAtDate: Date {
         ISO8601DateFormatter.supabase.date(from: startsAt) ?? Date()
     }

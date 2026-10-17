@@ -31,7 +31,7 @@ struct AuthView: View {
                     Image(systemName: "calendar.badge.clock")
                         .font(.system(size: 48, weight: .bold))
                         .foregroundStyle(.green)
-                    Text("Calender")
+                    Text("Remindly")
                         .font(.system(size: 46, weight: .black, design: .rounded))
                     Text("A calendar built around countdowns you actually notice.")
                         .foregroundStyle(.secondary)

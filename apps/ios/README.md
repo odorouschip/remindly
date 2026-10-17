@@ -1,20 +1,36 @@
 # Remindly iOS
 
-This folder contains the native SwiftUI + ActivityKit source for the iPhone app and Live Activity widget.
+SwiftUI app plus a WidgetKit extension for Live Activities.
 
-## Xcode setup
+## Layout
 
-1. On a Mac, create a new iOS app project named `Calender`.
-2. Set the minimum deployment target to iOS 17.2.
-3. Add the files in `apps/ios/Calender` to the main app target. Make sure all `.swift` files in that folder are members of the target — `Theme.swift` and `CalendarMetadata.swift` were added when the design was ported and need to be included alongside the older files.
-4. Add a Widget Extension target named `CalenderLiveActivity`.
-5. Add `apps/ios/CalenderLiveActivity` to the widget extension target.
-6. Add `apps/ios/Shared/CalenderActivityAttributes.swift` to both the app target and widget extension target.
-7. Enable capabilities on the app target: Push Notifications, Background Modes > Remote notifications, and Live Activities.
-8. Enable Live Activities on the widget extension target.
-9. Replace `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `Calender/Info.plist`.
-10. Set the bundle identifier to the same value used in Supabase function env var `APNS_BUNDLE_ID`.
+| Path | What |
+|---|---|
+| `Remindly.xcodeproj` | The project. Open this in Xcode. |
+| `Remindly/` | App target sources and assets. |
+| `RemindlyWidgets/` | Widget extension (Live Activity UI). |
+| `Shared/` | Code compiled into both targets (`RemindlyActivityAttributes`). |
+| `Config/` | Build settings and Info.plist pieces. `Secrets.xcconfig` is gitignored. |
 
-## Device testing notes
+The folders are synchronized with the project, so any file added inside them is picked up automatically — no need to add files in Xcode.
 
-Live Activities and APNs push-to-start should be tested on a real iPhone. The app also schedules local notifications as a fallback after syncing events.
+## First-time setup
+
+1. Generate the Supabase settings from the web app's `.env.local`:
+   ```sh
+   apps/ios/scripts/sync-secrets.sh
+   ```
+   (Or copy `Config/Secrets.example.xcconfig` to `Config/Secrets.xcconfig` and fill it in.)
+2. Open `apps/ios/Remindly.xcodeproj`, pick an iPhone simulator, press ⌘R.
+
+## Running on your iPhone
+
+Add your Apple ID in **Xcode → Settings → Accounts**, then set **Team** to your Personal Team on both targets (Signing & Capabilities). With a free account the app has to be re-run from Xcode every 7 days. Bundle IDs are `com.odorouschip.Remindly` and `com.odorouschip.Remindly.Widgets`; change both if that prefix is taken.
+
+## Command-line build
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  xcodebuild -project apps/ios/Remindly.xcodeproj -scheme Remindly \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+```

@@ -141,7 +141,7 @@ async function sendLiveActivityStart(device: DeviceRow, reminder: DueReminder, j
       timestamp: Math.floor(now.getTime() / 1000),
       event: "start",
       // Must match the ActivityAttributes type name in the iOS app.
-      "attributes-type": "CalenderActivityAttributes",
+      "attributes-type": "RemindlyActivityAttributes",
       attributes: {
         eventId: reminder.event_id,
         title: reminder.title,
@@ -153,7 +153,7 @@ async function sendLiveActivityStart(device: DeviceRow, reminder: DueReminder, j
         endsAt: reminder.occurrence_end,
         phase: phaseFor(now, reminder.occurrence_start, reminder.occurrence_end),
         urgency: urgencyFor(now, reminder.occurrence_start),
-        deepLinkUrl: `calender://events/${reminder.event_id}`,
+        deepLinkUrl: `remindly://events/${reminder.event_id}`,
       },
       alert: {
         title: reminder.title,
@@ -209,7 +209,7 @@ async function sendAlertNotification(device: DeviceRow, reminder: DueReminder, j
         "thread-id": reminder.event_id,
       },
       eventId: reminder.event_id,
-      deepLinkUrl: `calender://events/${reminder.event_id}`,
+      deepLinkUrl: `remindly://events/${reminder.event_id}`,
     }),
   });
 

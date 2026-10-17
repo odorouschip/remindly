@@ -1,6 +1,6 @@
 import Foundation
 
-enum CalenderConfig {
+enum RemindlyConfig {
     static var supabaseURL: URL {
         guard
             let rawValue = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,

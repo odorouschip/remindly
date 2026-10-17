@@ -5,8 +5,8 @@ final class SupabaseAPI: ObservableObject {
     @Published var events: [CalendarEvent] = []
     @Published var lastError: String?
 
-    private var baseURL: URL { CalenderConfig.supabaseURL }
-    private var anonKey: String { CalenderConfig.supabaseAnonKey }
+    private var baseURL: URL { RemindlyConfig.supabaseURL }
+    private var anonKey: String { RemindlyConfig.supabaseAnonKey }
 
     func signIn(email: String, password: String) async throws -> AuthResponse {
         var request = URLRequest(url: endpoint("auth/v1/token", queryItems: [

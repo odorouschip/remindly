@@ -3,15 +3,15 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct CalenderLiveActivityBundle: WidgetBundle {
+struct RemindlyWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        CalenderLiveActivityWidget()
+        RemindlyLiveActivity()
     }
 }
 
-struct CalenderLiveActivityWidget: Widget {
+struct RemindlyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: CalenderActivityAttributes.self) { context in
+        ActivityConfiguration(for: RemindlyActivityAttributes.self) { context in
             LockScreenActivityView(state: context.state)
                 .activityBackgroundTint(Color(red: 0.10, green: 0.18, blue: 0.15))
                 .activitySystemActionForegroundColor(.white)
@@ -55,7 +55,7 @@ struct CalenderLiveActivityWidget: Widget {
 }
 
 struct LockScreenActivityView: View {
-    let state: CalenderActivityAttributes.ContentState
+    let state: RemindlyActivityAttributes.ContentState
 
     var body: some View {
         HStack(spacing: 18) {
@@ -81,7 +81,7 @@ struct LockScreenActivityView: View {
 }
 
 struct CountdownText: View {
-    let state: CalenderActivityAttributes.ContentState
+    let state: RemindlyActivityAttributes.ContentState
 
     var body: some View {
         if state.phase == "in_progress" {
@@ -94,7 +94,7 @@ struct CountdownText: View {
     }
 }
 
-extension CalenderActivityAttributes.ContentState {
+extension RemindlyActivityAttributes.ContentState {
     var phaseLabel: String {
         switch phase {
         case "starting":

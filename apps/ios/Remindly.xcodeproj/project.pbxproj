@@ -1,0 +1,432 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		980275189ED0A4D7DB022F7B /* RemindlyWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F74BAD9471465C123B4938F0 /* RemindlyWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BCBF15474B2A061ECB387D62 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 972AE770AAFBF70FAA964116 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3B2280268900A6ACF59F27E0;
+			remoteInfo = RemindlyWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1B7C157733C6D8EF77D37DEC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				980275189ED0A4D7DB022F7B /* RemindlyWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		F5E49F070F2E3D29A719E648 /* Remindly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Remindly.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F74BAD9471465C123B4938F0 /* RemindlyWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RemindlyWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A861B9081277A375355EFC7 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		22E0E5C2A7C9F8937F7DD770 /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
+		5D3956579369D5D092AC58B3 /* Remindly-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Remindly-Info.plist"; sourceTree = "<group>"; };
+		B1D555F6807280303A5C2916 /* RemindlyWidgets-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RemindlyWidgets-Info.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A79977B54409686C85A32140 /* Remindly */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Remindly;
+			sourceTree = "<group>";
+		};
+		ED75D233D482604B14C3C11B /* RemindlyWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RemindlyWidgets;
+			sourceTree = "<group>";
+		};
+		271AE4822CFC1119413DBB5E /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D32F46C71B55F089068A2223 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F06F45FB02CB27108AA649D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D91B9ED10A4314CF22199AC2 = {
+			isa = PBXGroup;
+			children = (
+				A79977B54409686C85A32140 /* Remindly */,
+				ED75D233D482604B14C3C11B /* RemindlyWidgets */,
+				271AE4822CFC1119413DBB5E /* Shared */,
+				66D73389836F6B783319BFFA /* Config */,
+				2BFC127D1F91AC1994BDF6A8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		66D73389836F6B783319BFFA /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				1A861B9081277A375355EFC7 /* Base.xcconfig */,
+				22E0E5C2A7C9F8937F7DD770 /* Secrets.example.xcconfig */,
+				5D3956579369D5D092AC58B3 /* Remindly-Info.plist */,
+				B1D555F6807280303A5C2916 /* RemindlyWidgets-Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		2BFC127D1F91AC1994BDF6A8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F5E49F070F2E3D29A719E648 /* Remindly.app */,
+				F74BAD9471465C123B4938F0 /* RemindlyWidgetsExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3EADA9FF9165EA11E472EF0A /* Remindly */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 677EB52DD0BB7139DDEDCABD /* Build configuration list for PBXNativeTarget "Remindly" */;
+			buildPhases = (
+				13F57B0D653FA051DD7E4D82 /* Sources */,
+				D32F46C71B55F089068A2223 /* Frameworks */,
+				408881B1172A5C744170207C /* Resources */,
+				1B7C157733C6D8EF77D37DEC /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				45A97348C6A9279DD7DF35AB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A79977B54409686C85A32140 /* Remindly */,
+				271AE4822CFC1119413DBB5E /* Shared */,
+			);
+			name = Remindly;
+			packageProductDependencies = (
+			);
+			productName = Remindly;
+			productReference = F5E49F070F2E3D29A719E648 /* Remindly.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3B2280268900A6ACF59F27E0 /* RemindlyWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 59F6D55A2954432B8128BB2C /* Build configuration list for PBXNativeTarget "RemindlyWidgetsExtension" */;
+			buildPhases = (
+				4A625A2E47665C8379484A2B /* Sources */,
+				6F06F45FB02CB27108AA649D /* Frameworks */,
+				4737CD556CDE3147F97F184A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				ED75D233D482604B14C3C11B /* RemindlyWidgets */,
+				271AE4822CFC1119413DBB5E /* Shared */,
+			);
+			name = RemindlyWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = RemindlyWidgetsExtension;
+			productReference = F74BAD9471465C123B4938F0 /* RemindlyWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		972AE770AAFBF70FAA964116 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					3EADA9FF9165EA11E472EF0A = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					3B2280268900A6ACF59F27E0 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+				};
+			};
+			buildConfigurationList = C67967617723F6C85E93CD3D /* Build configuration list for PBXProject "Remindly" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D91B9ED10A4314CF22199AC2;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2BFC127D1F91AC1994BDF6A8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3EADA9FF9165EA11E472EF0A /* Remindly */,
+				3B2280268900A6ACF59F27E0 /* RemindlyWidgetsExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		408881B1172A5C744170207C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4737CD556CDE3147F97F184A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		13F57B0D653FA051DD7E4D82 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A625A2E47665C8379484A2B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		45A97348C6A9279DD7DF35AB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3B2280268900A6ACF59F27E0 /* RemindlyWidgetsExtension */;
+			targetProxy = BCBF15474B2A061ECB387D62 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		5AA154DD703B25516F8CCB0A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		32CC4FA3A169B1D2A354AFDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		43970752F86D74C36805E8AF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A861B9081277A375355EFC7 /* Base.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Remindly-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Remindly;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odorouschip.Remindly;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6F3C83EA1058AA876155DEA3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A861B9081277A375355EFC7 /* Base.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Remindly-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Remindly;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odorouschip.Remindly;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D546C46BC46BF757CEE72836 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/RemindlyWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Remindly;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odorouschip.Remindly.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5ABCAACD9CFA81A5A4CF3E28 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/RemindlyWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Remindly;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odorouschip.Remindly.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C67967617723F6C85E93CD3D /* Build configuration list for PBXProject "Remindly" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5AA154DD703B25516F8CCB0A /* Debug */,
+				32CC4FA3A169B1D2A354AFDD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		677EB52DD0BB7139DDEDCABD /* Build configuration list for PBXNativeTarget "Remindly" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				43970752F86D74C36805E8AF /* Debug */,
+				6F3C83EA1058AA876155DEA3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		59F6D55A2954432B8128BB2C /* Build configuration list for PBXNativeTarget "RemindlyWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D546C46BC46BF757CEE72836 /* Debug */,
+				5ABCAACD9CFA81A5A4CF3E28 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 972AE770AAFBF70FAA964116 /* Project object */;
+}

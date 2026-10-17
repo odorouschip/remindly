@@ -11,7 +11,7 @@ final class LiveActivityController: ObservableObject {
             throw LiveActivityError.disabled
         }
 
-        let attributes = CalenderActivityAttributes(
+        let attributes = RemindlyActivityAttributes(
             eventId: event.id.uuidString,
             title: event.title
         )
@@ -28,7 +28,7 @@ final class LiveActivityController: ObservableObject {
     }
 
     func update(event: CalendarEvent) async {
-        for activity in Activity<CalenderActivityAttributes>.activities where activity.attributes.eventId == event.id.uuidString {
+        for activity in Activity<RemindlyActivityAttributes>.activities where activity.attributes.eventId == event.id.uuidString {
             await activity.update(ActivityContent(
                 state: makeContentState(event: event),
                 staleDate: event.endsAt
@@ -37,7 +37,7 @@ final class LiveActivityController: ObservableObject {
     }
 
     func end(event: CalendarEvent) async {
-        for activity in Activity<CalenderActivityAttributes>.activities where activity.attributes.eventId == event.id.uuidString {
+        for activity in Activity<RemindlyActivityAttributes>.activities where activity.attributes.eventId == event.id.uuidString {
             await activity.end(
                 ActivityContent(state: makeContentState(event: event, phaseOverride: "ended"), staleDate: nil),
                 dismissalPolicy: .after(Date().addingTimeInterval(20 * 60))
@@ -51,7 +51,7 @@ final class LiveActivityController: ObservableObject {
         isObservingPushToStart = true
 
         Task {
-            for await token in Activity<CalenderActivityAttributes>.pushToStartTokenUpdates {
+            for await token in Activity<RemindlyActivityAttributes>.pushToStartTokenUpdates {
                 let hexToken = token.map { String(format: "%02.2hhx", $0) }.joined()
                 try? await api.upsertDevice(
                     accessToken: accessToken,
@@ -63,15 +63,15 @@ final class LiveActivityController: ObservableObject {
         }
     }
 
-    private func makeContentState(event: CalendarEvent, phaseOverride: String? = nil) -> CalenderActivityAttributes.ContentState {
-        CalenderActivityAttributes.ContentState(
+    private func makeContentState(event: CalendarEvent, phaseOverride: String? = nil) -> RemindlyActivityAttributes.ContentState {
+        RemindlyActivityAttributes.ContentState(
             eventId: event.id.uuidString,
             title: event.title,
             startsAt: ISO8601DateFormatter.supabase.string(from: event.startsAt),
             endsAt: ISO8601DateFormatter.supabase.string(from: event.endsAt),
             phase: phaseOverride ?? phase(for: event),
             urgency: urgency(for: event),
-            deepLinkUrl: "calender://events/\(event.id.uuidString)"
+            deepLinkUrl: "remindly://events/\(event.id.uuidString)"
         )
     }
 

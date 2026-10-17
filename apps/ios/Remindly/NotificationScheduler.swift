@@ -24,7 +24,7 @@ final class NotificationScheduler: ObservableObject {
         let pending = await center.pendingNotificationRequests()
         let existingIdentifiers = pending
             .map(\.identifier)
-            .filter { $0.hasPrefix("calender.event.") }
+            .filter { $0.hasPrefix("remindly.event.") }
 
         if !existingIdentifiers.isEmpty {
             center.removePendingNotificationRequests(withIdentifiers: existingIdentifiers)
@@ -39,7 +39,7 @@ final class NotificationScheduler: ObservableObject {
                 content.threadIdentifier = event.id.uuidString
                 content.userInfo = [
                     "eventId": event.id.uuidString,
-                    "deepLinkUrl": "calender://events/\(event.id.uuidString)"
+                    "deepLinkUrl": "remindly://events/\(event.id.uuidString)"
                 ]
 
                 let dateComponents = Calendar.current.dateComponents(
@@ -48,7 +48,7 @@ final class NotificationScheduler: ObservableObject {
                 )
                 let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
                 let request = UNNotificationRequest(
-                    identifier: "calender.event.\(event.id.uuidString).\(reminder.offsetMinutes)",
+                    identifier: "remindly.event.\(event.id.uuidString).\(reminder.offsetMinutes)",
                     content: content,
                     trigger: trigger
                 )

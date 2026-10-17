@@ -1,7 +1,7 @@
 import { WEEKDAYS, fmtTimeShort, monthGrid, toIsoDate, todayIso } from "@/lib/calendar/dates";
-import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
-import { displayTitle, sortByStart, type CalEvent } from "@/lib/calendar/types";
-import { catStyle } from "./catStyle";
+import { byDay, occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
+import { sortByStart, type CalEvent } from "@/lib/calendar/types";
+import { catStyle, useCategoryLookup } from "./categories";
 import { TaskMark } from "./TaskCheck";
 import styles from "./MonthView.module.css";
 
@@ -19,10 +19,11 @@ type MonthViewProps = {
 
 export function MonthView({ year, month, events, selDate, onSelect, onCreate, onOpenEvent }: MonthViewProps) {
   const today = todayIso();
+  const lookup = useCategoryLookup();
   const cells = monthGrid(year, month);
   const byDate = new Map<string, CalEvent[]>();
   const from = toIsoDate(cells[0]!), to = toIsoDate(cells[cells.length - 1]!);
-  for (const ev of occurrencesBetween(events, from, to).sort(sortByStart)) {
+  for (const ev of byDay(occurrencesBetween(events, from, to), from, to).sort(sortByStart)) {
     const list = byDate.get(ev.date);
     if (list) list.push(ev);
     else byDate.set(ev.date, [ev]);
@@ -47,7 +48,7 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
                 {d.getDate() === 1 && d.getMonth() !== month ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : d.getDate()}
               </span>
               {dayEvents.slice(0, MAX_PER_DAY).map((ev) => (
-                <button key={occurrenceKey(ev)} type="button" className={styles.event} style={catStyle(ev.cat)}
+                <button key={occurrenceKey(ev)} type="button" className={styles.event} style={catStyle(lookup(ev.categoryId)?.color)}
                   data-allday={(ev.allDay && !ev.isTask) || undefined}
                   data-done={ev.done || undefined}
                   onClick={(e) => { e.stopPropagation(); onOpenEvent(ev); }}
@@ -56,7 +57,7 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
                     {ev.isTask
                       ? <TaskMark done={ev.done} />
                       : !ev.allDay && <span className={styles.dot} />}
-                    <span className={styles.eventTitle}>{displayTitle(ev)}</span>
+                    <span className={styles.eventTitle}>{ev.title}</span>
                   </span>
                   {ev.time && <span className={styles.eventTime}>{fmtTimeShort(ev.time)}</span>}
                 </button>

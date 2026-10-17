@@ -27,10 +27,16 @@
   --danger: #d44c47;
   --focus: rgba(35, 131, 226, 0.45);
 
-  --cat-work: #337ea9;
-  --cat-personal: #9065b0;
-  --cat-health: #448361;
-  --cat-social: #d9730d;
+  /* Category palette (Notion's text colors). */
+  --cat-gray: #787774;
+  --cat-brown: #9f6b53;
+  --cat-orange: #d9730d;
+  --cat-yellow: #cb912f;
+  --cat-green: #448361;
+  --cat-blue: #337ea9;
+  --cat-purple: #9065b0;
+  --cat-pink: #c14c8a;
+  --cat-red: #d44c47;
 
   --shadow-pop: 0 0 0 1px rgba(15, 15, 15, 0.05), 0 3px 6px rgba(15, 15, 15, 0.1), 0 9px 24px rgba(15, 15, 15, 0.2);
   --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
@@ -82,10 +88,15 @@
   --danger: #e5625c;
   --focus: rgba(35, 131, 226, 0.6);
 
-  --cat-work: #529cca;
-  --cat-personal: #a782d8;
-  --cat-health: #4dab9a;
-  --cat-social: #ffa344;
+  --cat-gray: #9b9b9b;
+  --cat-brown: #ba856f;
+  --cat-orange: #ffa344;
+  --cat-yellow: #ffdc49;
+  --cat-green: #4dab9a;
+  --cat-blue: #529cca;
+  --cat-purple: #a782d8;
+  --cat-pink: #e255a1;
+  --cat-red: #ff7369;
 
   --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -115,10 +126,15 @@
     --danger: #e5625c;
     --focus: rgba(35, 131, 226, 0.6);
 
-    --cat-work: #529cca;
-    --cat-personal: #a782d8;
-    --cat-health: #4dab9a;
-    --cat-social: #ffa344;
+    --cat-gray: #9b9b9b;
+    --cat-brown: #ba856f;
+    --cat-orange: #ffa344;
+    --cat-yellow: #ffdc49;
+    --cat-green: #4dab9a;
+    --cat-blue: #529cca;
+    --cat-purple: #a782d8;
+    --cat-pink: #e255a1;
+    --cat-red: #ff7369;
 
     --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);

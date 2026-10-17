@@ -1,9 +1,8 @@
-import { Check, LogOut, Search, Settings, Sparkles, X } from "lucide-react";
+import { Check, LogOut, Pencil, Search, Settings, Sparkles, X } from "lucide-react";
 import type { RefObject } from "react";
 import { IconButton } from "@/components/ui/controls";
-import { CATEGORIES, type CategoryId } from "@/lib/calendar/types";
 import { Logo } from "@/components/ui/Logo";
-import { catStyle } from "./catStyle";
+import { catStyle, useCategories } from "./categories";
 import { MiniCalendar } from "./MiniCalendar";
 import styles from "./Sidebar.module.css";
 
@@ -18,8 +17,9 @@ type SidebarProps = {
   selDate: string | null;
   onNavMonth: (delta: number) => void;
   onSelectDate: (date: string) => void;
-  hiddenCats: ReadonlySet<CategoryId>;
-  onToggleCat: (id: CategoryId) => void;
+  hiddenCats: ReadonlySet<string>;
+  onToggleCat: (id: string) => void;
+  onEditCategories: () => void;
   account: Account;
   onOpenSettings: () => void;
   onSignOut: () => void;
@@ -30,6 +30,7 @@ type SidebarProps = {
 
 export function Sidebar(props: SidebarProps) {
   const { onOpenCommand, modKey } = props;
+  const categories = useCategories();
   const { search, onSearch, searchRef, hiddenCats, onToggleCat, account } = props;
 
   return (
@@ -62,16 +63,21 @@ export function Sidebar(props: SidebarProps) {
         onNav={props.onNavMonth} onSelect={props.onSelectDate} />
 
       <section>
-        <h3 className={styles.sectionTitle}>Categories</h3>
-        {CATEGORIES.map((c) => {
+        <div className={styles.sectionHead}>
+          <h3 className={styles.sectionTitle}>Categories</h3>
+          <IconButton label="Edit categories" size={22} onClick={props.onEditCategories}>
+            <Pencil size={12} strokeWidth={1.75} />
+          </IconButton>
+        </div>
+        {categories.map((c) => {
           const visible = !hiddenCats.has(c.id);
           return (
             <button key={c.id} type="button" className={styles.catRow} aria-pressed={visible}
               onClick={() => onToggleCat(c.id)}>
-              <span className={styles.catBox} style={catStyle(c.id)} data-on={visible || undefined}>
+              <span className={styles.catBox} style={catStyle(c.color)} data-on={visible || undefined}>
                 {visible && <Check size={10} strokeWidth={3} />}
               </span>
-              {c.label}
+              <span className={styles.catName}>{c.name}</span>
             </button>
           );
         })}

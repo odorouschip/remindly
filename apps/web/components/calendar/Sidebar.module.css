@@ -56,6 +56,19 @@
   margin-right: var(--sp-1);
 }
 
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-1);
+}
+.sectionHead .sectionTitle { margin: 0; }
+/* The edit button only shows on hover so the list stays quiet. */
+.sectionHead button { opacity: 0; transition: opacity 0.12s; }
+section:hover .sectionHead button, .sectionHead button:focus-visible { opacity: 1; }
+
+.catName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .sectionTitle {
   margin: 0 0 var(--sp-1);
   padding: 0 var(--sp-1);

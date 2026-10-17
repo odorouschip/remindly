@@ -1,9 +1,9 @@
 import { Repeat } from "lucide-react";
 import type { ReactNode } from "react";
 import { addDays, fmtTime, fmtTimeRange, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
-import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
-import { displayTitle, sortByStart, type CalEvent } from "@/lib/calendar/types";
-import { catStyle } from "./catStyle";
+import { byDay, occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
+import { sortByStart, type CalEvent } from "@/lib/calendar/types";
+import { catStyle, useCategoryLookup } from "./categories";
 import { TaskCheck } from "./TaskCheck";
 import styles from "./AgendaList.module.css";
 
@@ -27,6 +27,7 @@ type AgendaListProps = {
 
 /** Events and tasks from `from` onward, grouped by day. */
 export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compact = false, hideDayLabels = false, empty }: AgendaListProps) {
+  const lookup = useCategoryLookup();
   const today = todayIso();
   const last = to ?? events.reduce(
     (max, e) => (!e.recur && e.date > max ? e.date : max),
@@ -34,7 +35,7 @@ export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compac
   );
 
   const groups = new Map<string, CalEvent[]>();
-  for (const ev of occurrencesBetween(events, from, last).sort(sortByStart)) {
+  for (const ev of byDay(occurrencesBetween(events, from, last), from, last).sort(sortByStart)) {
     const list = groups.get(ev.date);
     if (list) list.push(ev);
     else groups.set(ev.date, [ev]);
@@ -59,7 +60,7 @@ export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compac
             </h3>
           )}
           {dayEvents.map((ev) => (
-            <div key={occurrenceKey(ev)} className={styles.row} style={catStyle(ev.cat)} data-done={ev.done || undefined}>
+            <div key={occurrenceKey(ev)} className={styles.row} style={catStyle(lookup(ev.categoryId)?.color)} data-done={ev.done || undefined}>
               {!compact && (
                 <span className={styles.time}>{ev.isTask ? "Task" : ev.allDay ? "All day" : fmtTime(ev.time)}</span>
               )}
@@ -68,7 +69,7 @@ export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compac
                 : <span className={styles.bar} />}
               <button type="button" className={styles.main} onClick={() => onOpenEvent(ev)}>
                 <span className={styles.title}>
-                  {displayTitle(ev)}
+                  {ev.title}
                   {ev.recur && <Repeat size={11} strokeWidth={2} className={styles.recur} aria-label={`Repeats ${ev.recur.toLowerCase()}`} />}
                 </span>
                 {compact && !ev.isTask && <span className={styles.meta}>{ev.allDay ? "All day" : fmtTimeRange(ev.time, ev.end)}</span>}

@@ -9,7 +9,7 @@ import { Workspace } from "./calendar/Workspace";
 import type { CalendarBackend } from "@/lib/calendar/backend";
 import { createDemoBackend } from "@/lib/calendar/demoBackend";
 import { createSupabaseBackend } from "@/lib/calendar/supabaseBackend";
-import type { CalEvent } from "@/lib/calendar/types";
+import type { CalEvent, Category } from "@/lib/calendar/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 /** Without Supabase keys (or with NEXT_PUBLIC_DEMO_MODE=true) the app runs on sample data. */
@@ -34,12 +34,13 @@ export function CalendarApp() {
   // they've chosen a new password instead of dropping into the calendar.
   const [recovering, setRecovering] = useState(false);
   const [events, setEvents] = useState<CalEvent[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<number | undefined>(undefined);
 
   const backend = useMemo<CalendarBackend | null>(() => {
     if (DEMO_MODE) return createDemoBackend();
-    return supabase && session ? createSupabaseBackend(supabase, session.userId) : null;
+    return supabase && session ? createSupabaseBackend(supabase) : null;
   }, [supabase, session?.userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showNotice = useCallback((message: string) => {
@@ -49,11 +50,13 @@ export function CalendarApp() {
   }, []);
 
   const reload = useCallback(async () => {
-    if (!backend) { setEvents([]); return; }
+    if (!backend) { setEvents([]); setCategories([]); return; }
     try {
-      setEvents(await backend.listEvents());
+      const [nextEvents, nextCategories] = await Promise.all([backend.listEvents(), backend.listCategories()]);
+      setEvents(nextEvents);
+      setCategories(nextCategories);
     } catch (error) {
-      showNotice(error instanceof Error ? error.message : "Could not load events.");
+      showNotice(error instanceof Error ? error.message : "Could not load your calendar.");
     }
   }, [backend, showNotice]);
 
@@ -88,6 +91,26 @@ export function CalendarApp() {
       await reload();
     } catch (error) {
       showNotice(error instanceof Error ? error.message : "Could not delete.");
+    }
+  }
+
+  async function handleSaveCategory(cat: Category) {
+    if (!backend) return;
+    try {
+      const saved = await backend.saveCategory(cat);
+      setCategories((prev) => (cat.id ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved]));
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : "Could not save the category.");
+    }
+  }
+
+  async function handleDeleteCategory(id: string) {
+    if (!backend) return;
+    try {
+      await backend.deleteCategory(id);
+      await reload(); // its events are now uncategorized
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : "Could not delete the category.");
     }
   }
 
@@ -210,11 +233,14 @@ export function CalendarApp() {
   return (
     <Workspace
       events={events}
+      categories={categories}
       account={{ email: session?.email ?? null, demo: DEMO_MODE }}
       notice={notice}
       onNotify={showNotice}
       onSave={(ev) => void handleSave(ev)}
       onDelete={(id) => void handleDelete(id)}
+      onSaveCategory={(cat) => void handleSaveCategory(cat)}
+      onDeleteCategory={(id) => void handleDeleteCategory(id)}
       onSignOut={() => void handleSignOut()}
     />
   );

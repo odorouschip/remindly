@@ -40,11 +40,15 @@ npm run dev:web
 
 ## Supabase setup
 
+Apply the migrations in [supabase/migrations](supabase/migrations) in order. Either paste each file into the Supabase dashboard's **SQL Editor** and run it, or use the CLI:
+
 ```powershell
 supabase login
 supabase link --project-ref your-project-ref
 supabase db push
 ```
+
+If you applied a migration through the SQL Editor and later switch to the CLI, mark it as applied first so it isn't run twice: `supabase migration repair --status applied <timestamp>`.
 
 Set Edge Function secrets and deploy the reminder dispatcher:
 

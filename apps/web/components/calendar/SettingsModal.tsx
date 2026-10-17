@@ -1,7 +1,9 @@
 import { Monitor, Moon, Sun, X } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Button, IconButton } from "@/components/ui/controls";
+import type { Category } from "@/lib/calendar/types";
 import type { ThemePref } from "@/lib/theme";
+import { CategoryEditor } from "./CategoryEditor";
 import type { Account } from "./Sidebar";
 import styles from "./SettingsModal.module.css";
 
@@ -13,14 +15,25 @@ const THEME_OPTIONS: readonly { value: ThemePref; label: string; icon: ReactNode
 
 type SettingsModalProps = {
   open: boolean;
+  /** Section to scroll to when opening. */
+  focus: "top" | "categories";
   onClose: () => void;
   themePref: ThemePref;
   onThemePref: (pref: ThemePref) => void;
+  onSaveCategory: (cat: Category) => void;
+  onDeleteCategory: (id: string) => void;
   account: Account;
   onSignOut: () => void;
 };
 
-export function SettingsModal({ open, onClose, themePref, onThemePref, account, onSignOut }: SettingsModalProps) {
+export function SettingsModal(props: SettingsModalProps) {
+  const { open, focus, onClose, themePref, onThemePref, account, onSignOut } = props;
+  const categoriesRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (open && focus === "categories") categoriesRef.current?.scrollIntoView({ block: "start" });
+  }, [open, focus]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -52,6 +65,11 @@ export function SettingsModal({ open, onClose, themePref, onThemePref, account, 
               </button>
             ))}
           </div>
+        </section>
+
+        <section ref={categoriesRef} className={styles.section}>
+          <h3 className={styles.sectionTitle}>Categories</h3>
+          <CategoryEditor onSave={props.onSaveCategory} onDelete={props.onDeleteCategory} />
         </section>
 
         <section className={styles.section}>

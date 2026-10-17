@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { fromMinutes, fmtTimeRangeShort, fmtTimeShort, hourLabel, minutesOf, parseIsoDate, toIsoDate, todayIso, weekOf, weekdayShort } from "@/lib/calendar/dates";
-import { occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
-import { displayTitle, type CalEvent } from "@/lib/calendar/types";
-import { catStyle } from "./catStyle";
+import { byDay, occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
+import { type CalEvent } from "@/lib/calendar/types";
+import { catStyle, useCategoryLookup } from "./categories";
 import { TaskMark } from "./TaskCheck";
 import styles from "./WeekView.module.css";
 
@@ -33,7 +33,9 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, on
   const now = useNow();
   const today = todayIso();
   const days = weekOf(selDate ? parseIsoDate(selDate) : new Date());
-  const events = occurrencesBetween(allEvents, toIsoDate(days[0]!), toIsoDate(days[6]!));
+  const lookup = useCategoryLookup();
+  const weekFrom = toIsoDate(days[0]!), weekTo = toIsoDate(days[6]!);
+  const events = byDay(occurrencesBetween(allEvents, weekFrom, weekTo), weekFrom, weekTo);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -66,10 +68,10 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, on
             return (
               <div key={ds} className={styles.allDayCol}>
                 {allDayOn(ds).map((ev) => (
-                  <button key={occurrenceKey(ev)} type="button" className={styles.allDayItem} style={catStyle(ev.cat)} onClick={() => onOpenEvent(ev)}
+                  <button key={occurrenceKey(ev)} type="button" className={styles.allDayItem} style={catStyle(lookup(ev.categoryId)?.color)} onClick={() => onOpenEvent(ev)}
                     data-done={ev.done || undefined}>
                     {ev.isTask && <TaskMark done={ev.done} />}
-                    <span className={styles.allDayTitle}>{displayTitle(ev)}</span>
+                    <span className={styles.allDayTitle}>{ev.title}</span>
                   </button>
                 ))}
               </div>
@@ -100,9 +102,9 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, on
                   const height = Math.max(((end - start) / 60) * HOUR_PX - 2, 20);
                   const short = height < 36;
                   return (
-                    <button key={occurrenceKey(ev)} type="button" className={styles.event} style={{ ...catStyle(ev.cat), top: (start / 60) * HOUR_PX + 1, height }}
+                    <button key={occurrenceKey(ev)} type="button" className={styles.event} style={{ ...catStyle(lookup(ev.categoryId)?.color), top: (start / 60) * HOUR_PX + 1, height }}
                       onClick={() => onOpenEvent(ev)} data-short={short || undefined}>
-                      <span className={styles.eventTitle}>{displayTitle(ev)}</span>
+                      <span className={styles.eventTitle}>{ev.title}</span>
                       <span className={styles.eventTime}>{short ? fmtTimeShort(ev.time) : fmtTimeRangeShort(ev.time, ev.end)}</span>
                     </button>
                   );

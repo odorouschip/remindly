@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { addDays, fmtTimeRange, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
 import { parseQuickAdd, quickAddToEvent, type QuickAdd } from "@/lib/calendar/quickAdd";
 import { occurrencesBetween } from "@/lib/calendar/recurrence";
-import { displayTitle, getCategory, type CalEvent } from "@/lib/calendar/types";
-import { catStyle } from "./catStyle";
+import { RECUR_UNIT, type CalEvent, type Category } from "@/lib/calendar/types";
+import { catStyle, useCategories } from "./categories";
 import styles from "./CommandBar.module.css";
 
 export type CommandAction = {
@@ -40,11 +40,14 @@ type CommandBarProps = {
 
 const MAX_EVENTS = 6;
 
-function summarize(q: QuickAdd): string {
+function summarize(q: QuickAdd, categories: readonly Category[]): string {
   const parts = [q.isTask ? `Task · ${relativeDayLabel(q.date)}` : relativeDayLabel(q.date)];
   if (!q.isTask) parts.push(q.allDay ? "All day" : fmtTimeRange(q.time, q.end));
-  if (q.recur) parts.push(`Repeats ${q.recur.toLowerCase()}`);
-  if (q.cat) parts.push(getCategory(q.cat).label);
+  if (q.recur) {
+    parts.push(q.recurInterval > 1 ? `Every ${q.recurInterval} ${RECUR_UNIT[q.recur]}s` : `Repeats ${q.recur.toLowerCase()}`);
+  }
+  const category = categories.find((c) => c.id === q.categoryId);
+  if (category) parts.push(category.name);
   return parts.join(" · ");
 }
 
@@ -54,7 +57,7 @@ function matchingEvents(events: CalEvent[], text: string): CalEvent[] {
   const yearOut = toIsoDate(addDays(parseIsoDate(today), 366));
   const needle = text.toLowerCase();
   return events
-    .filter((e) => displayTitle(e).toLowerCase().includes(needle))
+    .filter((e) => e.title.toLowerCase().includes(needle))
     // A repeating event is shown at its next occurrence.
     .map((e) => (e.recur ? occurrencesBetween([e], today, yearOut)[0] ?? e : e))
     .sort((a, b) => {
@@ -68,6 +71,7 @@ function matchingEvents(events: CalEvent[], text: string): CalEvent[] {
 export function CommandBar({ open, onClose, events, actions, onCreate, onEditDraft, onGoToDate, onOpenEvent }: CommandBarProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const categories = useCategories();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -86,14 +90,14 @@ export function CommandBar({ open, onClose, events, actions, onCreate, onEditDra
     if (!text) return actionItems("");
 
     const create: Item[] = [];
-    const parsed = parseQuickAdd(text);
+    const parsed = parseQuickAdd(text, new Date(), categories);
     if (parsed.title) {
       const draft = quickAddToEvent(parsed);
       create.push({
         id: "create", group: "Create",
         icon: parsed.isTask ? <CircleCheck size={16} strokeWidth={1.75} /> : <CalendarPlus size={16} strokeWidth={1.75} />,
         label: <>{parsed.isTask ? "New task" : "New event"} <strong>{parsed.title}</strong></>,
-        detail: summarize(parsed),
+        detail: summarize(parsed, categories),
         run: () => onCreate(draft),
       });
       create.push({
@@ -112,17 +116,17 @@ export function CommandBar({ open, onClose, events, actions, onCreate, onEditDra
     for (const ev of matchingEvents(events, text)) {
       found.push({
         id: `event-${ev.id}`, group: "Events",
-        icon: <span className={styles.dot} style={catStyle(ev.cat)} />,
-        label: displayTitle(ev),
+        icon: <span className={styles.dot} style={catStyle(categories.find((c) => c.id === ev.categoryId)?.color)} />,
+        label: ev.title,
         detail: `${relativeDayLabel(ev.date)}${ev.allDay ? "" : ` · ${fmtTimeRange(ev.time, ev.end)}`}`,
         run: () => onOpenEvent(ev),
       });
     }
     // A bare title ("standup") is more likely a lookup than a new event.
-    const isJustTitle = !parsed.dateMentioned && parsed.allDay && !parsed.recur && !parsed.isTask && !parsed.cat;
+    const isJustTitle = !parsed.dateMentioned && parsed.allDay && !parsed.recur && !parsed.isTask && !parsed.categoryId;
     const ordered = isJustTitle && found.length > 0 ? [...found, ...create] : [...create, ...found];
     return [...ordered, ...actionItems(text)];
-  }, [query, events, actions, onCreate, onEditDraft, onGoToDate, onOpenEvent]);
+  }, [query, events, categories, actions, onCreate, onEditDraft, onGoToDate, onOpenEvent]);
 
   useEffect(() => setActive(0), [query]);
   useEffect(() => {

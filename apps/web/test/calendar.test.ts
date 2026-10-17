@@ -1,35 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { packNotes, unpackNotes } from "../lib/calendar/notes";
-import { occurrencesBetween } from "../lib/calendar/recurrence";
+import { byDay, occurrencesBetween } from "../lib/calendar/recurrence";
 import { rowToEvent } from "../lib/calendar/supabaseBackend";
-import type { CalEvent } from "../lib/calendar/types";
+import { emptyEvent, type CalEvent } from "../lib/calendar/types";
 
-describe("notes metadata", () => {
-  it("round-trips a description and metadata", () => {
-    const packed = packNotes("Bring dessert", { cat: "social" });
-    expect(unpackNotes(packed)).toEqual({ desc: "Bring dessert", meta: { cat: "social" } });
-  });
-
-  it("reads the bare sentinel the iOS app writes", () => {
-    expect(unpackNotes('%%META%%{"cat":"personal","isTask":false}'))
-      .toEqual({ desc: "", meta: { cat: "personal", isTask: false } });
-  });
-
-  it("never leaks a corrupt blob into the description", () => {
-    expect(unpackNotes("Hello\n\n%%META%%{oops")).toEqual({ desc: "Hello", meta: {} });
-  });
-
-  it("writes no blank lines when there's no description", () => {
-    expect(packNotes("  ", { cat: "work" })).toBe('%%META%%{"cat":"work"}');
-  });
-});
-
-const base: CalEvent = {
-  id: "e1", title: "T", date: "2026-01-31", time: "09:00", end: "10:00", allDay: false,
-  cat: "work", recur: "", recurUntil: "", isTask: false, done: false, desc: "",
-};
+const base: CalEvent = { ...emptyEvent("2026-01-31"), id: "e1", title: "T", time: "09:00", end: "10:00" };
 const dates = (ev: Partial<CalEvent>, from: string, to: string) =>
-  occurrencesBetween([{ ...base, ...ev }], from, to).map((e) => e.date);
+  occurrencesBetween([{ ...base, endDate: ev.date ?? base.date, ...ev }], from, to).map((e) => e.date);
 
 describe("occurrencesBetween", () => {
   it("keeps one-off events only inside the window", () => {
@@ -60,23 +36,48 @@ describe("occurrencesBetween", () => {
 
 describe("rowToEvent", () => {
   const row = {
-    id: "r1", user_id: "u1", title: "Independence Day", timezone: "UTC", repeat_frequency: "none" as const,
-    repeat_until: null, is_archived: false, deleted_at: null, created_at: "", updated_at: "", reminders: [],
+    id: "r1", user_id: "u1", kind: "event" as const, title: "Trip", notes: "Pack light", location: "Denver",
+    category_id: "c1", timezone: "America/New_York", repeat_freq: null, repeat_interval: 1, repeat_until: null,
+    priority: null, completed_at: null, source: "manual", external_id: null, deleted_at: null,
+    created_at: "", updated_at: "", reminders: [],
   };
 
-  it("treats an unflagged UTC full-day row as all-day on its own date", () => {
-    const ev = rowToEvent({
-      ...row, is_all_day: false, notes: '%%META%%{"cat":"personal","isTask":false}',
-      starts_at: "2026-07-04T00:00:00+00:00", ends_at: "2026-07-04T23:59:00+00:00",
-    });
-    expect(ev).toMatchObject({ date: "2026-07-04", allDay: true, time: "", end: "", desc: "", cat: "personal" });
+  it("keeps all-day dates as dates, including multi-day spans", () => {
+    const ev = rowToEvent({ ...row, all_day: true, start_date: "2026-07-04", end_date: "2026-07-06", starts_at: null, ends_at: null });
+    expect(ev).toMatchObject({ date: "2026-07-04", endDate: "2026-07-06", allDay: true, time: "", desc: "Pack light", location: "Denver", categoryId: "c1" });
   });
 
-  it("keeps timed events in local time", () => {
+  it("shows timed events in local time", () => {
     const ev = rowToEvent({
-      ...row, is_all_day: false, notes: null,
+      ...row, all_day: false, start_date: null, end_date: null,
       starts_at: new Date(2026, 6, 4, 9, 30).toISOString(), ends_at: new Date(2026, 6, 4, 10).toISOString(),
     });
-    expect(ev).toMatchObject({ date: "2026-07-04", allDay: false, time: "09:30", end: "10:00" });
+    expect(ev).toMatchObject({ date: "2026-07-04", endDate: "2026-07-04", allDay: false, time: "09:30", end: "10:00" });
+  });
+
+  it("reads task reminders back as the option that made them", () => {
+    const task = { ...row, kind: "task" as const, all_day: true, start_date: "2026-07-04", end_date: "2026-07-04", starts_at: null, ends_at: null, priority: "high" as const };
+    expect(rowToEvent({ ...task, reminders: [{ offset_minutes: 900 }] })).toMatchObject({ isTask: true, remind: "1-day", priority: "high" });
+    expect(rowToEvent({ ...task, reminders: [{ offset_minutes: -540 }] })).toMatchObject({ remind: "at-time" });
+    expect(rowToEvent({ ...task, reminders: [{ offset_minutes: -420 }] })).toMatchObject({ remind: "custom", remindMinutes: 120 });
+    expect(rowToEvent({ ...task, reminders: [] })).toMatchObject({ remind: "none" });
+    expect(rowToEvent({ ...task, completed_at: "2026-07-01T00:00:00Z" })).toMatchObject({ done: true });
+  });
+});
+
+describe("intervals and spans", () => {
+  it("repeats every other week", () => {
+    expect(dates({ recur: "Weekly", recurInterval: 2, date: "2026-03-02" }, "2026-03-01", "2026-04-01"))
+      .toEqual(["2026-03-02", "2026-03-16", "2026-03-30"]);
+  });
+
+  it("repeats every 3 months", () => {
+    expect(dates({ recur: "Monthly", recurInterval: 3, date: "2026-01-15" }, "2026-01-01", "2026-12-31"))
+      .toEqual(["2026-01-15", "2026-04-15", "2026-07-15", "2026-10-15"]);
+  });
+
+  it("includes a multi-day occurrence that started before the window", () => {
+    const evs = occurrencesBetween([{ ...base, allDay: true, time: "", end: "", date: "2026-02-27", endDate: "2026-03-02" }], "2026-03-01", "2026-03-31");
+    expect(byDay(evs, "2026-03-01", "2026-03-31").map((e) => e.date)).toEqual(["2026-03-01", "2026-03-02"]);
   });
 });

@@ -3,13 +3,14 @@ import { parseQuickAdd } from "../lib/calendar/quickAdd";
 
 // Thursday, Oct 15 2026, 10:00 local.
 const NOW = new Date(2026, 9, 15, 10, 0);
-const parse = (s: string) => parseQuickAdd(s, NOW);
+const CATEGORIES = [{ id: "c-health", name: "Health" }, { id: "c-side", name: "Side project" }];
+const parse = (s: string) => parseQuickAdd(s, NOW, CATEGORIES);
 
 describe("parseQuickAdd", () => {
   it.each([
     ["lunch with Sam fri at noon",         { title: "Lunch with Sam", date: "2026-10-16", time: "12:00", end: "13:00" }],
     ["dentist tomorrow 3pm",               { title: "Dentist", date: "2026-10-16", time: "15:00", end: "16:00" }],
-    ["gym every monday 6-7pm #health",     { title: "Gym", date: "2026-10-19", time: "18:00", end: "19:00", recur: "Weekly", cat: "health" }],
+    ["gym every monday 6-7pm #health",     { title: "Gym", date: "2026-10-19", time: "18:00", end: "19:00", recur: "Weekly", categoryId: "c-health" }],
     ["1:1 with Priya at 11",               { title: "1:1 with Priya", date: "2026-10-15", time: "11:00" }],
     ["standup daily 9:30 for 15 min",      { title: "Standup", date: "2026-10-16", time: "09:30", end: "09:45", recur: "Daily" }],
     ["flight 11pm-1am",                    { title: "Flight", time: "23:00", end: "23:59" }],
@@ -34,6 +35,18 @@ describe("parseQuickAdd", () => {
     expect(parse("buy 3 eggs")).toMatchObject({ title: "Buy 3 eggs", allDay: true, dateMentioned: false });
     expect(parse("lie in the sun")).toMatchObject({ title: "Lie in the sun", dateMentioned: false });
     expect(parse("may 5")).toMatchObject({ title: "", date: "2027-05-05", dateMentioned: true });
+  });
+
+  it("reads repeat intervals", () => {
+    expect(parse("1:1 every other monday at 11")).toMatchObject({ title: "1:1", recur: "Weekly", recurInterval: 2, date: "2026-10-19" });
+    expect(parse("water plants every 3 days")).toMatchObject({ title: "Water plants", recur: "Daily", recurInterval: 3 });
+    expect(parse("payroll biweekly fri")).toMatchObject({ title: "Payroll", recur: "Weekly", recurInterval: 2 });
+    expect(parse("review every quarter")).toMatchObject({ recur: "" });
+  });
+
+  it("matches tags to the user's categories and leaves unknown ones alone", () => {
+    expect(parse("ship v2 #side-project")).toMatchObject({ title: "Ship v2", categoryId: "c-side" });
+    expect(parse("fix bug #urgent")).toMatchObject({ title: "Fix bug #urgent", categoryId: null });
   });
 
   it("recognizes a bare date for jumping", () => {

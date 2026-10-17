@@ -1,17 +1,30 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { CategoryColor, Priority } from "@/lib/calendar/types";
+
+// Row shapes for supabase/migrations/202610170001_schema_v2.sql. Only the
+// tables the web app touches are typed here.
 
 export type EventRow = {
   id: string;
   user_id: string;
+  kind: "event" | "task";
   title: string;
-  notes: string | null;
-  starts_at: string;
-  ends_at: string;
+  notes: string;
+  location: string;
+  category_id: string | null;
+  all_day: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   timezone: string;
-  is_all_day: boolean;
-  repeat_frequency: "none" | "daily" | "weekly" | "monthly";
+  repeat_freq: "daily" | "weekly" | "monthly" | "yearly" | null;
+  repeat_interval: number;
   repeat_until: string | null;
-  is_archived: boolean;
+  priority: Priority | null;
+  completed_at: string | null;
+  source: string;
+  external_id: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -23,46 +36,34 @@ export type ReminderRow = {
   user_id: string;
   offset_minutes: number;
   channel: "live_activity" | "notification";
-  due_at: string;
-  delivered_at: string | null;
+  next_due_at: string | null;
+  next_occurrence_date: string | null;
   created_at: string;
+};
+
+export type CategoryRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  color: CategoryColor;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type Table<Row, Required extends keyof Row, Generated extends keyof Row> = {
+  Row: Row;
+  Insert: Pick<Row, Required> & Partial<Omit<Row, Required | Generated>>;
+  Update: Partial<Omit<Row, Generated>>;
+  Relationships: [];
 };
 
 export type Database = {
   public: {
     Tables: {
-      events: {
-        Row: EventRow;
-        Insert: Omit<EventRow, "id" | "created_at" | "updated_at"> & { id?: string };
-        Update: Partial<Omit<EventRow, "id" | "created_at" | "updated_at">>;
-        Relationships: [
-          {
-            foreignKeyName: "events_user_id_fkey";
-            columns: ["user_id"];
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      reminders: {
-        Row: ReminderRow;
-        Insert: Omit<ReminderRow, "id" | "created_at"> & { id?: string };
-        Update: Partial<Omit<ReminderRow, "id" | "created_at">>;
-        Relationships: [
-          {
-            foreignKeyName: "reminders_event_id_fkey";
-            columns: ["event_id"];
-            referencedRelation: "events";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "reminders_user_id_fkey";
-            columns: ["user_id"];
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+      events: Table<EventRow, "title", "id" | "user_id" | "created_at" | "updated_at">;
+      reminders: Table<ReminderRow, "event_id" | "offset_minutes", "id" | "user_id" | "created_at" | "next_due_at" | "next_occurrence_date">;
+      categories: Table<CategoryRow, "name", "id" | "user_id" | "created_at" | "updated_at">;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

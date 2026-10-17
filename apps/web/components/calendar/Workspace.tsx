@@ -1,10 +1,11 @@
 import { CalendarDays, CircleCheck, Columns3, LayoutGrid, List, Monitor, Moon, PanelRight, Plus, Settings, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addDays, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
-import { displayTitle, type CalEvent, type CategoryId } from "@/lib/calendar/types";
+import { emptyEvent, type CalEvent, type Category } from "@/lib/calendar/types";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
 import { Button } from "@/components/ui/controls";
 import { AgendaList } from "./AgendaList";
+import { CategoriesContext } from "./categories";
 import { CommandBar, type CommandAction } from "./CommandBar";
 import { DayPanel } from "./DayPanel";
 import { EventPanel } from "./EventPanel";
@@ -17,15 +18,19 @@ import styles from "./Workspace.module.css";
 
 type WorkspaceProps = {
   events: CalEvent[];
+  categories: Category[];
   account: Account;
   notice: string | null;
   onNotify: (message: string) => void;
   onSave: (ev: CalEvent) => void;
   onDelete: (id: string) => void;
+  onSaveCategory: (cat: Category) => void;
+  onDeleteCategory: (id: string) => void;
   onSignOut: () => void;
 };
 
-export function Workspace({ events, account, notice, onNotify, onSave, onDelete, onSignOut }: WorkspaceProps) {
+export function Workspace(props: WorkspaceProps) {
+  const { events, categories, account, notice, onNotify, onSave, onDelete, onSignOut } = props;
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -36,12 +41,13 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
   // How many days before today the Agenda view reaches back ("Show earlier").
   const [agendaBack, setAgendaBack] = useState(0);
   const [search, setSearch] = useState("");
-  const [hiddenCats, setHiddenCats] = useState<ReadonlySet<CategoryId>>(new Set());
+  const [hiddenCats, setHiddenCats] = useState<ReadonlySet<string>>(new Set());
   // `session` changes on every open so the editor resets even if it's already showing.
   const [panel, setPanel] = useState<{
     open: boolean; editing: CalEvent | null; date?: string | undefined; time?: string | undefined; session: number;
   }>({ open: false, editing: null, session: 0 });
-  const [showSettings, setShowSettings] = useState(false);
+  // Which settings section to scroll to, or null when closed.
+  const [settings, setSettings] = useState<null | "top" | "categories">(null);
   const [themePref, setThemePref] = useState<ThemePref>("system");
   const [commandOpen, setCommandOpen] = useState(false);
   const [modKey, setModKey] = useState("Ctrl");
@@ -101,7 +107,7 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
     onSave({ ...series, done: !series.done });
   };
 
-  const toggleCat = (id: CategoryId) => setHiddenCats((prev) => {
+  const toggleCat = (id: string) => setHiddenCats((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -110,7 +116,7 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
 
   const query = search.trim().toLowerCase();
   const visible = events.filter((e) =>
-    !hiddenCats.has(e.cat) && (!query || e.title.toLowerCase().includes(query)));
+    !(e.categoryId && hiddenCats.has(e.categoryId)) && (!query || e.title.toLowerCase().includes(query)));
 
   const setTheme = (p: ThemePref) => { setThemePref(p); applyThemePref(p); };
   const jumpTo = (date: string) => {
@@ -121,10 +127,7 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
   const commandActions: CommandAction[] = [
     { id: "new-event", label: "New event", icon: <Plus size={16} strokeWidth={1.75} />, keywords: "create add", run: () => openNew() },
     { id: "new-task", label: "New task", icon: <CircleCheck size={16} strokeWidth={1.75} />, keywords: "create add todo",
-      run: () => openEvent({
-        id: "", title: "", date: selDate ?? todayIso(), time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "",
-        isTask: true, done: false, desc: "", remind: "1-day", priority: "medium",
-      }) },
+      run: () => openEvent({ ...emptyEvent(selDate ?? todayIso()), allDay: true, isTask: true, remind: "1-day", priority: "medium" }) },
     { id: "today", label: "Go to today", icon: <CalendarDays size={16} strokeWidth={1.75} />, run: () => jumpTo(todayIso()) },
     { id: "view-month", label: "Month view", icon: <LayoutGrid size={16} strokeWidth={1.75} />, keywords: "switch show", run: () => setView("month") },
     { id: "view-week", label: "Week view", icon: <Columns3 size={16} strokeWidth={1.75} />, keywords: "switch show", run: () => setView("week") },
@@ -134,13 +137,13 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
     { id: "theme-light", label: "Light theme", icon: <Sun size={16} strokeWidth={1.75} />, keywords: "appearance mode", run: () => setTheme("light") },
     { id: "theme-dark", label: "Dark theme", icon: <Moon size={16} strokeWidth={1.75} />, keywords: "appearance mode", run: () => setTheme("dark") },
     { id: "theme-system", label: "Match system theme", icon: <Monitor size={16} strokeWidth={1.75} />, keywords: "appearance mode auto", run: () => setTheme("system") },
-    { id: "settings", label: "Settings", icon: <Settings size={16} strokeWidth={1.75} />, keywords: "preferences account", run: () => setShowSettings(true) },
+    { id: "settings", label: "Settings", icon: <Settings size={16} strokeWidth={1.75} />, keywords: "preferences account", run: () => setSettings("top") },
   ];
 
   const createFromCommand = (draft: CalEvent) => {
     onSave(draft);
     jumpTo(draft.date);
-    onNotify(`Added “${displayTitle(draft)}” · ${relativeDayLabel(draft.date)}`);
+    onNotify(`Added “${draft.title}” · ${relativeDayLabel(draft.date)}`);
   };
 
   const showDayPanel = dayPanelOpen && view !== "agenda" && !panel.open;
@@ -151,73 +154,76 @@ export function Workspace({ events, account, notice, onNotify, onSave, onDelete,
     : toIsoDate(addDays(parseIsoDate(today), -agendaBack));
 
   return (
-    <div className={styles.workspace}>
-      <Sidebar
-        search={search} onSearch={setSearch} searchRef={searchRef}
-        year={cursor.year} month={cursor.month} selDate={selDate}
-        onNavMonth={navMonth}
-        onSelectDate={(ds) => { goToDate(ds); if (view === "agenda") setView("month"); }}
-        hiddenCats={hiddenCats} onToggleCat={toggleCat}
-        account={account} onOpenSettings={() => setShowSettings(true)} onSignOut={onSignOut}
-        onOpenCommand={() => setCommandOpen(true)} modKey={modKey} />
+    <CategoriesContext.Provider value={categories}>
+      <div className={styles.workspace}>
+        <Sidebar
+          search={search} onSearch={setSearch} searchRef={searchRef}
+          year={cursor.year} month={cursor.month} selDate={selDate}
+          onNavMonth={navMonth}
+          onSelectDate={(ds) => { goToDate(ds); if (view === "agenda") setView("month"); }}
+          hiddenCats={hiddenCats} onToggleCat={toggleCat} onEditCategories={() => setSettings("categories")}
+          account={account} onOpenSettings={() => setSettings("top")} onSignOut={onSignOut}
+          onOpenCommand={() => setCommandOpen(true)} modKey={modKey} />
 
-      <main className={styles.main}>
-        <Toolbar year={cursor.year} month={cursor.month} view={view} onView={setView}
-          onNav={nav} onToday={() => goToDate(todayIso())}
-          dayPanelOpen={dayPanelOpen} onToggleDayPanel={() => setDayPanelOpen((o) => !o)}
-          onNew={() => openNew()} />
+        <main className={styles.main}>
+          <Toolbar year={cursor.year} month={cursor.month} view={view} onView={setView}
+            onNav={nav} onToday={() => goToDate(todayIso())}
+            dayPanelOpen={dayPanelOpen} onToggleDayPanel={() => setDayPanelOpen((o) => !o)}
+            onNew={() => openNew()} />
 
-        {query && (
-          <div className={styles.searchBar}>
-            {visible.length === 0 ? "No matches" : `${visible.length} ${visible.length === 1 ? "match" : "matches"}`} for “{search.trim()}”
-            {view !== "agenda" && visible.length > 0 && (
-              <button type="button" onClick={() => setView("agenda")}>Show as list</button>
-            )}
-            <button type="button" onClick={() => setSearch("")}>Clear</button>
-          </div>
-        )}
-
-        <div className={styles.content}>
-          {view === "month" && (
-            <MonthView year={cursor.year} month={cursor.month} events={visible} selDate={selDate}
-              onSelect={goToDate} onCreate={openNew} onOpenEvent={openEvent} />
-          )}
-          {view === "week" && (
-            <WeekView selDate={selDate} events={visible} onSelect={goToDate} onOpenEvent={openEvent} onCreate={openNew} />
-          )}
-          {view === "agenda" && (
-            <div className={styles.scroll}>
-              {!query && (
-                <div className={styles.earlier}>
-                  <Button variant="ghost" size="sm" onClick={() => setAgendaBack((d) => d + 30)}>Show earlier</Button>
-                </div>
+          {query && (
+            <div className={styles.searchBar}>
+              {visible.length === 0 ? "No matches" : `${visible.length} ${visible.length === 1 ? "match" : "matches"}`} for “{search.trim()}”
+              {view !== "agenda" && visible.length > 0 && (
+                <button type="button" onClick={() => setView("agenda")}>Show as list</button>
               )}
-              <AgendaList events={visible} from={agendaFrom} onOpenEvent={openEvent} onToggleDone={toggleDone} />
+              <button type="button" onClick={() => setSearch("")}>Clear</button>
             </div>
           )}
-        </div>
-      </main>
 
-      <aside className={styles.dayPanel} data-open={showDayPanel || undefined} inert={!showDayPanel}>
-        <DayPanel date={selDate ?? today} events={visible}
-          onOpenEvent={openEvent} onToggleDone={toggleDone} onCreate={openNew} />
-      </aside>
+          <div className={styles.content}>
+            {view === "month" && (
+              <MonthView year={cursor.year} month={cursor.month} events={visible} selDate={selDate}
+                onSelect={goToDate} onCreate={openNew} onOpenEvent={openEvent} />
+            )}
+            {view === "week" && (
+              <WeekView selDate={selDate} events={visible} onSelect={goToDate} onOpenEvent={openEvent} onCreate={openNew} />
+            )}
+            {view === "agenda" && (
+              <div className={styles.scroll}>
+                {!query && (
+                  <div className={styles.earlier}>
+                    <Button variant="ghost" size="sm" onClick={() => setAgendaBack((d) => d + 30)}>Show earlier</Button>
+                  </div>
+                )}
+                <AgendaList events={visible} from={agendaFrom} onOpenEvent={openEvent} onToggleDone={toggleDone} />
+              </div>
+            )}
+          </div>
+        </main>
 
-      <EventPanel open={panel.open} editing={panel.editing} session={panel.session}
-        defaultDate={panel.date ?? selDate ?? today} defaultTime={panel.time}
-        onClose={closePanel}
-        onSave={(ev) => { onSave(ev); closePanel(); }}
-        onDelete={(id) => { onDelete(id); closePanel(); }} />
+        <aside className={styles.dayPanel} data-open={showDayPanel || undefined} inert={!showDayPanel}>
+          <DayPanel date={selDate ?? today} events={visible}
+            onOpenEvent={openEvent} onToggleDone={toggleDone} onCreate={openNew} />
+        </aside>
 
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)}
-        themePref={themePref} onThemePref={setTheme}
-        account={account} onSignOut={onSignOut} />
+        <EventPanel open={panel.open} editing={panel.editing} session={panel.session}
+          defaultDate={panel.date ?? selDate ?? today} defaultTime={panel.time}
+          onClose={closePanel}
+          onSave={(ev) => { onSave(ev); closePanel(); }}
+          onDelete={(id) => { onDelete(id); closePanel(); }} />
 
-      <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} events={events} actions={commandActions}
-        onCreate={createFromCommand} onEditDraft={openEvent} onGoToDate={jumpTo}
-        onOpenEvent={(ev) => { jumpTo(ev.date); openEvent(ev); }} />
+        <SettingsModal open={settings !== null} focus={settings ?? "top"} onClose={() => setSettings(null)}
+          themePref={themePref} onThemePref={setTheme}
+          onSaveCategory={props.onSaveCategory} onDeleteCategory={props.onDeleteCategory}
+          account={account} onSignOut={onSignOut} />
 
-      {notice && <div className={styles.toast} role="status">{notice}</div>}
-    </div>
+        <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} events={events} actions={commandActions}
+          onCreate={createFromCommand} onEditDraft={openEvent} onGoToDate={jumpTo}
+          onOpenEvent={(ev) => { jumpTo(ev.date); openEvent(ev); }} />
+
+        {notice && <div className={styles.toast} role="status">{notice}</div>}
+      </div>
+    </CategoriesContext.Provider>
   );
 }

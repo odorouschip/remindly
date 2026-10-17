@@ -3,7 +3,7 @@
 // predictable. Anything it doesn't recognize stays in the title.
 
 import { addDays, fromMinutes, toIsoDate } from "./dates";
-import type { CalEvent, CategoryId, RecurLabel } from "./types";
+import { emptyEvent, type CalEvent, type Category, type RecurLabel } from "./types";
 
 export type QuickAdd = {
   title: string;
@@ -14,8 +14,10 @@ export type QuickAdd = {
   end: string;
   allDay: boolean;
   recur: RecurLabel;
+  recurInterval: number;
   isTask: boolean;
-  cat: CategoryId | null;
+  /** Set when a #tag matched one of the user's categories. */
+  categoryId: string | null;
 };
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -29,7 +31,10 @@ const MONTH_RE = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|jul
 // A clock time: 3, 3pm, 3:30, 3:30 p.m. — never part of a date like 10/20.
 const TIME = String.raw`(?<![\d/:])(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?|a|p)?(?![\d/:])`;
 
-const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, other: 2 };
+
+/** "Side project" and #sideproject / #side-project all compare equal. */
+const tagKey = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 
 const weekdayIndex = (word: string) => WEEKDAYS.findIndex((d) => d.startsWith(word.slice(0, 3).toLowerCase()));
 const monthIndex = (word: string) => MONTHS.indexOf(word.slice(0, 3).toLowerCase());
@@ -68,13 +73,13 @@ function upcomingDate(today: Date, month: number, day: number, year?: number): D
   return d;
 }
 
-export function parseQuickAdd(input: string, now: Date = new Date()): QuickAdd {
+export function parseQuickAdd(input: string, now: Date = new Date(), categories: readonly Pick<Category, "id" | "name">[] = []): QuickAdd {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let rest = ` ${input} `;
 
   /** Removes the first match of `pattern` that `use` accepts (returning false skips to the next match). */
   const take = (pattern: string, use: (m: RegExpExecArray) => boolean | void) => {
-    const re = new RegExp(pattern, "gi");
+    const re = new RegExp(pattern, "giu");
     for (let m = re.exec(rest); m; m = re.exec(rest)) {
       if (use(m) === false) {
         if (m[0] === "") re.lastIndex++;
@@ -88,8 +93,9 @@ export function parseQuickAdd(input: string, now: Date = new Date()): QuickAdd {
   // Assigned inside the `take` callbacks, so widen the types up front or
   // TypeScript keeps them narrowed to their initial values.
   let isTask = false as boolean;
-  let cat = null as CategoryId | null;
+  let categoryId = null as string | null;
   let recur = "" as RecurLabel;
+  let recurInterval = 1 as number;
   let date = null as Date | null;
   let start = null as number | null;
   let end = null as number | null;
@@ -99,17 +105,30 @@ export function parseQuickAdd(input: string, now: Date = new Date()): QuickAdd {
 
   take(String.raw`^\s*(?:task|todo)\s*:\s*`, () => { isTask = true; });
   take(String.raw`^\s*remind me to\s+`, () => { isTask = true; });
-  take(String.raw`(?:^|\s)#(work|personal|health|social)\b`, (m) => { cat = m[1]!.toLowerCase() as CategoryId; });
-
-  // Repeats
-  take(String.raw`\b(?:every\s+day|daily)\b`, () => { recur = "Daily"; });
-  take(String.raw`\bevery\s+(${WD_FULL}|${WD_ANY_SHORT})\b`, (m) => {
-    recur = "Weekly";
-    date = nextWeekday(today, weekdayIndex(m[1]!), false);
+  take(String.raw`(?:^|\s)#([\p{L}\p{N}_-]+)`, (m) => {
+    const match = categories.find((c) => tagKey(c.name) === tagKey(m[1]!));
+    if (!match) return false; // unknown tags stay in the title
+    categoryId = match.id;
   });
-  take(String.raw`\b(?:every\s+week|weekly)\b`, () => { recur = "Weekly"; });
-  take(String.raw`\b(?:every\s+month|monthly)\b`, () => { recur = "Monthly"; });
-  take(String.raw`\b(?:every\s+year|yearly|annually)\b`, () => { recur = "Yearly"; });
+
+  // Repeats. "every other X" / "every 3 Xs" set an interval.
+  const EVERY_N = String.raw`every\s+(?:(other|\d{1,2}|two|three|four|five|six)\s+)?`;
+  const interval = (word: string | undefined) => (word ? NUMBER_WORDS[word.toLowerCase()] ?? Number(word) : 1);
+  take(String.raw`\b${EVERY_N}(${WD_FULL}|${WD_ANY_SHORT})s?\b`, (m) => {
+    recur = "Weekly";
+    recurInterval = interval(m[1]);
+    date = nextWeekday(today, weekdayIndex(m[2]!), false);
+  });
+  take(String.raw`\b${EVERY_N}(day|week|month|year)s?\b`, (m) => {
+    const unit = m[2]!.toLowerCase();
+    recur = unit === "day" ? "Daily" : unit === "week" ? "Weekly" : unit === "month" ? "Monthly" : "Yearly";
+    recurInterval = interval(m[1]);
+  });
+  take(String.raw`\bbiweekly\b`, () => { recur = "Weekly"; recurInterval = 2; });
+  take(String.raw`\bdaily\b`, () => { recur = "Daily"; });
+  take(String.raw`\bweekly\b`, () => { recur = "Weekly"; });
+  take(String.raw`\bmonthly\b`, () => { recur = "Monthly"; });
+  take(String.raw`\b(?:yearly|annually)\b`, () => { recur = "Yearly"; });
 
   take(String.raw`\ball[- ]day\b`, () => { allDayWord = true; });
 
@@ -217,24 +236,24 @@ export function parseQuickAdd(input: string, now: Date = new Date()): QuickAdd {
     endTime = naturalEnd > start ? fromMinutes(naturalEnd) : fromMinutes(24 * 60 - 1);
   }
 
-  return { title, date: toIsoDate(finalDate), dateMentioned, time, end: endTime, allDay, recur: isTask ? "" : recur, isTask, cat };
+  return {
+    title, date: toIsoDate(finalDate), dateMentioned, time, end: endTime, allDay,
+    recur: isTask ? "" : recur, recurInterval: isTask || !recur ? 1 : recurInterval, isTask, categoryId,
+  };
 }
 
 /** The draft the command bar saves, or opens in the editor. */
 export function quickAddToEvent(q: QuickAdd): CalEvent {
   return {
-    id: "",
-    title: q.isTask ? `${q.title} ✓` : q.title,
-    date: q.date,
+    ...emptyEvent(q.date),
+    title: q.title,
     time: q.time,
     end: q.end,
     allDay: q.allDay,
-    cat: q.cat ?? (q.isTask ? "personal" : "work"),
+    categoryId: q.categoryId,
     recur: q.recur,
-    recurUntil: "",
+    recurInterval: q.recurInterval,
     isTask: q.isTask,
-    done: false,
-    desc: "",
     ...(q.isTask ? { remind: "1-day" as const, priority: "medium" as const } : {}),
   };
 }

@@ -1,12 +1,12 @@
-import { AlignLeft, Bell, Calendar, CalendarX, Clock, Flag, Repeat, Sun, Tag, Trash2, X } from "lucide-react";
+import { AlignLeft, Bell, Calendar, CalendarX, Clock, Flag, MapPin, Repeat, Sun, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button, IconButton, Segmented, Switch } from "@/components/ui/controls";
 import { addDays, fromMinutes, minutesOf, parseIsoDate, toIsoDate } from "@/lib/calendar/dates";
 import {
-  CATEGORIES, PRIORITIES, RECUR_OPTIONS, REMIND_OPTIONS,
-  displayTitle, type CalEvent, type CategoryId, type Priority, type RecurLabel, type RemindKey,
+  PRIORITIES, RECUR_OPTIONS, RECUR_UNIT, REMIND_OPTIONS,
+  type CalEvent, type Priority, type RecurLabel, type RemindKey,
 } from "@/lib/calendar/types";
-import { catStyle } from "./catStyle";
+import { catStyle, useCategories } from "./categories";
 import styles from "./EventPanel.module.css";
 
 type Kind = "event" | "task";
@@ -58,32 +58,40 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
   const [time, setTime] = useState("09:00");
   const [end, setEnd] = useState("10:00");
   const [allDay, setAllDay] = useState(false);
-  const [cat, setCat] = useState<CategoryId>("work");
+  // All-day events can span days; timed ones keep whatever span they had.
+  const [endDate, setEndDate] = useState(defaultDate);
+  const [categoryId, setCategoryId] = useState("");
   const [recur, setRecur] = useState<RecurLabel>("");
+  const [recurInterval, setRecurInterval] = useState(1);
   const [recurUntil, setRecurUntil] = useState("");
   const [remind, setRemind] = useState<RemindKey>("1-day");
   const [custom, setCustom] = useState<{ amount: number; unit: Unit }>({ amount: 2, unit: "hours" });
   const [priority, setPriority] = useState<Priority>("medium");
   const [desc, setDesc] = useState("");
+  const [location, setLocation] = useState("");
+  const categories = useCategories();
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const ev = editing;
     setKind(ev?.isTask ? "task" : "event");
-    setTitle(ev ? displayTitle(ev) : "");
+    setTitle(ev ? ev.title : "");
     setDate(ev?.date || defaultDate);
     const start = ev?.time || defaultTime || "09:00";
     setTime(start);
     setEnd(ev?.end || fromMinutes(minutesOf(start) + 60));
     setAllDay(Boolean(ev?.allDay && !ev.isTask));
-    setCat(ev?.cat ?? "work");
+    setEndDate(ev?.endDate || ev?.date || defaultDate);
+    setCategoryId(ev?.categoryId ?? "");
     setRecur(ev?.recur ?? "");
+    setRecurInterval(ev?.recurInterval ?? 1);
     setRecurUntil(ev?.recurUntil ?? "");
     setRemind(ev?.remind ?? "1-day");
     setCustom(ev?.remindMinutes ? splitMinutes(ev.remindMinutes) : { amount: 2, unit: "hours" });
     setPriority(ev?.priority ?? "medium");
     setDesc(ev?.desc ?? "");
+    setLocation(ev?.location ?? "");
     // Wait for the slide-in to start so focus doesn't jump the layout.
     const id = window.setTimeout(() => titleRef.current?.focus(), 60);
     return () => window.clearTimeout(id);
@@ -98,12 +106,22 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
     setTime(next);
   };
 
+  // Moving the start date carries the end date along.
+  const changeDate = (next: string) => {
+    if (next) {
+      const span = Math.round((parseIsoDate(endDate).getTime() - parseIsoDate(date).getTime()) / 86_400_000);
+      setEndDate(toIsoDate(addDays(parseIsoDate(next), Math.max(0, span))));
+    }
+    setDate(next);
+  };
+
   const changeRecur = (next: RecurLabel) => {
     setRecur(next);
     if (!next) setRecurUntil("");
   };
 
-  const timeError = kind === "event" && !allDay && end <= time ? "End time must be after the start." : null;
+  const timeError = kind === "event" && !allDay && endDate <= date && end <= time ? "End time must be after the start." : null;
+  const endDateError = kind === "event" && allDay && endDate < date ? "The last day can't be before the first." : null;
   const untilError = kind === "event" && recur && recurUntil && recurUntil < date ? "Can't stop repeating before it starts." : null;
   const customMinutes = custom.amount * (UNITS.find((u) => u.value === custom.unit)?.minutes ?? 1);
 
@@ -111,17 +129,17 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
     e.preventDefault();
     const t = title.trim();
     if (!t) { titleRef.current?.focus(); return; }
-    if (timeError || untilError) return;
-    const id = editing?.id ?? "";
+    if (timeError || untilError || endDateError) return;
+    const shared = { id: editing?.id ?? "", title: t, date, categoryId: categoryId || null, desc, location };
     if (kind === "event") {
       onSave({
-        id, title: t, date, time: allDay ? "" : time, end: allDay ? "" : end, allDay,
-        cat, recur, recurUntil: recur ? recurUntil : "", isTask: false, done: false, desc,
+        ...shared, endDate, time: allDay ? "" : time, end: allDay ? "" : end, allDay,
+        recur, recurInterval: recur ? recurInterval : 1, recurUntil: recur ? recurUntil : "", isTask: false, done: false,
       });
     } else {
       onSave({
-        id, title: `${t} ✓`, date, time: "", end: "", allDay: true, cat: "personal", recur: "", recurUntil: "",
-        isTask: true, done: editing?.isTask ? editing.done : false, desc, remind, priority,
+        ...shared, endDate: date, time: "", end: "", allDay: true, recur: "", recurInterval: 1, recurUntil: "",
+        isTask: true, done: editing?.isTask ? editing.done : false, remind, priority,
         ...(remind === "custom" ? { remindMinutes: customMinutes } : {}),
       });
     }
@@ -144,8 +162,16 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
             placeholder={kind === "task" ? "Task name" : "Event name"} />
 
           <div className={styles.props}>
-            <Prop icon={<Calendar size={14} />} label={kind === "task" ? "Due" : "Date"}>
-              <input type="date" className={styles.control} value={date} onChange={(e) => setDate(e.target.value)} />
+            <Prop icon={<Calendar size={14} />} label={kind === "task" ? "Due" : "Date"} error={endDateError}>
+              {kind === "event" && allDay ? (
+                <div className={styles.timeRange}>
+                  <input type="date" className={styles.control} value={date} onChange={(e) => changeDate(e.target.value)} aria-label="First day" />
+                  <span className={styles.dash}>–</span>
+                  <input type="date" className={styles.control} value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} aria-label="Last day" />
+                </div>
+              ) : (
+                <input type="date" className={styles.control} value={date} onChange={(e) => changeDate(e.target.value)} />
+              )}
             </Prop>
 
             {kind === "event" ? (
@@ -165,18 +191,22 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
                     </div>
                   </Prop>
                 )}
-                <Prop icon={<Tag size={14} />} label="Category">
-                  <div className={styles.selectWrap} style={catStyle(cat)}>
-                    <span className={styles.catDot} />
-                    <select className={styles.control} value={cat} onChange={(e) => setCat(e.target.value as CategoryId)}>
-                      {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
-                  </div>
+                <Prop icon={<MapPin size={14} />} label="Location">
+                  <input className={styles.control} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Add a place" />
                 </Prop>
-                <Prop icon={<Repeat size={14} />} label="Repeat">
+                <Prop icon={<Repeat size={14} />} label="Repeat" top={Boolean(recur)}>
                   <select className={styles.control} value={recur} onChange={(e) => changeRecur(e.target.value as RecurLabel)}>
                     {RECUR_OPTIONS.map((r) => <option key={r} value={r}>{r || "Does not repeat"}</option>)}
                   </select>
+                  {recur && (
+                    <div className={styles.inline}>
+                      <span className={styles.every}>Every</span>
+                      <input type="number" className={`${styles.control} ${styles.amount}`} min={1} max={99}
+                        value={recurInterval} aria-label="Repeat interval"
+                        onChange={(e) => setRecurInterval(Math.min(99, Math.max(1, Math.round(Number(e.target.value)) || 1)))} />
+                      <span className={styles.every}>{RECUR_UNIT[recur]}{recurInterval === 1 ? "" : "s"}</span>
+                    </div>
+                  )}
                 </Prop>
                 {recur && (
                   <Prop icon={<CalendarX size={14} />} label="Ends" error={untilError}>
@@ -220,6 +250,16 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
                 </Prop>
               </>
             )}
+
+            <Prop icon={<Tag size={14} />} label="Category">
+              <div className={styles.selectWrap} style={catStyle(categories.find((c) => c.id === categoryId)?.color)}>
+                <span className={styles.catDot} />
+                <select className={styles.control} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                  <option value="">No category</option>
+                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            </Prop>
 
             <Prop icon={<AlignLeft size={14} />} label="Notes" top>
               <textarea className={`${styles.control} ${styles.notes}`} value={desc}

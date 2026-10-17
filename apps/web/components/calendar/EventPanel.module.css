@@ -162,3 +162,10 @@ select.control { cursor: pointer; appearance: none; }
   color: var(--danger);
 }
 .control + .inline { margin-top: var(--sp-1); }
+.every {
+  flex-shrink: 0;
+  padding: 0 var(--sp-1);
+  font-size: var(--fs-md);
+  color: var(--text-2);
+}
+.inline .every + .control { flex: 0 0 56px; }

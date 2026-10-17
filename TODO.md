@@ -61,7 +61,7 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 - [ ] **No day view** — standard calendar pattern; missing.
 - [ ] **Drag-and-drop to reschedule** events between days/times.
 - [ ] **Drag-to-resize** events in week view.
-- [ ] **Multi-day events** — currently every event is bound to one date.
+- [x] *(All-day events can span days; timed events keep a multi-day end. Shown on each day they cover.)* **Multi-day events** — currently every event is bound to one date.
 - [x] **Repeating events** — repeat rule is stored but the views don't expand recurrences into the grid; only the original instance shows.
 - [x] **Month-view overflow days are dead.** The grid shows the last few days of the previous month and the first few of the next (grayed) for layout, but `onClick` and `onDoubleClick` both gate on `isCur` (`isCur && onSelect(ds)`) so clicking them does nothing. Expected behavior: clicking should navigate to that month and select the day.
 - [x] *(Single click now shows that day in the side panel, which has a + button; double-click still creates.)* **Creating an event in the month view requires a double-click on an empty area** — undiscoverable. Single click currently just selects the day. Either show a hint, or have single-click on empty area open the create panel.
@@ -83,7 +83,7 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 - [x] **No "all-day event" option.** The UI offers Task (treated as all-day under the hood) or Event (timed); there's no way to create a real all-day Event like "Anniversary" or "Conference Day 1". The `is_all_day` column exists and is currently only set for tasks.
 - [x] **All-day-like events render as "8:00 PM – 7:59 PM" instead of "All day".** Confirmed in audit: holiday rows (Independence Day, Labor Day, Columbus Day, Veterans Day) are stored ~00:00–23:59 UTC and the UI renders them in local TZ raw as "8:00 PM – 7:59 PM" with no awareness of `is_all_day`. The Upcoming panel, Agenda view, and event chip all need to check `is_all_day` (or detect ~24h span) and render "All day" instead of the literal timed range.
 - [x] **No way to mark a task complete.** Tasks store the title with a `" ✓"` suffix on create ([CalendarApp.tsx](apps/web/components/CalendarApp.tsx) `handleSave` for the task tab) but there's no toggle / checkbox in the UI to flip the state later.
-- [ ] No location field on events.
+- [x] No location field on events.
 - [ ] *(release only)* No attendees / invitees.
 - [ ] No way to attach a file or note longer than a textarea.
 
@@ -94,15 +94,15 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/migrations/202604300001_init.sql): `events`, `reminders`, `devices`, `live_activity_runs`. RLS is per-user (`auth.uid() = user_id`). Several things the UI pretends to support don't exist in the DB yet.
 
 ### Schema additions (prerequisites for features above)
-- [ ] **Calendars table.** Sidebar pretends "My Calendar", "Work", "Birthdays", "US Holidays" exist but nothing is stored. Add `public.calendars` (id, user_id, name, color, kind: personal/shared/holiday, is_visible). Add a `calendar_id` FK on `events`. Backfill existing rows into a default "My Calendar" per user. This is the prerequisite for the sidebar filter feature in Functional gaps.
-- [ ] **Categories as a real column (or table).** Today `cat` (work/personal/health/social) is packed into `notes` as `%%META%%` JSON — see `packNotes` / `unpackNotes` in [notes.ts](apps/web/lib/calendar/notes.ts). Move to a real `category` column on `events`. If categories should be user-customizable (per Themes section), promote to a `categories` table instead.
-- [ ] **Priority + `is_task` as real columns.** Both also currently in the meta JSON. Move to real columns so they're queryable (e.g., "show me all high-priority tasks").
-- [ ] *(release only)* **Profiles table.** No place to store display name, avatar URL, theme preference, week_start, default_view. Two options: (a) shove into `auth.users.user_metadata` (simplest, JSON blob, no extra table); (b) create `public.profiles` mirrored from `auth.users` via a trigger (Supabase convention, queryable, RLS-friendly). Recommend **(b)** — needed anyway for avatar URL (Storage bucket) and to read another user's display name if sharing ever happens.
-- [ ] **Import source tracking.** When calendar imports work, events need `source` (google/apple/outlook/ics/manual), `external_id` (for sync dedup), `last_synced_at`. Add columns to `events`, or a separate `event_external_links` table if one event can sync from multiple sources.
+- [x] *(Folded into editable categories — one concept, toggled in the sidebar.)* **Calendars table.** Sidebar pretends "My Calendar", "Work", "Birthdays", "US Holidays" exist but nothing is stored. Add `public.calendars` (id, user_id, name, color, kind: personal/shared/holiday, is_visible). Add a `calendar_id` FK on `events`. Backfill existing rows into a default "My Calendar" per user. This is the prerequisite for the sidebar filter feature in Functional gaps.
+- [x] **Categories as a real column (or table).** Today `cat` (work/personal/health/social) is packed into `notes` as `%%META%%` JSON — see `packNotes` / `unpackNotes` in [notes.ts](apps/web/lib/calendar/notes.ts). Move to a real `category` column on `events`. If categories should be user-customizable (per Themes section), promote to a `categories` table instead.
+- [x] *(`kind`, `priority`, `completed_at`.)* **Priority + `is_task` as real columns.** Both also currently in the meta JSON. Move to real columns so they're queryable (e.g., "show me all high-priority tasks").
+- [x] *(Created on signup with name + time zone; avatar etc. still to come.)* *(release only)* **Profiles table.** No place to store display name, avatar URL, theme preference, week_start, default_view. Two options: (a) shove into `auth.users.user_metadata` (simplest, JSON blob, no extra table); (b) create `public.profiles` mirrored from `auth.users` via a trigger (Supabase convention, queryable, RLS-friendly). Recommend **(b)** — needed anyway for avatar URL (Storage bucket) and to read another user's display name if sharing ever happens.
+- [x] *(`source` + `external_id` columns, unique per user.)* **Import source tracking.** When calendar imports work, events need `source` (google/apple/outlook/ics/manual), `external_id` (for sync dedup), `last_synced_at`. Add columns to `events`, or a separate `event_external_links` table if one event can sync from multiple sources.
 
 ### Data integrity / schema cleanup
-- [ ] **"Yearly" recurrence is invisible to SQL.** `RECUR_TO_DB` in [supabaseBackend.ts](apps/web/lib/calendar/supabaseBackend.ts) maps `Yearly → "none"` and stashes the actual frequency in the meta JSON. Any query like `where repeat_frequency = 'yearly'` will find nothing. Either add `'yearly'` to the `repeat_frequency` CHECK constraint and store it, or remove the Yearly option until recurrence expansion handles it properly.
-- [ ] **`is_archived` column is dead.** Defined in [the init migration](supabase/migrations/202604300001_init.sql) but never read or written by the web app. Either build an archive flow (events that don't show but aren't deleted) or drop the column in a follow-up migration.
+- [x] **"Yearly" recurrence is invisible to SQL.** `RECUR_TO_DB` in [supabaseBackend.ts](apps/web/lib/calendar/supabaseBackend.ts) maps `Yearly → "none"` and stashes the actual frequency in the meta JSON. Any query like `where repeat_frequency = 'yearly'` will find nothing. Either add `'yearly'` to the `repeat_frequency` CHECK constraint and store it, or remove the Yearly option until recurrence expansion handles it properly.
+- [x] **`is_archived` column is dead.** Defined in [the init migration](supabase/migrations/202604300001_init.sql) but never read or written by the web app. Either build an archive flow (events that don't show but aren't deleted) or drop the column in a follow-up migration.
 - [ ] **`devices.platform` enforces `'ios' | 'web'` but no web row ever gets created.** When/if web push is added, need a flow to register the browser as a device.
 
 ### US Holidays — pick an approach
@@ -119,8 +119,10 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [ ] **If B wins:** build the on-signup `handle_new_user()` trigger and an admin script to refresh holiday rows each year.
 
 ### Recurrence storage
+- [ ] **Edit or skip one occurrence (web UI).** `event_exceptions` is ready (and the reminder scheduler respects it), but the editor still only edits the whole series. Add "This event / All events" when saving or deleting an occurrence, and apply exceptions in [recurrence.ts](apps/web/lib/calendar/recurrence.ts).
+- [ ] **Category order.** `sort_order` exists; Settings has no drag-to-reorder yet.
 - [x] **Decide expansion strategy.** Today `events` stores `repeat_frequency` + `repeat_until` but the views never expand the rule into instances — only the original date renders (tracked in Functional gaps → Calendar views). Three approaches: (a) expand client-side on read from the single stored row, (b) generate occurrence rows in a database view, (c) materialize the next N occurrences into a separate table via a job. **(a) is the simplest start** — defer (c) until performance forces it.
-- [ ] **Exceptions table.** Once recurrence is expanded, users will want to move or delete a single instance of a repeating event. Add `recurrence_exceptions` (event_id, occurrence_date, action: cancelled / modified, override_event_id).
+- [x] *(Table exists and reminders honor it; the web UI to skip/move one occurrence is still to build.)* **Exceptions table.** Once recurrence is expanded, users will want to move or delete a single instance of a repeating event. Add `recurrence_exceptions` (event_id, occurrence_date, action: cancelled / modified, override_event_id).
 
 ### Search
 - [ ] *(release only)* **Server-side search** (deferred). Today search is `events.filter()` over the locally loaded list — fine for small datasets, breaks once a user has 1000+ events. Add a `tsvector` index on `title || notes` and an RPC. Not urgent.
@@ -131,13 +133,13 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [ ] **Backups.** Verify the Supabase project has point-in-time recovery turned on (requires Pro plan); document the restore procedure.
 
 ### Edge function (dispatch-reminders)
-- [ ] **Repeating events only get server reminders for their first occurrence.** The web app now expands repeats in every view, but reminder rows (`due_at`) are written once per event from `starts_at`, so APNs/Live Activity reminders fire for the first instance only. The dispatcher needs to compute the next occurrence (e.g. reuse `expandOccurrences` from `@calender/shared`) or a job needs to roll reminders forward.
-- [ ] **`delivered_at` is set even when every APNs send fails.** [dispatch-reminders/index.ts](supabase/functions/dispatch-reminders/index.ts) (~line 96) updates `delivered_at = now()` unconditionally after the device loop, regardless of `sendResults`. If APNs is unreachable, every token is stale, or there are zero devices for the user, the reminder is silently marked delivered and lost. Fix: only mark delivered if at least one send returned `ok: true` (or branch into a retry/backoff path).
-- [ ] *(release only)* **APNs JWT is regenerated for every reminder.** `createApnsJwt()` is called inside `dispatchReminder` (per-reminder), but JWTs are valid ~50 minutes and re-use is encouraged by Apple. Move JWT creation to the top of the cron invocation and reuse across all reminders in the batch.
+- [x] **Repeating events only get server reminders for their first occurrence.** The web app now expands repeats in every view, but reminder rows (`due_at`) are written once per event from `starts_at`, so APNs/Live Activity reminders fire for the first instance only. The dispatcher needs to compute the next occurrence (e.g. reuse `expandOccurrences` from `@calender/shared`) or a job needs to roll reminders forward.
+- [x] **`delivered_at` is set even when every APNs send fails.** [dispatch-reminders/index.ts](supabase/functions/dispatch-reminders/index.ts) (~line 96) updates `delivered_at = now()` unconditionally after the device loop, regardless of `sendResults`. If APNs is unreachable, every token is stale, or there are zero devices for the user, the reminder is silently marked delivered and lost. Fix: only mark delivered if at least one send returned `ok: true` (or branch into a retry/backoff path).
+- [x] *(release only)* **APNs JWT is regenerated for every reminder.** `createApnsJwt()` is called inside `dispatchReminder` (per-reminder), but JWTs are valid ~50 minutes and re-use is encouraged by Apple. Move JWT creation to the top of the cron invocation and reuse across all reminders in the batch.
 - [ ] *(release only)* **Only `platform = 'ios'` devices are queried** (`.eq("platform", "ios")` in `dispatchReminder`). If web push or another platform is ever added, those device rows will silently never receive reminders.
-- [ ] **`live_activity_runs` has no dedup.** Each successful Live Activity start `INSERT`s a row; if the same event has multiple reminders that all fire near each other (e.g., 1-day, 30-min, at-time), multiple runs are created. Add a unique constraint on `(event_id, device_id, phase)` or check before insert.
-- [ ] **APNs token rotation.** `devices.apns_device_token` + `activity_push_to_start_token` are stored but there's no flow for invalidating stale tokens when APNs returns `Unregistered` / `BadDeviceToken`.
-- [ ] **Idempotency.** If the 1-minute cron double-fires (or misses then re-runs), make sure the same reminder isn't dispatched twice. The `delivered_at` column is the natural latch — verify the function actually checks + sets it atomically.
+- [x] **`live_activity_runs` has no dedup.** Each successful Live Activity start `INSERT`s a row; if the same event has multiple reminders that all fire near each other (e.g., 1-day, 30-min, at-time), multiple runs are created. Add a unique constraint on `(event_id, device_id, phase)` or check before insert.
+- [x] **APNs token rotation.** `devices.apns_device_token` + `activity_push_to_start_token` are stored but there's no flow for invalidating stale tokens when APNs returns `Unregistered` / `BadDeviceToken`.
+- [x] **Idempotency.** If the 1-minute cron double-fires (or misses then re-runs), make sure the same reminder isn't dispatched twice. The `delivered_at` column is the natural latch — verify the function actually checks + sets it atomically.
 
 ---
 
@@ -159,7 +161,7 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 
 - [ ] **More themes.** Bring back some colorful options, or add a high-contrast / accessibility theme.
 - [x] **System theme preference.** Match the OS light/dark setting on first visit.
-- [ ] **Per-category color customization.** The 4 category colors are `--cat-*` tokens in [globals.css](apps/web/app/globals.css). Let users pick their own.
+- [x] **Per-category color customization.** The 4 category colors are `--cat-*` tokens in [globals.css](apps/web/app/globals.css). Let users pick their own.
 - [ ] **Custom accent color** independent of theme (Notion-style).
 
 ---
@@ -225,6 +227,14 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Schema v2 + editable categories — 2026-10-17
+- [x] New migration [202610170001_schema_v2.sql](supabase/migrations/202610170001_schema_v2.sql) replaces the original tables: `profiles`, `categories`, `events` (events + tasks, real columns, date-based all-day, repeat interval), `event_exceptions`, `reminders` (rules with a DB-maintained `next_due_at`), `reminder_deliveries`, `devices` (one row per device), `live_activity_runs`. The JSON-in-notes metadata is gone.
+- [x] Reminder scheduling lives in Postgres (`next_reminder()`, triggers, `claim_due_reminders()`), so repeats remind every time, nothing double-sends, failures retry. Verified against a local Postgres with 24 behavior checks (signup defaults, DST-safe repeats, exceptions, RLS isolation, claiming/retries).
+- [x] Categories are editable in Settings (rename, 9-color palette, add, delete → events become uncategorized); `#tags` in quick add match them by name.
+- [x] Repeat interval in the editor and quick add ("every other week", "every 3 days", "biweekly"); location field; multi-day all-day events.
+- [x] Dispatcher rewritten on top of the new tables: one JWT per run, deliveries marked sent only when Apple accepts them, dead tokens disabled, Live Activity runs upserted per occurrence.
+- [ ] **iOS models are now out of date** with the schema — they get rebuilt in the iOS pass.
 
 ### Command bar — 2026-10-15
 - [x] ⌘K / Ctrl+K (or "Quick add" in the sidebar) opens a command bar: create events/tasks from a phrase, jump to a date, find events (past ones too), switch views/theme, open settings.

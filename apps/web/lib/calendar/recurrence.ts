@@ -1,23 +1,51 @@
 import { addDays, parseIsoDate, toIsoDate } from "./dates";
 import type { CalEvent } from "./types";
 
+// Mirrors public.next_reminder() in supabase/migrations/202610170001_schema_v2.sql;
+// keep the two in step.
+
 const DAY_MS = 86_400_000;
 
+const daysBetween = (a: string, b: string) =>
+  Math.round((parseIsoDate(b).getTime() - parseIsoDate(a).getTime()) / DAY_MS);
+
 /**
- * Events falling on a date in [from, to] (inclusive, YYYY-MM-DD). A repeating
+ * Occurrences overlapping [from, to] (inclusive, YYYY-MM-DD). A repeating
  * event becomes one copy per occurrence; copies keep the series id, so key
  * them by id + date.
  */
 export function occurrencesBetween(events: readonly CalEvent[], from: string, to: string): CalEvent[] {
   const out: CalEvent[] = [];
   for (const ev of events) {
+    const span = Math.max(0, daysBetween(ev.date, ev.endDate || ev.date));
     if (!ev.recur) {
-      if (ev.date >= from && ev.date <= to) out.push(ev);
+      if (ev.date <= to && (ev.endDate || ev.date) >= from) out.push(ev);
       continue;
     }
+    // Start early enough to catch a multi-day occurrence already underway.
+    const earliest = toIsoDate(addDays(parseIsoDate(from), -span));
     const last = ev.recurUntil && ev.recurUntil < to ? ev.recurUntil : to;
-    for (const date of repeatDates(ev, from, last)) {
-      out.push(date === ev.date ? ev : { ...ev, date });
+    for (const date of repeatDates(ev, earliest, last)) {
+      out.push(date === ev.date ? ev : { ...ev, date, endDate: toIsoDate(addDays(parseIsoDate(date), span)) });
+    }
+  }
+  return out;
+}
+
+/**
+ * Splits multi-day events into one entry per day they cover, within [from, to],
+ * for views that lay events out day by day.
+ */
+export function byDay(events: readonly CalEvent[], from: string, to: string): CalEvent[] {
+  const out: CalEvent[] = [];
+  for (const ev of events) {
+    const end = ev.endDate || ev.date;
+    if (end <= ev.date) {
+      out.push(ev);
+      continue;
+    }
+    for (let d = ev.date < from ? from : ev.date; d <= end && d <= to; d = toIsoDate(addDays(parseIsoDate(d), 1))) {
+      out.push({ ...ev, date: d });
     }
   }
   return out;
@@ -27,11 +55,12 @@ export const occurrenceKey = (ev: CalEvent): string => `${ev.id}:${ev.date}`;
 
 function* repeatDates(ev: CalEvent, from: string, to: string): Generator<string> {
   const start = parseIsoDate(ev.date);
+  const every = Math.max(1, ev.recurInterval || 1);
 
   if (ev.recur === "Daily" || ev.recur === "Weekly") {
-    const step = ev.recur === "Daily" ? 1 : 7;
+    const step = (ev.recur === "Daily" ? 1 : 7) * every;
     // Jump straight to the first occurrence on or after `from`.
-    const gapDays = Math.round((parseIsoDate(from).getTime() - start.getTime()) / DAY_MS);
+    const gapDays = daysBetween(ev.date, from);
     for (let i = Math.max(0, Math.ceil(gapDays / step)); ; i++) {
       const ds = toIsoDate(addDays(start, i * step));
       if (ds > to) return;
@@ -41,7 +70,7 @@ function* repeatDates(ev: CalEvent, from: string, to: string): Generator<string>
 
   // Monthly / yearly repeat on the same day of the month. Months without that
   // day (the 31st, Feb 29) are skipped, like Google Calendar.
-  const stepMonths = ev.recur === "Monthly" ? 1 : 12;
+  const stepMonths = (ev.recur === "Monthly" ? 1 : 12) * every;
   for (let i = 0; ; i++) {
     const d = new Date(start.getFullYear(), start.getMonth() + i * stepMonths, start.getDate());
     const ds = toIsoDate(d);

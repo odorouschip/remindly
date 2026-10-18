@@ -110,11 +110,17 @@ struct CalendarEvent: Identifiable, Hashable {
     /// Countdown reminders every timed event gets (same as REMINDER_PRESETS_MINUTES on the web).
     static let eventReminderOffsets = [30, 10, 0]
 
-    /// A new timed event: the next whole hour on `day`, one hour long.
-    static func newEvent(on day: Day) -> CalendarEvent {
+    /// A new timed event, one hour long: at `minute` past midnight on `day` if given,
+    /// otherwise the next whole hour (today) or 9 AM.
+    static func newEvent(on day: Day, minute: Int? = nil) -> CalendarEvent {
         let calendar = Calendar.current
-        let hour = day == .today ? min(calendar.component(.hour, from: Date()) + 1, 23) : 9
-        let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day.date()) ?? day.date()
+        let start: Date
+        if let minute {
+            start = calendar.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: day.date()) ?? day.date()
+        } else {
+            let hour = day == .today ? min(calendar.component(.hour, from: Date()) + 1, 23) : 9
+            start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day.date()) ?? day.date()
+        }
         return CalendarEvent(start: start, end: start.addingTimeInterval(3600))
     }
 

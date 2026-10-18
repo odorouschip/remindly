@@ -47,6 +47,7 @@ Edit Scheme → Run → Arguments (Debug builds only):
 |---|---|
 | `-demo` | Sample data, no account needed; edits stay in memory |
 | `-tab upcoming` | Start on the Upcoming tab |
+| `-tab week` / `-tab month` | Start on the Calendar tab in that view |
 | `-open-event <uuid>` | Open that event on launch, as a tapped notification would |
 | `-quick-add "<text>"` | Open quick add with the text typed in |
 | `-live-activity` | Start a countdown for the next timed event |

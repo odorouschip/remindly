@@ -18,6 +18,9 @@ struct MainView: View {
     init() {
         #if DEBUG
         if DemoData.launchTab == "upcoming" { _tab = State(initialValue: .upcoming) }
+        if let mode = DemoData.launchTab.flatMap(CalendarMode.init(rawValue:)) {
+            UserDefaults.standard.set(mode.rawValue, forKey: "calendarMode")
+        }
         if DemoData.quickAddText != nil { _showingQuickAdd = State(initialValue: true) }
         #endif
     }

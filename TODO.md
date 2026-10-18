@@ -205,7 +205,8 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [x] *(Replaced rather than audited.)* **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
 - [x] *(Native Upcoming list for now: overdue tasks, days ahead, checkboxes, pull to refresh. Month/week views still to come.)* **Rebuild events list / agenda view** with the new design language.
 - [x] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
-- [x] *(Month grid with category dots + selected day's list, on every size.)* **Add month / week views** on iPad / larger phones.
+- [x] *(Month grid with category dots + selected day's list; Week timeline with a Month / Week switch.)* **Add month / week views** on iPad / larger phones.
+- [ ] **Pinch to zoom the iOS week timeline**, and drag to move / resize events there.
 - [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
 
 ### Functionality still needed
@@ -230,6 +231,10 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Week view on iPhone — 2026-10-18
+- [x] Calendar tab has a Month / Week switch (remembered). Week ([WeekView.swift](apps/ios/Remindly/Views/WeekView.swift), layout in [WeekLayout.swift](apps/ios/Remindly/Data/WeekLayout.swift)): day headers, all-day bars spanning the days they cover (folds to "+N" past three rows), a 24-hour timeline with a now line, overnight events split at midnight like the web, overlapping events cascaded like Calendar's. Tap an empty slot to add an event at that half hour; swipe to change weeks; tap / press and hold events as in the lists.
+- [ ] **Web week view still stacks overlapping events on top of each other** — port the lane layout from `WeekLayout.swift`.
 
 ### Quick add on iPhone, web logo — 2026-10-18
 - [x] iOS quick add / search sheet (✨🔍 button on both tabs): natural-language create, "Add details first…", jump to a date, find events. Parser ported to Swift ([QuickAdd.swift](apps/ios/Remindly/Data/QuickAdd.swift)) and checked against the web's test phrases.

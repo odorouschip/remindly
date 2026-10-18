@@ -15,7 +15,7 @@ enum DemoData {
     /// `-quick-add <text>` opens quick add with that text typed in.
     static var quickAddText: String? { argument(after: "-quick-add") }
 
-    /// `-tab upcoming` starts on the Upcoming tab.
+    /// `-tab upcoming` starts on the Upcoming tab; `-tab week` / `-tab month` on the Calendar tab in that view.
     static var launchTab: String? { argument(after: "-tab") }
 
     /// `-open-event <uuid>` opens that event on launch, as a tapped notification would.
@@ -67,6 +67,7 @@ enum DemoData {
             event(-2, "Standup", at: 9, 30, minutes: 15, category: "Work", rule: RepeatRule(frequency: .daily, until: Day.today.adding(days: 10))),
             { var lunch = event(0, "Lunch with Sam", at: 12, 30, category: "Social", location: "Tartine"); lunch.id = linkTestId; return lunch }(),
             event(0, "Gym", at: 18, category: "Health"),
+            event(0, "Call Mom", at: 18, 30, minutes: 30, category: "Personal"),
             task(0, "Reply to landlord", .medium),
             task(-2, "Return library books", .low),
             event(1, "Design review", at: 14, category: "Work"),
@@ -76,6 +77,7 @@ enum DemoData {
             conference,
             { var trip = event(1, "Trip to Denver", at: 10, minutes: 2 * 1440 + 60, category: "Personal"); trip.location = "Denver"; return trip }(),
             event(6, "Dinner at Nonna's", at: 19, minutes: 120, category: "Social"),
+            event(4, "Red-eye to NYC", at: 22, minutes: 7 * 60, category: "Personal"),
         ]
     }
 }

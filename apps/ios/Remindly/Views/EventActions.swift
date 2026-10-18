@@ -14,8 +14,7 @@ struct EventActions {
 extension View {
     /// Tap to open, swipe to complete (tasks) or delete, press and hold for a menu.
     func eventRowActions(_ event: CalendarEvent, _ actions: EventActions) -> some View {
-        contentShape(Rectangle())
-            .onTapGesture { actions.open(event) }
+        eventActions(event, actions)
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 if event.isTask {
                     Button { actions.toggleDone(event) } label: {
@@ -31,6 +30,12 @@ extension View {
                 }
                 .tint(.red)
             }
+    }
+
+    /// Tap to open, press and hold for a menu (for places without swipe actions, like the week view).
+    func eventActions(_ event: CalendarEvent, _ actions: EventActions) -> some View {
+        contentShape(Rectangle())
+            .onTapGesture { actions.open(event) }
             .contextMenu {
                 Button { actions.open(event) } label: { Label("Edit", systemImage: "pencil") }
                 if event.isTask {

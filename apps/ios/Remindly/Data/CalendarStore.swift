@@ -43,6 +43,11 @@ final class CalendarStore {
         return map
     }
 
+    /// Every occurrence overlapping `from...to` (the week view lays these out itself).
+    func occurrences(from: Day, to: Day) -> [Occurrence] {
+        events.flatMap { $0.occurrences(from: from, to: to) }
+    }
+
     /// Rebuilds the agenda if the date changed since it was built (e.g. after midnight).
     func rollOverIfNeeded() {
         if agenda.today != .today { agenda = Agenda(events: events) }

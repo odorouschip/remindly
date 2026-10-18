@@ -5,8 +5,8 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  /* Round, like the browser tab icon (app/icon.png). */
-  border-radius: 50%;
+  /* The rounded-square version of the icon (40px corners at 180px). */
+  border-radius: calc(var(--s) * 40 / 180);
   background: #f3f1ec;
   /* Keeps the paper square from melting into light backgrounds. */
   box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.08);
@@ -16,7 +16,7 @@
   display: flex;
   align-items: flex-end;
   gap: calc(var(--s) * 2 / 180);
-  margin-top: calc(var(--s) * -10 / 180);
+  margin-top: calc(var(--s) * -26 / 180);
 }
 
 .r {

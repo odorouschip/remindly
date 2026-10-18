@@ -247,7 +247,7 @@ Native SwiftUI (tab bar, native forms and sheets, system light/dark colors), wit
 ## Recently done
 
 ### Round tab icon, coral New button, new sign-in screens — 2026-10-18
-- [x] Browser tab icon is now the round mark (paper circle, ink "r", coral dot) with transparent corners; the sidebar / sign-in logo is round to match. Apple touch and PWA icons stay square for the OS to mask.
+- [x] Browser tab icon is now the round mark (paper circle, ink "r", coral dot) with transparent corners, a slightly larger "r" and a faint edge so it reads as big as other sites' icons on a white tab. The "r" is nudged up to sit centered in every icon (web, PWA, iOS app icon and in-app logo); the sidebar / sign-in logo stays a rounded square.
 - [x] "+ New" uses the brand coral (`--accent: #cf4a2c`, the icon's coral deepened to pass 4.5:1 with white text).
 - [x] Log in / sign up / reset password redesigned: form on the left with the wordmark, brand panel on the right (serif headline, a live mock of today's agenda and the Lock Screen countdown, three feature lines). Paper panel in light mode, ink in dark; form only below 960px.
 

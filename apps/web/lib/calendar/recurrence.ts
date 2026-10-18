@@ -20,7 +20,8 @@ const spanOf = (ev: CalEvent) => Math.max(0, daysBetween(ev.date, ev.endDate || 
 export function occurrencesBetween(events: readonly CalEvent[], from: string, to: string): CalEvent[] {
   const out: CalEvent[] = [];
   for (const ev of events) {
-    if (!ev.recur) {
+    // A repeating task shows once, at its current due date; checking it off moves it on (nextTaskDue).
+    if (!ev.recur || ev.isTask) {
       if (ev.date <= to && (ev.endDate || ev.date) >= from) out.push(ev);
       continue;
     }
@@ -64,6 +65,24 @@ function applyOverride(ev: CalEvent, x: OccurrenceOverride): CalEvent {
     }
   }
   return out;
+}
+
+/** Days in one repeat period, for bounding searches: long enough that the next occurrence is inside. */
+const PERIOD_DAYS = { Daily: 1, Weekly: 7, Monthly: 31, Yearly: 366 } as const;
+
+/**
+ * Where a repeating task moves when it's checked off, like Google Tasks: its
+ * first repeat after both its current due date and today. Null when the
+ * repeat has ended, so the task is simply done.
+ */
+export function nextTaskDue(task: CalEvent, today: string): string | null {
+  if (!task.recur) return null;
+  const from = toIsoDate(addDays(parseIsoDate(task.date > today ? task.date : today), 1));
+  // Twelve periods covers months without the start's day (the 31st) and Feb 29 (every 4 years).
+  const window = toIsoDate(addDays(parseIsoDate(from), 12 * PERIOD_DAYS[task.recur] * Math.max(1, task.recurInterval)));
+  const to = task.recurUntil && task.recurUntil < window ? task.recurUntil : window;
+  for (const date of repeatDates(task, from, to)) return date;
+  return null;
 }
 
 /** Whether a repeating event has an occurrence on `date` (before any exceptions). */

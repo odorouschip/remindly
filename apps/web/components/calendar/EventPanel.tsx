@@ -122,7 +122,7 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
 
   const timeError = kind === "event" && !allDay && endDate <= date && end <= time ? "End time must be after the start." : null;
   const endDateError = kind === "event" && endDate < date ? "The end can't be before the start." : null;
-  const untilError = kind === "event" && recur && recurUntil && recurUntil < date ? "Can't stop repeating before it starts." : null;
+  const untilError = recur && recurUntil && recurUntil < date ? "Can't stop repeating before it starts." : null;
   const customMinutes = custom.amount * (UNITS.find((u) => u.value === custom.unit)?.minutes ?? 1);
 
   const handleSubmit = (e: FormEvent) => {
@@ -138,7 +138,8 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
       });
     } else {
       onSave({
-        ...shared, endDate: date, time: "", end: "", allDay: true, recur: "", recurInterval: 1, recurUntil: "",
+        ...shared, endDate: date, time: "", end: "", allDay: true,
+        recur, recurInterval: recur ? recurInterval : 1, recurUntil: recur ? recurUntil : "",
         isTask: true, done: editing?.isTask ? editing.done : false, remind, priority,
         ...(remind === "custom" ? { remindMinutes: customMinutes } : {}),
       });
@@ -146,6 +147,44 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
   };
 
   const noun = kind === "task" ? "task" : "event";
+
+  // Events and tasks both repeat. A repeating task shows once, at its next due date.
+  const repeatProps = (
+    <>
+      <Prop icon={<Repeat size={14} />} label="Repeat" top={Boolean(recur)}>
+        <select className={styles.control} value={recur} onChange={(e) => changeRecur(e.target.value as RecurLabel)}>
+          {RECUR_OPTIONS.map((r) => <option key={r} value={r}>{r || "Does not repeat"}</option>)}
+        </select>
+        {recur && (
+          <div className={styles.inline}>
+            <span className={styles.every}>Every</span>
+            <input type="number" className={`${styles.control} ${styles.amount}`} min={1} max={99}
+              value={recurInterval} aria-label="Repeat interval"
+              onChange={(e) => setRecurInterval(Math.min(99, Math.max(1, Math.round(Number(e.target.value)) || 1)))} />
+            <span className={styles.every}>{RECUR_UNIT[recur]}{recurInterval === 1 ? "" : "s"}</span>
+          </div>
+        )}
+      </Prop>
+      {recur && (
+        <Prop icon={<CalendarX size={14} />} label="Ends" error={untilError}>
+          {recurUntil ? (
+            <div className={styles.inline}>
+              <input type="date" className={styles.control} value={recurUntil} min={date}
+                onChange={(e) => setRecurUntil(e.target.value)} aria-label="Last day it repeats" />
+              <IconButton label="Repeat forever" size={26} onClick={() => setRecurUntil("")}>
+                <X size={14} strokeWidth={1.75} />
+              </IconButton>
+            </div>
+          ) : (
+            <button type="button" className={`${styles.control} ${styles.muted}`}
+              onClick={() => setRecurUntil(toIsoDate(addDays(parseIsoDate(date), DEFAULT_REPEAT_DAYS[recur])))}>
+              Never
+            </button>
+          )}
+        </Prop>
+      )}
+    </>
+  );
 
   return (
     <div className={styles.panel} data-open={open || undefined} inert={!open}>
@@ -194,38 +233,7 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
                 <Prop icon={<MapPin size={14} />} label="Location">
                   <input className={styles.control} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Add a place" />
                 </Prop>
-                <Prop icon={<Repeat size={14} />} label="Repeat" top={Boolean(recur)}>
-                  <select className={styles.control} value={recur} onChange={(e) => changeRecur(e.target.value as RecurLabel)}>
-                    {RECUR_OPTIONS.map((r) => <option key={r} value={r}>{r || "Does not repeat"}</option>)}
-                  </select>
-                  {recur && (
-                    <div className={styles.inline}>
-                      <span className={styles.every}>Every</span>
-                      <input type="number" className={`${styles.control} ${styles.amount}`} min={1} max={99}
-                        value={recurInterval} aria-label="Repeat interval"
-                        onChange={(e) => setRecurInterval(Math.min(99, Math.max(1, Math.round(Number(e.target.value)) || 1)))} />
-                      <span className={styles.every}>{RECUR_UNIT[recur]}{recurInterval === 1 ? "" : "s"}</span>
-                    </div>
-                  )}
-                </Prop>
-                {recur && (
-                  <Prop icon={<CalendarX size={14} />} label="Ends" error={untilError}>
-                    {recurUntil ? (
-                      <div className={styles.inline}>
-                        <input type="date" className={styles.control} value={recurUntil} min={date}
-                          onChange={(e) => setRecurUntil(e.target.value)} aria-label="Last day it repeats" />
-                        <IconButton label="Repeat forever" size={26} onClick={() => setRecurUntil("")}>
-                          <X size={14} strokeWidth={1.75} />
-                        </IconButton>
-                      </div>
-                    ) : (
-                      <button type="button" className={`${styles.control} ${styles.muted}`}
-                        onClick={() => setRecurUntil(toIsoDate(addDays(parseIsoDate(date), DEFAULT_REPEAT_DAYS[recur])))}>
-                        Never
-                      </button>
-                    )}
-                  </Prop>
-                )}
+                {repeatProps}
               </>
             ) : (
               <>
@@ -248,6 +256,7 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
                 <Prop icon={<Flag size={14} />} label="Priority">
                   <Segmented ariaLabel="Priority" options={PRIORITIES} value={priority} onChange={setPriority} fullWidth />
                 </Prop>
+                {repeatProps}
               </>
             )}
 

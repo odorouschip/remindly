@@ -296,7 +296,7 @@ struct EventPayload: Encodable {
         try c.encode(allDay ? firstDay : nil, forKey: .startDate)
         try c.encode(allDay ? max(firstDay, e.isTask ? firstDay : Day(e.end)) : nil, forKey: .endDate)
         try c.encode(TimeZone.current.identifier, forKey: .timezone)
-        let rule = e.isTask ? nil : e.repeatRule
+        let rule = e.repeatRule
         try c.encode(rule?.frequency, forKey: .repeatFreq)
         try c.encode(rule?.interval ?? 1, forKey: .repeatInterval)
         try c.encode(rule?.until, forKey: .repeatUntil)

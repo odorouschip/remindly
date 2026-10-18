@@ -26,9 +26,9 @@ extension View {
                     .tint(.green)
                 }
             }
-            .swipeActions(edge: .trailing, allowsFullSwipe: event.repeatRule == nil) {
+            .swipeActions(edge: .trailing, allowsFullSwipe: !asksBeforeDeleting(event)) {
                 // Repeating events confirm first, so don't let the row animate away.
-                Button(role: event.repeatRule == nil ? .destructive : nil) { actions.delete(occurrence) } label: {
+                Button(role: asksBeforeDeleting(event) ? nil : .destructive) { actions.delete(occurrence) } label: {
                     Label("Delete", systemImage: "trash")
                 }
                 .tint(.red)
@@ -51,4 +51,9 @@ extension View {
                 Button(role: .destructive) { actions.delete(occurrence) } label: { Label("Delete", systemImage: "trash") }
             }
     }
+}
+
+/// Repeating events ask "this event or all events" before deleting (repeating tasks delete whole).
+private func asksBeforeDeleting(_ event: CalendarEvent) -> Bool {
+    event.repeatRule != nil && !event.isTask
 }

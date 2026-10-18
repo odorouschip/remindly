@@ -28,6 +28,9 @@ enum DemoData {
         argument(after: "-open-event").flatMap { $0.split(separator: "@").dropFirst().first.flatMap { Day(string: String($0)) } }
     }
 
+    /// The demo "Water plants" (a weekly task), for `-open-event`.
+    static let waterId = UUID(uuidString: "00000000-0000-0000-0000-00000000DE72")!
+
     /// The demo Standup (daily), for `-open-event`.
     static let standupId = UUID(uuidString: "00000000-0000-0000-0000-00000000DE71")!
 
@@ -89,6 +92,7 @@ enum DemoData {
             event(0, "Gym", at: 18, category: "Health"),
             event(0, "Call Mom", at: 18, 30, minutes: 30, category: "Personal"),
             task(0, "Reply to landlord", .medium),
+            { var water = task(0, "Water plants", .low); water.id = waterId; water.repeatRule = RepeatRule(frequency: .weekly); return water }(),
             task(-2, "Return library books", .low),
             event(1, "Design review", at: 14, category: "Work"),
             task(1, "Pay rent", .high),

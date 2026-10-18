@@ -244,7 +244,7 @@ export function parseQuickAdd(input: string, now: Date = new Date(), categories:
 
   return {
     title, date: toIsoDate(finalDate), dateMentioned, time, end: endTime, allDay,
-    recur: isTask ? "" : recur, recurInterval: isTask || !recur ? 1 : recurInterval, isTask, categoryId,
+    recur, recurInterval: recur ? recurInterval : 1, isTask, categoryId,
   };
 }
 

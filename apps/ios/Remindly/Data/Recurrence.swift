@@ -39,8 +39,9 @@ extension CalendarEvent {
     }
 
     /// Occurrences that overlap the days `from...to`, skipped and changed ones applied.
+    /// A repeating task shows once, at its current due date; checking it off moves it on (`nextDue`).
     func occurrences(from: Day, to: Day, calendar: Calendar = .current) -> [Occurrence] {
-        guard let rule = repeatRule else {
+        guard let rule = repeatRule, !isTask else {
             let occurrence = Occurrence(event: self, occurrenceDate: firstDay, day: firstDay, start: start, end: end)
             return occurrence.day <= to && occurrence.lastDay >= from ? [occurrence] : []
         }
@@ -84,6 +85,23 @@ extension CalendarEvent {
             bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: time.second ?? 0, of: day.date(calendar)
         ) ?? day.date(calendar)
         return Occurrence(event: self, occurrenceDate: day, day: day, start: occurrenceStart, end: occurrenceStart.addingTimeInterval(end.timeIntervalSince(start)))
+    }
+
+    /// Where a repeating task moves when it's checked off, like Google Tasks: its
+    /// first repeat after both its current due date and `today`. Nil when the
+    /// repeat has ended, so the task is simply done.
+    func nextDue(after today: Day, calendar: Calendar = .current) -> Day? {
+        guard let rule = repeatRule else { return nil }
+        let from = max(firstDay, today).adding(days: 1, calendar: calendar)
+        // Twelve periods covers months without the start's day (the 31st) and Feb 29 (every 4 years).
+        let period = switch rule.frequency {
+        case .daily: 1
+        case .weekly: 7
+        case .monthly: 31
+        case .yearly: 366
+        }
+        let window = from.adding(days: 12 * period * max(1, rule.interval), calendar: calendar)
+        return repeatDays(rule, from: from, to: rule.until.map { min($0, window) } ?? window, calendar: calendar).first
     }
 
     /// Whether the series has an occurrence on `day` (before any exceptions).

@@ -82,7 +82,8 @@ struct MainView: View {
             open: { occurrence in
                 guard let series = store.event(occurrence.event.id) else { return }
                 // A repeating event opens at the occurrence that was tapped.
-                editing = series.repeatRule == nil
+                // Repeating tasks only ever show their current due date, so they open whole.
+                editing = series.repeatRule == nil || series.isTask
                     ? EditorTarget(event: series)
                     : EditorTarget(event: CalendarEvent(editing: series.occurrence(on: occurrence.occurrenceDate)), occurrenceDate: occurrence.occurrenceDate)
             },
@@ -90,7 +91,7 @@ struct MainView: View {
             toggleDone: { event in Task { await store.toggleDone(event) } },
             delete: { occurrence in
                 guard let series = store.event(occurrence.event.id) else { return }
-                if series.repeatRule != nil { confirmingDelete = occurrence } else { Task { await store.delete(series) } }
+                if series.repeatRule != nil && !series.isTask { confirmingDelete = occurrence } else { Task { await store.delete(series) } }
             },
             showSettings: { showingSettings = true },
             showQuickAdd: { showingQuickAdd = true }

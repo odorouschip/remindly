@@ -26,6 +26,7 @@ struct QuickAdd: Equatable {
             var task = CalendarEvent.newTask(on: day)
             task.title = title
             task.categoryId = categoryId
+            task.repeatRule = repeatRule
             return task
         }
         var event = CalendarEvent(start: day.date(calendar), end: day.date(calendar))
@@ -310,7 +311,7 @@ enum QuickAddParser {
             dateMentioned: dateMentioned,
             startMinutes: startMinutes,
             endMinutes: endMinutes,
-            repeatRule: isTask ? nil : frequency.map { RepeatRule(frequency: $0, interval: interval) },
+            repeatRule: frequency.map { RepeatRule(frequency: $0, interval: interval) },
             isTask: isTask,
             categoryId: categoryId
         )

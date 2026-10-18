@@ -4,17 +4,25 @@ Living document. Check things off as they're done; add new items freely. Loosely
 
 Items marked *(release only)* aren't needed while Remindly is a personal tool. They're kept for a possible public launch.
 
+## Next up
+
+1. **Try the iOS app on a real phone** — see iOS app → Functionality still needed.
+2. **Run the Google Tasks import on the real Takeout file** (built and tested against a sample; Google doesn't document the format).
+3. **Import from Apple Calendar on iOS** (EventKit; covers iCloud, Google and work calendars added on the phone).
+4. Web week view: overlapping events side by side (port `WeekLayout.swift`).
+5. Drag to reschedule in the week views.
+
 ---
 
 ## Branding & assets
 
-- [ ] **New logo.** Current mark is a generic calendar glyph on a dark rounded square. It lives in one place — [components/ui/Logo.tsx](apps/web/components/ui/Logo.tsx) — plus the generated icons ([public/icon.svg](apps/web/public/icon.svg), `icon-192.png`, `icon-512.png`, [app/apple-icon.png](apps/web/app/apple-icon.png)).
+- [x] *(Italic "r" with a coral dot on paper, web and iOS.)* **New logo.** Current mark is a generic calendar glyph on a dark rounded square. It lives in one place — [components/ui/Logo.tsx](apps/web/components/ui/Logo.tsx) — plus the generated icons ([public/icon.svg](apps/web/public/icon.svg), `icon-192.png`, `icon-512.png`, [app/apple-icon.png](apps/web/app/apple-icon.png)).
 - [x] *(Moot — the Import tab is gone until imports exist.)* **Real import provider logos.** Settings → Import currently shows letters "G", "O", "Y" and a blank circle for Apple (see `IMPORT_SOURCES` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx)). The real SVG icons already exist in [LoginScreen.tsx](apps/web/components/LoginScreen.tsx) (`GoogleIcon`, `AppleIcon`, `MicrosoftIcon`, `GitHubIcon`) — extract them and add a `YahooIcon`.
 - [x] **Favicon** — missing entirely. `/favicon.ico` 404s on every page load (visible in the console at runtime); no file in [apps/web/public/](apps/web/public/).
 - [x] **PWA manifest icons** — [apps/web/app/manifest.ts](apps/web/app/manifest.ts) only declares a single `/icon.svg` with `sizes: "any"`. iOS Home Screen and Android splash screens won't use SVG — need explicit 192×192 and 512×512 PNGs (and ideally an `apple-touch-icon` set).
 - [x] **Manifest brand name mismatches the UI.** [manifest.ts](apps/web/app/manifest.ts) declares `name: "Calender"` and `short_name: "Calender"`, while the in-app brand is "Remindly". An installed PWA would show "Calender" on the home screen. Pick one and align everywhere (including page title in [layout.tsx](apps/web/app/layout.tsx) which is also "Calender").
 - [x] **Manifest `theme_color` vs `<meta theme-color>` mismatch.** [manifest.ts](apps/web/app/manifest.ts) sets `theme_color: "#1f3d36"` (forest green — leftover from the dead globals.css palette), while [layout.tsx](apps/web/app/layout.tsx) sets `themeColor: "#f4f0e8"` (paper). Different surfaces (browser chrome vs installed PWA) will tint differently. Pick one or compute both from the active theme.
-- [ ] **iOS app icon** — needs to match the new logo.
+- [x] **iOS app icon** — needs to match the new logo.
 
 ---
 
@@ -55,6 +63,7 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 - [ ] *(release only)* **Make Settings feel like a real app, not a mockup.** Current Account tab is three lonely inputs. Add: change-password flow, connected providers list, sign-out button (currently in sidebar), notification preferences, default view / week-start (already collected at signup but never editable after), delete-account.
 - [x] **Categories tab** is read-only ("managed inline on each event for now"). Either make it editable (add/rename/delete categories) or delete the tab.
 - [x] **Import tab** buttons don't import. Build the OAuth flow + ICS upload, or hide the section.
+- [ ] **Reorder categories on the web.** `sort_order` exists and iOS can reorder (Settings → Edit Categories); the web category editor can't yet.
 
 ### Calendar views
 - [x] **Week view is fixed 7am–11pm.** Events outside that range silently disappear. Make it 24h, fit-to-events, or scrollable/zoomable.
@@ -68,7 +77,8 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 - [x] **Week-view empty time slots aren't clickable.** Clicking a 9am Tuesday slot should open a new-event panel with that date/time pre-filled; currently nothing happens.
 - [x] **Week-view day-number headers aren't clickable.** Clicking "Mon 3" in the header should jump to the day view (when day view exists).
 - [x] **Week-view events outside 7am–11pm render at negative top / below grid instead of being hidden or moved.** `topFrac = (sh - 7) + sm/60` in [CalendarApp.tsx](apps/web/components/CalendarApp.tsx) — a 6am event renders with `top: -51px` (above the visible grid), a 11pm event renders below. Caught in audit: a 6am event appears as a partial colored block at the top of the Thursday column with no label visible. Either clip these, scroll them into view, or stack them in an "earlier"/"later" overflow row.
-- [ ] **Month-view "today" highlight is only on the day-number circle, not the whole column or cell.** Week view also only marks the day-number, not the column — most calendars tint the entire today column for stronger visual anchor.
+- [ ] **Month-view "today" highlight is only on the day-number circle, not the whole column or cell.** Week view also only marks the day-number, not the column — most calendars tint the entire today column for stronger visual anchor. (The iOS week view tints it.)
+- [ ] **Web week view stacks overlapping events on top of each other.** Port the cascade layout from [WeekLayout.swift](apps/ios/Remindly/Data/WeekLayout.swift).
 - [x] **All three view toggles can be off simultaneously** → "Pick a view above" dead state. Month/Week aren't mutually exclusive (re-clicking the active one toggles it off); Agenda is overloaded (side panel when grid view is on, full view when no grid view). Reasonable redesign: Month / Week / Day / Agenda as a true mutually-exclusive radio set with Agenda always available as a separate toggle for the side panel.
 - [x] **No way to view past events as a list.** Upcoming side panel filters `e.date >= todayLocalIso`; Agenda-only view does the same. A user who searches for "conference" and the matching events are in the past sees an empty Upcoming with no hint that the matches exist. Add a "show past" toggle on Agenda, or a separate Past view.
 
@@ -91,7 +101,7 @@ Items marked *(release only)* aren't needed while Remindly is a personal tool. T
 
 ## Database / backend
 
-Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/migrations/202604300001_init.sql): `events`, `reminders`, `devices`, `live_activity_runs`. RLS is per-user (`auth.uid() = user_id`). Several things the UI pretends to support don't exist in the DB yet.
+Current schema: [202610170001_schema_v2.sql](supabase/migrations/202610170001_schema_v2.sql) plus later migrations in [supabase/migrations](supabase/migrations) (the original `202604300001_init.sql` is superseded). RLS is per-user (`auth.uid() = user_id`).
 
 ### Schema additions (prerequisites for features above)
 - [x] *(Folded into editable categories — one concept, toggled in the sidebar.)* **Calendars table.** Sidebar pretends "My Calendar", "Work", "Birthdays", "US Holidays" exist but nothing is stored. Add `public.calendars` (id, user_id, name, color, kind: personal/shared/holiday, is_visible). Add a `calendar_id` FK on `events`. Backfill existing rows into a default "My Calendar" per user. This is the prerequisite for the sidebar filter feature in Functional gaps.
@@ -122,7 +132,6 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [x] **Edit or skip one occurrence** (web + iOS). "This event / All events" on save, "This event / This and following / All events" on delete.
 - [ ] **"This and following" for edits** (split the series in two) — only delete has it so far.
 - [ ] An occurrence can't drop the series' category (a null override means "same as the series").
-- [ ] **Category order.** `sort_order` exists; Settings has no drag-to-reorder yet.
 - [x] **Decide expansion strategy.** Today `events` stores `repeat_frequency` + `repeat_until` but the views never expand the rule into instances — only the original date renders (tracked in Functional gaps → Calendar views). Three approaches: (a) expand client-side on read from the single stored row, (b) generate occurrence rows in a database view, (c) materialize the next N occurrences into a separate table via a job. **(a) is the simplest start** — defer (c) until performance forces it.
 - [x] *(Table exists and reminders honor it; the web UI to skip/move one occurrence is still to build.)* **Exceptions table.** Once recurrence is expanded, users will want to move or delete a single instance of a repeating event. Add `recurrence_exceptions` (event_id, occurrence_date, action: cancelled / modified, override_event_id).
 
@@ -131,7 +140,7 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 
 ### Maintenance
 - [ ] *(release only)* **Soft-delete purge job.** `deleted_at` is set but never cleaned. Add a scheduled function to permanently delete rows where `deleted_at < now() - interval '30 days'`.
-- [ ] **Migration discipline.** Right now everything lives in `202604300001_init.sql`. Future schema changes should land as new timestamped migrations — never edit a shipped one.
+- [x] **Migration discipline.** Right now everything lives in `202604300001_init.sql`. Future schema changes should land as new timestamped migrations — never edit a shipped one.
 - [ ] **Backups.** Verify the Supabase project has point-in-time recovery turned on (requires Pro plan); document the restore procedure.
 
 ### Edge function (dispatch-reminders)
@@ -177,12 +186,14 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 
 ### iOS Live Activities (the headline feature)
 - [x] *(Ink/paper/coral from the new icon; serif title; flips to "Now" with a progress ring at the start time.)* Live Activity styling should match the (eventual) new web brand.
-- [ ] Confirm the Live Activity surfaces the next event with a glanceable countdown — this is the whole reason for building Remindly vs. using stock Calendar.
-- [ ] Test push-to-start Live Activities on iOS 17.2+ so events can launch a Live Activity from the server when due.
+- [ ] Confirm the Live Activity surfaces the next event with a glanceable countdown — this is the whole reason for building Remindly vs. using stock Calendar. *(Part of the real-phone check below.)*
+- [ ] *(Needs a paid developer account.)* Test push-to-start Live Activities on iOS 17.2+ so events can launch a Live Activity from the server when due.
 
 ### Cross-platform sync
 - [ ] Conflict resolution when web and iOS edit the same event while one is offline.
-- [ ] Apple Calendar / Google Calendar / Outlook one-way mirror in.
+- [x] *(Settings → Import → Google Tasks, from a Takeout `Tasks.json`.)* **Import from Google Tasks** — bring existing Google Tasks over as Remindly tasks (title, notes, due date, done state), so Google Tasks can be retired.
+- [ ] **Import from Apple Calendar on iOS** (EventKit, read-only copies tagged with `source` / `external_id`). Covers whatever calendars are on the phone, including Google and work accounts.
+- [ ] Google Calendar / Outlook one-way mirror on the web (only needed if the Apple Calendar import isn't enough).
 - [ ] *(release only)* Share-calendar-with-another-user (longer term).
 
 ### PWA story
@@ -200,28 +211,28 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 
 ## iOS app
 
-The iOS side is significantly less developed than the web side and the entire UI needs a redesign. Most items here are placeholders — flesh them out as direction firms up. Live Activity items live above under "Bigger picture → iOS Live Activities" for now.
+Native SwiftUI (tab bar, native forms and sheets, system light/dark colors), with the brand colors on the Live Activity and icon. Live Activity items live above under "Bigger picture → iOS Live Activities".
 
-### UI redesign (currently unsatisfactory — full overhaul planned)
-- [ ] **Decide the iOS visual direction.** Should it mirror the web (sidebar + theming + 7 themes) or lean into native iOS patterns (NavigationStack, tab bar, native sheets, system colors)? Probably native — but the web brand needs to be visible.
+### UI redesign
+- [x] *(Native, with the brand on the icon, Live Activity and widgets.)* **Decide the iOS visual direction.** Should it mirror the web (sidebar + theming + 7 themes) or lean into native iOS patterns (NavigationStack, tab bar, native sheets, system colors)? Probably native — but the web brand needs to be visible.
 - [x] *(Replaced rather than audited.)* **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
 - [x] *(Native Upcoming list for now: overdue tasks, days ahead, checkboxes, pull to refresh. Month/week views still to come.)* **Rebuild events list / agenda view** with the new design language.
 - [x] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
 - [x] *(Month grid with category dots + selected day's list; Week timeline with a Month / Week switch.)* **Add month / week views** on iPad / larger phones.
 - [ ] **Pinch to zoom the iOS week timeline**, and drag to move / resize events there.
-- [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
+- [x] *(Moot: the app uses system colors, which follow light/dark; brand and category colors are in [Style.swift](apps/ios/Remindly/Views/Style.swift) and [CategoryPalette.swift](apps/ios/Shared/CategoryPalette.swift).)* **App-wide theming layer** — match the web's light/dark tokens.
 
 ### Functionality still needed
 - [x] **Background refresh.** `BGAppRefreshTask` every ≥3h (iOS decides); needs an on-device check since the simulator can't run it — see apps/ios/README.md.
 - [x] **Edit categories on iOS** — Settings → Edit Categories: rename, recolor, add, reorder, delete.
-- [ ] **Forgot password on iOS** (points to the web for now).
-- [ ] **Auth UI** — match the web's simplified auth (email + password, forgot password with code, optional provider buttons).
+- [ ] **Forgot password on iOS** (sign-in is email + password; reset points to the web for now).
 - [ ] *(release only)* **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
 - [ ] **Offline editing + sync conflict handling.**
 - [x] *(Local notifications are the main path until there's a paid developer account.)* **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
 - [ ] **iCloud / device-local backup** of preferences (theme choice, default view, etc.).
 - [x] **Calendar widgets** (Home Screen + Lock Screen) beyond the Live Activity.
-- [ ] **Check the widgets on a real phone** (App Group on the free team, Lock Screen tinting) and consider a tap-to-complete checkbox for tasks (needs an App Intent that can write to Supabase).
+- [ ] **Try it on a real phone.** Everything so far has only run in the simulator. Check: reminders arrive with the app closed, background refresh picks up web changes, Home / Lock Screen widgets (App Group on the free team, Lock Screen tinting), the Live Activity countdown in the Dynamic Island and on the Lock Screen, and a full week of daily use.
+- [ ] Tap-to-complete checkbox for tasks in the widgets (needs an App Intent that can write to Supabase).
 - [ ] **Share extension** so events can be created from other apps (e.g., from a Safari page).
 
 ### Polish / quality
@@ -235,6 +246,11 @@ The iOS side is significantly less developed than the web side and the entire UI
 
 ## Recently done
 
+### Repeating tasks, TODO cleanup — 2026-10-18
+- [x] Tasks can repeat (web + iOS editors and quick add, e.g. "task: water plants every sunday"). Like Google Tasks, a repeating task shows once, at its current due date; checking it off moves it to the next repeat after today, and it's only done once the repeat ends. Reminders follow the due date with no database change (checked against a local Postgres).
+- [x] **Google Tasks import** (web, Settings → Import): reads the `Tasks.json` from a Google Takeout export ([googleTasks.ts](apps/web/lib/calendar/googleTasks.ts)), previews it, maps each list to a category (same-named one picked automatically), sets one reminder choice, and optionally includes completed tasks. Undated tasks are due on the import day; subtasks come over as tasks with a note. Tagged `source = 'google_tasks'` + the Google id, so importing again skips what's already there. Repeats aren't in Google's export — set them in the editor afterwards.
+- [x] TODO.md brought up to date (done items checked off, stale paths fixed, "Next up" list).
+
 ### One occurrence of a repeating event — 2026-10-18
 - [x] Opening an occurrence of a repeating event (web and iOS) now shows that occurrence, not the first one. Saving asks **This event / All events** (repeat, all-day and kind changes always apply to all); deleting offers **This event / This and following / All events**. "This event" writes an `event_exceptions` row, so it stays part of the series and the reminder scheduler already honors it; "All events" moves the whole series by the same number of days.
 - [x] Exceptions applied when expanding repeats on web ([recurrence.ts](apps/web/lib/calendar/recurrence.ts)) and iOS ([Recurrence.swift](apps/ios/Remindly/Data/Recurrence.swift)), including occurrences moved in from outside the visible range. Edit logic in [occurrenceEdits.ts](apps/web/lib/calendar/occurrenceEdits.ts) ↔ [OccurrenceEdits.swift](apps/ios/Remindly/Data/OccurrenceEdits.swift).
@@ -246,7 +262,6 @@ The iOS side is significantly less developed than the web side and the entire UI
 
 ### Week view on iPhone — 2026-10-18
 - [x] Calendar tab has a Month / Week switch (remembered). Week ([WeekView.swift](apps/ios/Remindly/Views/WeekView.swift), layout in [WeekLayout.swift](apps/ios/Remindly/Data/WeekLayout.swift)): day headers, all-day bars spanning the days they cover (folds to "+N" past three rows), a 24-hour timeline with a now line, overnight events split at midnight like the web, overlapping events cascaded like Calendar's. Tap an empty slot to add an event at that half hour; swipe to change weeks; tap / press and hold events as in the lists.
-- [ ] **Web week view still stacks overlapping events on top of each other** — port the lane layout from `WeekLayout.swift`.
 
 ### Quick add on iPhone, web logo — 2026-10-18
 - [x] iOS quick add / search sheet (✨🔍 button on both tabs): natural-language create, "Add details first…", jump to a date, find events. Parser ported to Swift ([QuickAdd.swift](apps/ios/Remindly/Data/QuickAdd.swift)) and checked against the web's test phrases.
@@ -279,7 +294,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [x] Categories are editable in Settings (rename, 9-color palette, add, delete → events become uncategorized); `#tags` in quick add match them by name.
 - [x] Repeat interval in the editor and quick add ("every other week", "every 3 days", "biweekly"); location field; multi-day all-day events.
 - [x] Dispatcher rewritten on top of the new tables: one JWT per run, deliveries marked sent only when Apple accepts them, dead tokens disabled, Live Activity runs upserted per occurrence.
-- [ ] **iOS models are now out of date** with the schema — they get rebuilt in the iOS pass.
+- [x] **iOS models are now out of date** with the schema — they get rebuilt in the iOS pass.
 
 ### Command bar — 2026-10-15
 - [x] ⌘K / Ctrl+K (or "Quick add" in the sidebar) opens a command bar: create events/tasks from a phrase, jump to a date, find events (past ones too), switch views/theme, open settings.

@@ -29,6 +29,7 @@ function seedEvents(): CalEvent[] {
     ev(0, "Lunch with Sam", "12:30", "13:30", "Social", { location: "Tartine" }),
     ev(0, "Gym", "18:00", "19:00", "Health"),
     task(0, "Reply to landlord", "medium"),
+    task(0, "Water plants", "low", { recur: "Weekly" }),
     ev(1, "Design review", "14:00", "15:00", "Work", { desc: "Calendar redesign — bring screenshots" }),
     task(1, "Pay rent", "high"),
     ev(2, "Dentist", "10:00", "11:00", "Health"),
@@ -52,6 +53,7 @@ function seedEvents(): CalEvent[] {
 export function createDemoBackend(): CalendarBackend {
   let events = seedEvents();
   let categories = DEMO_CATEGORIES.map((c) => ({ ...c }));
+  const imported = new Set<string>();
 
   return {
     kind: "demo",
@@ -73,6 +75,17 @@ export function createDemoBackend(): CalendarBackend {
         else delete exceptions[occurrenceDate];
         return { ...e, exceptions };
       });
+    },
+    async importEvents(source, items) {
+      let added = 0;
+      for (const { event, externalId } of items) {
+        const key = `${source}:${externalId}`;
+        if (imported.has(key)) continue;
+        imported.add(key);
+        events = [...events, { ...event, id: crypto.randomUUID() }];
+        added++;
+      }
+      return { added, skipped: items.length - added };
     },
     async listCategories() {
       return [...categories].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => ({ ...c }));

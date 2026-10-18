@@ -57,7 +57,7 @@ struct EventEditorView: View {
                     }
                 }
 
-                if draft.isTask { taskSection } else { timeSection; repeatSection }
+                if draft.isTask { taskSection; repeatSection } else { timeSection; repeatSection }
 
                 Section {
                     Picker("Category", selection: $draft.categoryId) {
@@ -126,7 +126,7 @@ struct EventEditorView: View {
                     }
                 }
             } message: {
-                if repeatingSeries != nil {
+                if repeatingSeries != nil && !draft.isTask {
                     Text(occurrenceDate == nil ? "This deletes every occurrence." : "This is a repeating event.")
                 }
             }
@@ -168,7 +168,9 @@ struct EventEditorView: View {
                 }
             }
         } footer: {
-            if draft.repeatRule != nil && draft.isSaved {
+            if draft.isTask && draft.repeatRule != nil {
+                Text("Checking it off moves it to the next date.")
+            } else if draft.repeatRule != nil && draft.isSaved {
                 Text(occurrenceDate == nil ? "Changes apply to every occurrence." : "Repeat changes apply to every occurrence.")
             }
         }
@@ -213,7 +215,6 @@ struct EventEditorView: View {
                 draft.allDay = true
                 draft.start = day.date()
                 draft.end = day.date()
-                draft.repeatRule = nil
             } else {
                 let fresh = CalendarEvent.newEvent(on: day)
                 draft.kind = .event

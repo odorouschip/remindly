@@ -9,6 +9,7 @@ import { Workspace } from "./calendar/Workspace";
 import type { CalendarBackend } from "@/lib/calendar/backend";
 import { createDemoBackend } from "@/lib/calendar/demoBackend";
 import { createSupabaseBackend } from "@/lib/calendar/supabaseBackend";
+import { GOOGLE_TASKS_SOURCE } from "@/lib/calendar/googleTasks";
 import type { CalEvent, Category, OccurrenceOverride } from "@/lib/calendar/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -108,6 +109,14 @@ export function CalendarApp() {
     } catch (error) {
       showNotice(error instanceof Error ? error.message : "Could not save.");
     }
+  }
+
+  /** Throws so the import panel can show what went wrong. */
+  async function handleImportTasks(items: { event: CalEvent; externalId: string }[]) {
+    if (!backend) throw new Error("Not connected.");
+    const result = await backend.importEvents(GOOGLE_TASKS_SOURCE, items);
+    await reload();
+    return result;
   }
 
   async function handleSaveCategory(cat: Category) {
@@ -264,6 +273,7 @@ export function CalendarApp() {
       onDelete={(id) => void handleDelete(id)}
       onSaveOccurrence={(seriesId, date, override) => void handleSaveOccurrence(seriesId, date, override)}
       onSaveCategory={(cat) => void handleSaveCategory(cat)}
+      onImportTasks={handleImportTasks}
       onDeleteCategory={(id) => void handleDeleteCategory(id)}
       onSignOut={() => void handleSignOut()}
     />

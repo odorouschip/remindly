@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyToSeries, changesSeriesOnly, endBefore, hasChanges, overrideFor } from "../lib/calendar/occurrenceEdits";
-import { byDay, occurrenceKey, occurrenceOf, occurrencesBetween } from "../lib/calendar/recurrence";
+import { byDay, nextTaskDue, occurrenceKey, occurrenceOf, occurrencesBetween } from "../lib/calendar/recurrence";
 import { chipTime, timeColumnLabel, whenLabel } from "../lib/calendar/display";
 import { rowToEvent } from "../lib/calendar/supabaseBackend";
 import { emptyEvent, type CalEvent } from "../lib/calendar/types";
@@ -189,5 +189,34 @@ describe("one occurrence of a repeating event", () => {
       "2026-10-21": { cancelled: true },
       "2026-10-22": { cancelled: false, title: "Retro", date: "2026-10-22", endDate: "2026-10-22", time: "16:00", end: "16:15" },
     });
+  });
+});
+
+describe("repeating tasks", () => {
+  const water: CalEvent = { ...emptyEvent("2026-10-18"), id: "t1", title: "Water plants", allDay: true, isTask: true, recur: "Weekly" };
+
+  it("shows once, at the current due date", () => {
+    expect(occurrencesBetween([water], "2026-10-01", "2026-11-30").map((e) => e.date)).toEqual(["2026-10-18"]);
+  });
+
+  it("moves to the next repeat after the due date when checked off early or on time", () => {
+    expect(nextTaskDue(water, "2026-10-15")).toBe("2026-10-25");
+    expect(nextTaskDue(water, "2026-10-18")).toBe("2026-10-25");
+  });
+
+  it("moves past today when checked off late", () => {
+    expect(nextTaskDue(water, "2026-11-03")).toBe("2026-11-08");
+    expect(nextTaskDue({ ...water, recur: "Daily" }, "2026-11-03")).toBe("2026-11-04");
+  });
+
+  it("follows intervals and skips months without the day", () => {
+    expect(nextTaskDue({ ...water, recur: "Weekly", recurInterval: 2 }, "2026-10-18")).toBe("2026-11-01");
+    expect(nextTaskDue({ ...water, date: "2026-01-31", endDate: "2026-01-31", recur: "Monthly" }, "2026-01-31")).toBe("2026-03-31");
+    expect(nextTaskDue({ ...water, date: "2024-02-29", endDate: "2024-02-29", recur: "Yearly" }, "2024-02-29")).toBe("2028-02-29");
+  });
+
+  it("is done for good once the repeat has ended", () => {
+    expect(nextTaskDue({ ...water, recurUntil: "2026-10-24" }, "2026-10-18")).toBeNull();
+    expect(nextTaskDue({ ...water, recur: "" }, "2026-10-18")).toBeNull();
   });
 });

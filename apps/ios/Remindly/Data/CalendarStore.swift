@@ -201,10 +201,16 @@ final class CalendarStore {
         }
     }
 
-    /// Checks a task off (or back on) right away, then saves.
+    /// Checks a task off (or back on) right away, then saves. A repeating task
+    /// moves to its next due date instead, until its repeat ends.
     func toggleDone(_ event: CalendarEvent) async {
         guard var task = self.event(event.id) else { return }
-        task.isDone.toggle()
+        if !task.isDone, let next = task.nextDue(after: .today) {
+            task.start = next.date()
+            task.end = next.date()
+        } else {
+            task.isDone.toggle()
+        }
         if let index = events.firstIndex(where: { $0.id == task.id }) { events[index] = task }
         await save(task)
     }

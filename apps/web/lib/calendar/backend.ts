@@ -16,6 +16,11 @@ export interface CalendarBackend {
    * date it would normally fall on. Null puts it back to match the series.
    */
   saveOccurrence(seriesId: string, occurrenceDate: string, override: OccurrenceOverride | null): Promise<void>;
+  /**
+   * Adds events copied from somewhere else (e.g. Google Tasks). Ones already
+   * imported from the same source and external id are skipped.
+   */
+  importEvents(source: string, items: readonly { event: CalEvent; externalId: string }[]): Promise<{ added: number; skipped: number }>;
 
   listCategories(): Promise<Category[]>;
   /** Inserts when `cat.id` is empty, otherwise updates. Returns the saved category. */

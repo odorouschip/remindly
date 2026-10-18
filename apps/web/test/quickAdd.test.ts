@@ -27,6 +27,10 @@ describe("parseQuickAdd", () => {
     expect(parse(input)).toMatchObject(expected);
   });
 
+  it("lets tasks repeat", () => {
+    expect(parse("task: water plants every sunday")).toMatchObject({ title: "Water plants", date: "2026-10-18", isTask: true, recur: "Weekly" });
+  });
+
   it("makes tasks from a prefix and keeps them all-day", () => {
     expect(parse("task: pay rent nov 1")).toMatchObject({ title: "Pay rent", date: "2026-11-01", isTask: true, allDay: true, time: "" });
     expect(parse("remind me to call the bank friday")).toMatchObject({ title: "Call the bank", date: "2026-10-16", isTask: true });

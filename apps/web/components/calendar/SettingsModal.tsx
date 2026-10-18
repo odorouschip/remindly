@@ -4,6 +4,7 @@ import { Button, IconButton } from "@/components/ui/controls";
 import type { Category } from "@/lib/calendar/types";
 import type { ThemePref } from "@/lib/theme";
 import { CategoryEditor } from "./CategoryEditor";
+import { GoogleTasksImport, type ImportTasks } from "./GoogleTasksImport";
 import type { Account } from "./Sidebar";
 import styles from "./SettingsModal.module.css";
 
@@ -22,6 +23,7 @@ type SettingsModalProps = {
   onThemePref: (pref: ThemePref) => void;
   onSaveCategory: (cat: Category) => void;
   onDeleteCategory: (id: string) => void;
+  onImportTasks: ImportTasks;
   account: Account;
   onSignOut: () => void;
 };
@@ -70,6 +72,11 @@ export function SettingsModal(props: SettingsModalProps) {
         <section ref={categoriesRef} className={styles.section}>
           <h3 className={styles.sectionTitle}>Categories</h3>
           <CategoryEditor onSave={props.onSaveCategory} onDelete={props.onDeleteCategory} />
+        </section>
+
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Import</h3>
+          <GoogleTasksImport onImport={props.onImportTasks} />
         </section>
 
         <section className={styles.section}>

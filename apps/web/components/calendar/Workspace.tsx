@@ -2,7 +2,7 @@ import { CalendarDays, CircleCheck, Columns3, LayoutGrid, List, Monitor, Moon, P
 import { useEffect, useRef, useState } from "react";
 import { addDays, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
 import { applyToSeries, changesSeriesOnly, endBefore, hasChanges, overrideFor } from "@/lib/calendar/occurrenceEdits";
-import { occurrenceOf } from "@/lib/calendar/recurrence";
+import { nextTaskDue, occurrenceOf } from "@/lib/calendar/recurrence";
 import { emptyEvent, type CalEvent, type Category, type OccurrenceOverride } from "@/lib/calendar/types";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
 import { Button } from "@/components/ui/controls";
@@ -12,6 +12,7 @@ import { CommandBar, type CommandAction } from "./CommandBar";
 import { DayPanel } from "./DayPanel";
 import { EventPanel } from "./EventPanel";
 import { MonthView } from "./MonthView";
+import type { ImportTasks } from "./GoogleTasksImport";
 import { ScopeDialog, type Scope } from "./ScopeDialog";
 import { SettingsModal } from "./SettingsModal";
 import { Sidebar, type Account } from "./Sidebar";
@@ -29,6 +30,7 @@ type WorkspaceProps = {
   onDelete: (id: string) => void;
   onSaveOccurrence: (seriesId: string, occurrenceDate: string, override: OccurrenceOverride | null) => void;
   onSaveCategory: (cat: Category) => void;
+  onImportTasks: ImportTasks;
   onDeleteCategory: (id: string) => void;
   onSignOut: () => void;
 };
@@ -149,6 +151,14 @@ export function Workspace(props: WorkspaceProps) {
   };
   const toggleDone = (ev: CalEvent) => {
     const series = seriesOf(ev);
+    // Checking off a repeating task moves it to its next due date instead.
+    const next = series.recur && !series.done ? nextTaskDue(series, todayIso()) : null;
+    if (next) {
+      onSave({ ...series, date: next, endDate: next });
+      const label = relativeDayLabel(next);
+      onNotify(`Done · “${series.title}” is next due ${next <= toIsoDate(addDays(new Date(), 1)) ? label.toLowerCase() : label}`);
+      return;
+    }
     onSave({ ...series, done: !series.done });
   };
 
@@ -263,7 +273,7 @@ export function Workspace(props: WorkspaceProps) {
 
         <SettingsModal open={settings !== null} focus={settings ?? "top"} onClose={() => setSettings(null)}
           themePref={themePref} onThemePref={setTheme}
-          onSaveCategory={props.onSaveCategory} onDeleteCategory={props.onDeleteCategory}
+          onSaveCategory={props.onSaveCategory} onDeleteCategory={props.onDeleteCategory} onImportTasks={props.onImportTasks}
           account={account} onSignOut={onSignOut} />
 
         <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} events={events} actions={commandActions}

@@ -120,7 +120,7 @@ function eventToRow(ev: CalEvent): Database["public"]["Tables"]["events"]["Inser
     start_date: allDay ? ev.date : null,
     end_date: allDay ? (ev.endDate && ev.endDate >= ev.date ? ev.endDate : ev.date) : null,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-    repeat_freq: ev.isTask ? null : LABEL_TO_FREQ[ev.recur],
+    repeat_freq: LABEL_TO_FREQ[ev.recur],
     repeat_interval: ev.recur ? ev.recurInterval : 1,
     repeat_until: ev.recur && ev.recurUntil ? ev.recurUntil : null,
     priority: ev.isTask ? ev.priority ?? "medium" : null,
@@ -174,6 +174,33 @@ export function createSupabaseBackend(supabase: SupabaseClient<Database>): Calen
           .upsert(overrideToRow(seriesId, occurrenceDate, override), { onConflict: "event_id,occurrence_date" })
         : await supabase.from("event_exceptions").delete().eq("event_id", seriesId).eq("occurrence_date", occurrenceDate);
       if (error) throw new Error(error.message);
+    },
+
+    async importEvents(source, items) {
+      // One copy per external id, even if the file repeats one.
+      const unique = [...new Map(items.map((item) => [item.externalId, item])).values()];
+      let added = 0;
+      for (let i = 0; i < unique.length; i += 200) {
+        const batch = unique.slice(i, i + 200);
+        const rows = batch.map(({ event, externalId }) => ({ ...eventToRow(event), source, external_id: externalId }));
+        // Already imported (same user, source and external id) → left alone.
+        const { data, error } = await supabase.from("events")
+          .upsert(rows, { onConflict: "user_id,source,external_id", ignoreDuplicates: true })
+          .select("id, external_id");
+        if (error) throw new Error(error.message);
+        const inserted = data ?? [];
+        added += inserted.length;
+        const byExternalId = new Map(batch.map((item) => [item.externalId, item.event]));
+        const reminders = inserted.flatMap((row) => {
+          const event = byExternalId.get(row.external_id ?? "");
+          return event ? reminderOffsets(event).map((offset_minutes) => ({ event_id: row.id, offset_minutes })) : [];
+        });
+        if (reminders.length > 0) {
+          const { error: reminderError } = await supabase.from("reminders").insert(reminders);
+          if (reminderError) throw new Error(reminderError.message);
+        }
+      }
+      return { added, skipped: items.length - added };
     },
 
     async listCategories() {

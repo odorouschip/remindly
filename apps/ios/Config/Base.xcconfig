@@ -7,6 +7,6 @@ SUPABASE_ANON_KEY =
 
 // Where the web app is hosted, e.g. remindly.example.com (no https://).
 // Turns the "do this on the web" notes into links. Optional.
-REMINDLY_WEB_HOST =
+REMINDLY_WEB_HOST = remindly.tylerq.me
 
 #include? "Secrets.xcconfig"

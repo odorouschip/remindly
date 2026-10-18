@@ -311,7 +311,7 @@ struct EventEditorView: View {
     private func startLiveActivity() {
         guard let occurrence = nextOccurrence else { return }
         do {
-            try LiveActivityController.start(occurrence)
+            try LiveActivityController.start(occurrence, tint: store.category(draft.categoryId)?.color)
             liveActivityMessage = "Countdown started. Lock your phone to see it."
         } catch {
             liveActivityMessage = error.localizedDescription

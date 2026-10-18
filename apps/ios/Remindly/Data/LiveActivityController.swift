@@ -11,26 +11,27 @@ enum LiveActivityController {
         Activity<RemindlyActivityAttributes>.activities.contains { $0.attributes.eventId == occurrence.id }
     }
 
-    static func start(_ occurrence: Occurrence) throws {
+    static func start(_ occurrence: Occurrence, tint: CategoryColor?) throws {
         guard isAvailable else { throw APIError("Live Activities are turned off for Remindly in Settings.") }
         let attributes = RemindlyActivityAttributes(eventId: occurrence.id, title: occurrence.event.title)
         _ = try Activity.request(
             attributes: attributes,
-            content: ActivityContent(state: state(for: occurrence), staleDate: occurrence.end),
+            // Going stale at the start time flips the widget from countdown to
+            // "Now" on its own, without the app having to push an update.
+            content: ActivityContent(state: state(for: occurrence, tint: tint), staleDate: occurrence.start > Date() ? occurrence.start : occurrence.end),
             pushType: nil
         )
     }
 
-    static func end(_ occurrence: Occurrence) async {
-        for activity in Activity<RemindlyActivityAttributes>.activities where activity.attributes.eventId == occurrence.id {
-            await activity.end(
-                ActivityContent(state: state(for: occurrence, phase: "ended"), staleDate: nil),
-                dismissalPolicy: .immediate
-            )
+    /// Ends countdowns whose event is over. Called when the app comes to the foreground.
+    static func endFinished() async {
+        let now = Date()
+        for activity in Activity<RemindlyActivityAttributes>.activities where activity.content.state.endsAtDate <= now {
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
 
-    private static func state(for occurrence: Occurrence, phase: String? = nil) -> RemindlyActivityAttributes.ContentState {
+    private static func state(for occurrence: Occurrence, tint: CategoryColor?) -> RemindlyActivityAttributes.ContentState {
         let now = Date()
         let minutesUntil = occurrence.start.timeIntervalSince(now) / 60
         let currentPhase: String
@@ -44,9 +45,10 @@ enum LiveActivityController {
             title: occurrence.event.title,
             startsAt: ISO8601DateFormatter.supabase.string(from: occurrence.start),
             endsAt: ISO8601DateFormatter.supabase.string(from: occurrence.end),
-            phase: phase ?? currentPhase,
+            phase: currentPhase,
             urgency: minutesUntil <= 1 ? "now" : minutesUntil <= 10 ? "soon" : "calm",
-            deepLinkUrl: "remindly://events/\(occurrence.event.id.uuidString)"
+            deepLinkUrl: "remindly://events/\(occurrence.event.id.uuidString)",
+            tint: tint?.rawValue
         )
     }
 }

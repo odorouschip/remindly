@@ -24,21 +24,27 @@ struct Agenda {
             .map { $0.occurrence(on: $0.firstDay) }
             .sorted { $0.start < $1.start }
 
-        let last = today.adding(days: Self.daysAhead)
+        let byDay = Self.byDay(events: events, from: today, to: today.adding(days: Self.daysAhead))
+        days = byDay.keys.sorted().map { DayGroup(day: $0, occurrences: byDay[$0]!) }
+    }
+
+    /// What's on each day in `from...to`, each day sorted for display.
+    /// Multi-day events appear on every day they cover.
+    static func byDay(events: [CalendarEvent], from: Day, to: Day) -> [Day: [Occurrence]] {
         var byDay: [Day: [Occurrence]] = [:]
         for event in events {
-            for occurrence in event.occurrences(from: today, to: last) {
-                // Multi-day events show on every day they cover.
-                var day = max(occurrence.day, today)
-                while day <= occurrence.lastDay && day <= last {
+            for occurrence in event.occurrences(from: from, to: to) {
+                var day = max(occurrence.day, from)
+                while day <= occurrence.lastDay && day <= to {
                     byDay[day, default: []].append(occurrence)
                     day = day.adding(days: 1)
                 }
             }
         }
-        days = byDay.keys.sorted().map { day in
-            DayGroup(day: day, occurrences: byDay[day]!.sorted { Self.sortKey($0, on: day) < Self.sortKey($1, on: day) })
+        for (day, list) in byDay {
+            byDay[day] = list.sorted { sortKey($0, on: day) < sortKey($1, on: day) }
         }
+        return byDay
     }
 
     /// All-day items (and the middle days of long events) first, then by when they start that day.

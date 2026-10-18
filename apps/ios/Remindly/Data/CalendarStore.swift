@@ -6,7 +6,10 @@ import Observation
 @Observable
 final class CalendarStore {
     private(set) var events: [CalendarEvent] = [] {
-        didSet { agenda = Agenda(events: events) }
+        didSet {
+            agenda = Agenda(events: events)
+            dayMapCache = nil
+        }
     }
     /// Derived from `events`; rebuilt when they change or the day rolls over.
     private(set) var agenda = Agenda()
@@ -28,6 +31,16 @@ final class CalendarStore {
     init(auth: AuthStore) {
         self.auth = auth
         rest = SupabaseREST(auth: auth)
+    }
+
+    /// The month grid's view of the data, cached for the range last asked for.
+    @ObservationIgnored private var dayMapCache: (from: Day, to: Day, map: [Day: [Occurrence]])?
+
+    func dayMap(from: Day, to: Day) -> [Day: [Occurrence]] {
+        if let cache = dayMapCache, cache.from == from, cache.to == to { return cache.map }
+        let map = Agenda.byDay(events: events, from: from, to: to)
+        dayMapCache = (from, to, map)
+        return map
     }
 
     /// Rebuilds the agenda if the date changed since it was built (e.g. after midnight).

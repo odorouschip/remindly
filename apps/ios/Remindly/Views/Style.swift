@@ -5,6 +5,12 @@ extension Color {
     /// Remindly's accent (the web's --primary).
     static let remindly = Color(light: 0x2383E2, dark: 0x2383E2)
 
+    // Brand colors from the app icon.
+    static let ink = Color(uiColor: UIColor(hex: 0x0D0D0D))
+    static let paper = Color(uiColor: UIColor(hex: 0xF3F1EC))
+    /// The icon's dot, oklch(0.68 0.19 30).
+    static let coral = Color(uiColor: UIColor(hex: 0xF7604B))
+
     init(light: UInt32, dark: UInt32) {
         self.init(uiColor: UIColor { traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
@@ -45,18 +51,19 @@ extension Optional where Wrapped == Category {
     var color: Color { self?.color.color ?? CategoryColor.gray.color }
 }
 
-/// The app mark: a calendar glyph on a dark rounded square, like the web logo.
+/// The app mark (same artwork as the app icon), on a rounded square.
 struct LogoMark: View {
     var size: CGFloat = 44
 
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
-            .fill(Color(light: 0x37352F, dark: 0xEBEBEA))
+        Image("Logo")
+            .resizable()
+            .interpolation(.high)
             .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
             .overlay {
-                Image(systemName: "calendar")
-                    .font(.system(size: size * 0.5, weight: .medium))
-                    .foregroundStyle(Color(light: 0xFFFFFF, dark: 0x191919))
+                RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
             }
             .accessibilityHidden(true)
     }

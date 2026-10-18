@@ -9,115 +9,184 @@ struct RemindlyWidgetsBundle: WidgetBundle {
     }
 }
 
+// Styled after the app icon: ink background, paper text, a coral accent.
+private enum Brand {
+    static let ink = Color(red: 0x0D / 255, green: 0x0D / 255, blue: 0x0D / 255)
+    static let paper = Color(red: 0xF3 / 255, green: 0xF1 / 255, blue: 0xEC / 255)
+    static let coral = Color(red: 0xF7 / 255, green: 0x60 / 255, blue: 0x4B / 255)
+}
+
+/// The "r" from the app icon, in the system serif.
+private struct Mark: View {
+    var body: some View {
+        Text("r")
+            .font(.system(.body, design: .serif).italic().weight(.bold))
+            .foregroundStyle(Brand.coral)
+    }
+}
+
 struct RemindlyLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RemindlyActivityAttributes.self) { context in
-            LockScreenActivityView(state: context.state)
-                .activityBackgroundTint(Color(red: 0.10, green: 0.18, blue: 0.15))
-                .activitySystemActionForegroundColor(.white)
+            LockScreenActivityView(state: context.state, started: context.isStale)
+                .activityBackgroundTint(Brand.ink)
+                .activitySystemActionForegroundColor(Brand.paper)
                 .widgetURL(URL(string: context.state.deepLinkUrl))
         } dynamicIsland: { context in
-            DynamicIsland {
+            let started = context.isStale || context.state.phase == "in_progress"
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(context.state.phaseLabel)
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        PhaseLabel(state: context.state, started: started)
                         Text(context.state.title)
-                            .font(.headline.weight(.heavy))
+                            .font(.headline)
                             .lineLimit(1)
                     }
+                    .padding(.leading, 4)
                 }
-
                 DynamicIslandExpandedRegion(.trailing) {
-                    CountdownText(state: context.state)
-                        .font(.title2.monospacedDigit().weight(.black))
+                    Countdown(state: context.state, started: started)
+                        .font(.title2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(context.state.isSoon || started ? Brand.coral : Brand.paper)
+                        .padding(.trailing, 4)
                 }
-
                 DynamicIslandExpandedRegion(.bottom) {
-                    ProgressView(timerInterval: Date.now...context.state.endsAtDate, countsDown: false)
-                        .tint(context.state.accentColor)
+                    if started {
+                        ProgressView(timerInterval: context.state.startsAtDate...context.state.endsAtDate, countsDown: false) {
+                            EmptyView()
+                        } currentValueLabel: {
+                            EmptyView()
+                        }
+                        .tint(context.state.tintColor)
+                    } else {
+                        Text(context.state.timeRange)
+                            .font(.footnote)
+                            .foregroundStyle(Brand.paper.opacity(0.6))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 4)
+                    }
                 }
             } compactLeading: {
-                Image(systemName: "calendar.badge.clock")
-                    .foregroundStyle(context.state.accentColor)
+                Mark()
             } compactTrailing: {
-                CountdownText(state: context.state)
-                    .font(.caption2.monospacedDigit().bold())
+                Countdown(state: context.state, started: started)
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(context.state.isSoon || started ? Brand.coral : Brand.paper)
+                    .frame(maxWidth: 52)
             } minimal: {
-                Image(systemName: "timer")
-                    .foregroundStyle(context.state.accentColor)
+                Mark()
             }
             .widgetURL(URL(string: context.state.deepLinkUrl))
-            .keylineTint(context.state.accentColor)
+            .keylineTint(Brand.coral)
         }
     }
 }
 
 struct LockScreenActivityView: View {
     let state: RemindlyActivityAttributes.ContentState
+    let started: Bool
+
+    private var isStarted: Bool { started || state.phase == "in_progress" }
 
     var body: some View {
-        HStack(spacing: 18) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text(state.phaseLabel)
-                    .font(.caption.weight(.black))
-                    .foregroundStyle(state.accentColor)
-                    .textCase(.uppercase)
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(state.tintColor)
+                .frame(width: 4)
+
+            VStack(alignment: .leading, spacing: 3) {
+                PhaseLabel(state: state, started: isStarted)
                 Text(state.title)
-                    .font(.title3.weight(.heavy))
+                    .font(.system(.title3, design: .serif).weight(.semibold))
                     .lineLimit(2)
+                Text(state.timeRange)
+                    .font(.footnote)
+                    .foregroundStyle(Brand.paper.opacity(0.6))
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
 
-            CountdownText(state: state)
-                .font(.system(size: 34, weight: .black, design: .rounded).monospacedDigit())
-                .minimumScaleFactor(0.74)
+            if isStarted {
+                ProgressView(timerInterval: state.startsAtDate...state.endsAtDate, countsDown: false) {
+                    EmptyView()
+                } currentValueLabel: {
+                    Text("Now")
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Brand.coral)
+                }
+                .progressViewStyle(.circular)
+                .tint(Brand.coral)
+                .frame(width: 64)
+            } else {
+                Countdown(state: state, started: false)
+                    .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(state.isSoon ? Brand.coral : Brand.paper)
+                    .multilineTextAlignment(.trailing)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: 130, alignment: .trailing)
+            }
         }
-        .foregroundStyle(.white)
-        .padding(18)
+        .foregroundStyle(Brand.paper)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 }
 
-struct CountdownText: View {
+private struct PhaseLabel: View {
     let state: RemindlyActivityAttributes.ContentState
+    let started: Bool
 
     var body: some View {
-        if state.phase == "in_progress" {
+        HStack(spacing: 5) {
+            if started || state.isSoon {
+                Circle().fill(Brand.coral).frame(width: 6, height: 6)
+            }
+            Text(started ? "HAPPENING NOW" : state.isSoon ? "STARTING SOON" : "UP NEXT")
+                .font(.caption2.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(Brand.paper.opacity(0.6))
+        }
+    }
+}
+
+/// Counts down to the start and stops at zero (the widget turns to "Now" when
+/// the activity goes stale at the start time).
+private struct Countdown: View {
+    let state: RemindlyActivityAttributes.ContentState
+    let started: Bool
+
+    var body: some View {
+        if started {
             Text("Now")
-        } else if state.phase == "ended" {
-            Text("Done")
         } else {
-            Text(state.startsAtDate, style: .timer)
+            Text(timerInterval: Date.now...max(Date.now, state.startsAtDate), countsDown: true)
         }
     }
 }
 
 extension RemindlyActivityAttributes.ContentState {
-    var phaseLabel: String {
-        switch phase {
-        case "starting":
-            return "Starting"
-        case "in_progress":
-            return "Happening"
-        case "ended":
-            return "Finished"
-        case "stale":
-            return "Needs sync"
-        default:
-            return "Upcoming"
-        }
+    /// Within ten minutes of starting when the countdown began. (Widget views
+    /// don't re-render as time passes, so this comes from the state, not the clock.)
+    var isSoon: Bool { urgency == "soon" || urgency == "now" }
+
+    var timeRange: String {
+        "\(startsAtDate.formatted(date: .omitted, time: .shortened)) – \(endsAtDate.formatted(date: .omitted, time: .shortened))"
     }
 
-    var accentColor: Color {
-        switch urgency {
-        case "now":
-            return Color(red: 0.95, green: 0.38, blue: 0.25)
-        case "soon":
-            return Color(red: 0.95, green: 0.74, blue: 0.24)
-        default:
-            return Color(red: 0.56, green: 0.80, blue: 0.72)
+    /// The event's category color (dark-mode shades, since the background is dark).
+    var tintColor: Color {
+        let hex: UInt32 = switch tint {
+        case "gray": 0x9B9B9B
+        case "brown": 0xBA856F
+        case "orange": 0xFFA344
+        case "yellow": 0xFFDC49
+        case "green": 0x4DAB9A
+        case "blue": 0x529CCA
+        case "purple": 0xA782D8
+        case "pink": 0xE255A1
+        case "red": 0xFF7369
+        default: 0xF7604B // coral when there's no category
         }
+        return Color(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
     }
 }

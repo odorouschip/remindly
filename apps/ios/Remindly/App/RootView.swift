@@ -9,7 +9,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if auth.isSignedIn || isDemo {
-                AgendaView()
+                MainView()
             } else {
                 SignInView()
             }
@@ -18,6 +18,16 @@ struct RootView: View {
             if auth.isSignedIn || isDemo {
                 // Load first so the agenda isn't blank while the permission prompt is up.
                 await store.load()
+                #if DEBUG
+                if DemoData.startsLiveActivity, let next = store.agenda.days.lazy.flatMap(\.occurrences).first(where: { !$0.event.allDay && $0.start > Date() }) {
+                    do {
+                        try LiveActivityController.start(next, tint: store.category(next.event.categoryId)?.color)
+                        BackgroundRefresh.log.notice("Demo Live Activity started for \(next.event.title, privacy: .public)")
+                    } catch {
+                        BackgroundRefresh.log.error("Demo Live Activity failed: \(String(describing: error), privacy: .public)")
+                    }
+                }
+                #endif
                 await store.notifications.requestAuthorization()
                 await store.notifications.reschedule(events: store.events)
             } else {
@@ -27,6 +37,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
+                Task { await LiveActivityController.endFinished() }
                 // Pick up changes made on the web, unless we synced moments ago.
                 if auth.isSignedIn && !isDemo && store.hasLoaded {
                     Task { await store.refreshIfStale() }

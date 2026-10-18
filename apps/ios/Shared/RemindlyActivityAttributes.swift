@@ -10,6 +10,8 @@ struct RemindlyActivityAttributes: ActivityAttributes {
         var phase: String
         var urgency: String
         var deepLinkUrl: String
+        /// Category palette name (e.g. "blue"). Optional so server pushes without it still decode.
+        var tint: String?
     }
 
     var eventId: String

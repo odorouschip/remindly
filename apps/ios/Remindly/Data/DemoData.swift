@@ -9,11 +9,19 @@ enum DemoData {
     /// Fixed id so `xcrun simctl openurl booted remindly://events/<id>` can open it.
     static let linkTestId = UUID(uuidString: "00000000-0000-0000-0000-00000000DE70")!
 
+    /// `-live-activity` starts a countdown for the next timed event after loading.
+    static var startsLiveActivity: Bool { ProcessInfo.processInfo.arguments.contains("-live-activity") }
+
+    /// `-tab upcoming` starts on the Upcoming tab.
+    static var launchTab: String? { argument(after: "-tab") }
+
     /// `-open-event <uuid>` opens that event on launch, as a tapped notification would.
-    static var eventToOpen: UUID? {
+    static var eventToOpen: UUID? { argument(after: "-open-event").flatMap(UUID.init(uuidString:)) }
+
+    private static func argument(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-open-event"), i + 1 < args.count else { return nil }
-        return UUID(uuidString: args[i + 1])
+        guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
+        return args[i + 1]
     }
 
     static let categories: [Category] = [

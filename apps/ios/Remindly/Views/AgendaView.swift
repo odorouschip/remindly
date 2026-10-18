@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// The main screen: overdue tasks, then the next few weeks grouped by day.
+/// The Upcoming tab: overdue tasks, then the next few weeks grouped by day.
 struct AgendaView: View {
     @Environment(CalendarStore.self) private var store
-    @State private var editing: CalendarEvent?
-    @State private var showingSettings = false
+    let actions: EventActions
 
     var body: some View {
         NavigationStack {
@@ -35,45 +34,11 @@ struct AgendaView: View {
             .navigationTitle("Upcoming")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showingSettings = true } label: { Image(systemName: "gearshape") }
+                    Button(action: actions.showSettings) { Image(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button { editing = .newEvent(on: .today) } label: { Label("New event", systemImage: "calendar.badge.plus") }
-                        Button { editing = .newTask(on: .today) } label: { Label("New task", systemImage: "checkmark.circle") }
-                    } label: {
-                        Image(systemName: "plus")
-                    } primaryAction: {
-                        editing = .newEvent(on: .today)
-                    }
-                    .accessibilityLabel("New")
-                }
-            }
-            .sheet(item: $editing) { event in
-                EventEditorView(event: event)
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-            }
-            .alert("Something went wrong", isPresented: Binding(
-                get: { store.errorMessage != nil },
-                set: { if !$0 { store.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(store.errorMessage ?? "")
-            }
-            .onChange(of: store.pendingEventId, initial: true) { _, id in
-                guard let id, store.hasLoaded else { return }
-                store.pendingEventId = nil
-                editing = store.event(id)
-            }
-            .onChange(of: store.hasLoaded) { _, loaded in
-                // A link that arrived before the first load finished.
-                if loaded, let id = store.pendingEventId {
-                    store.pendingEventId = nil
-                    editing = store.event(id)
+                    NewMenu(day: .today, create: actions.create)
                 }
             }
         }
@@ -81,10 +46,9 @@ struct AgendaView: View {
 
     private func row(_ occurrence: Occurrence, on day: Day) -> some View {
         EventRowView(occurrence: occurrence, day: day, category: store.category(occurrence.event.categoryId)) {
-            Task { await store.toggleDone(occurrence.event) }
+            actions.toggleDone(occurrence.event)
         }
-        .contentShape(Rectangle())
-        .onTapGesture { editing = occurrence.event }
+        .eventRowActions(occurrence.event, actions)
     }
 }
 

@@ -86,3 +86,17 @@ enum Timestamp {
         plain.string(from: date)
     }
 }
+
+extension Day {
+    /// The first day of this day's month.
+    var startOfMonth: Day { Day(year: year, month: month, day: 1) }
+
+    func addingMonths(_ months: Int, calendar: Calendar = .current) -> Day {
+        Day(calendar.date(byAdding: .month, value: months, to: date(calendar)) ?? date(calendar), calendar: calendar)
+    }
+
+    /// 0 = Sunday … 6 = Saturday.
+    func weekday(calendar: Calendar = .current) -> Int {
+        calendar.component(.weekday, from: date(calendar)) - 1
+    }
+}

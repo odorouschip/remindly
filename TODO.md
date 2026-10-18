@@ -174,7 +174,7 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 - [x] If natural-language event creation uses an LLM, it should round-trip locally for the simple cases (dates, times, durations) and only call the model for ambiguous input — avoids latency and cost on every keystroke.
 
 ### iOS Live Activities (the headline feature)
-- [ ] Live Activity styling should match the (eventual) new web brand.
+- [x] *(Ink/paper/coral from the new icon; serif title; flips to "Now" with a progress ring at the start time.)* Live Activity styling should match the (eventual) new web brand.
 - [ ] Confirm the Live Activity surfaces the next event with a glanceable countdown — this is the whole reason for building Remindly vs. using stock Calendar.
 - [ ] Test push-to-start Live Activities on iOS 17.2+ so events can launch a Live Activity from the server when due.
 
@@ -205,7 +205,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [x] *(Replaced rather than audited.)* **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
 - [x] *(Native Upcoming list for now: overdue tasks, days ahead, checkboxes, pull to refresh. Month/week views still to come.)* **Rebuild events list / agenda view** with the new design language.
 - [x] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
-- [ ] **Add month / week views** on iPad / larger phones.
+- [x] *(Month grid with category dots + selected day's list, on every size.)* **Add month / week views** on iPad / larger phones.
 - [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
 
 ### Functionality still needed
@@ -221,7 +221,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [ ] **Share extension** so events can be created from other apps (e.g., from a Safari page).
 
 ### Polish / quality
-- [ ] **App icon** — needs to match the new logo.
+- [x] *(Temporary italic "r" mark; dark and date-number variants planned for when Remindly replaces the stock Calendar.)* **App icon** — needs to match the new logo.
 - [ ] **Launch screen** — currently default.
 - [ ] *(release only)* **Onboarding** — first-launch flow asking for notification permission, Live Activity opt-in, calendar imports.
 - [ ] *(release only)* **Dynamic Type** support across all screens.
@@ -230,6 +230,12 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### iOS redesign, part 1 — 2026-10-18
+- [x] New app icon (light italic "r" with coral dot) and matching sign-in logo.
+- [x] Calendar tab: month grid with category dots, swipe/arrows between months, Today button, selected day's schedule below. Upcoming moved to its own tab.
+- [x] Swipe a task to complete it, swipe to delete (repeating events confirm first), press-and-hold menu with Edit / Done / Delete.
+- [x] Live Activity redesign: ink background, category bar, serif title, coral countdown, "r" mark in the Dynamic Island; turns to "Now" at the start time without an app update, and finished ones are cleared when the app opens.
 
 ### Background refresh, battery pass, hosting prep — 2026-10-18
 - [x] iOS background refresh ([BackgroundRefresh.swift](apps/ios/Remindly/Data/BackgroundRefresh.swift)): syncs and reschedules reminders while the app is closed.

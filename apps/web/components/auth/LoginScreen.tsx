@@ -23,7 +23,7 @@ export function LoginScreen({ onSignIn, onOAuth, onForgotPassword, onSignUp, err
   };
 
   return (
-    <AuthLayout title="Log in to Remindly"
+    <AuthLayout title="Welcome back" subtitle="Log in to pick up where you left off."
       footer={<>No account yet? <button type="button" className={styles.link} onClick={onSignUp}>Sign up</button></>}>
       <OAuthButtons onOAuth={(p) => void onOAuth(p)} />
       <form className={styles.form} onSubmit={handleSubmit}>
@@ -37,7 +37,7 @@ export function LoginScreen({ onSignIn, onOAuth, onForgotPassword, onSignUp, err
             autoComplete="current-password" required aria-invalid={Boolean(error) || undefined} />
         </Field>
         {error && <p className={styles.error} role="alert">{error}</p>}
-        <Button variant="primary" type="submit" className={styles.submit} disabled={isWorking}>
+        <Button variant="accent" type="submit" className={styles.submit} disabled={isWorking}>
           {isWorking ? "Logging in…" : "Log in"}
         </Button>
       </form>

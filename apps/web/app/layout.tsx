@@ -4,8 +4,8 @@ import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-// Only used for the logo's "r"; same face as the app icon.
-const serif = DM_Serif_Display({ subsets: ["latin"], weight: "400", style: "italic", variable: "--font-logo", display: "swap" });
+// The logo's "r" (italic, same face as the app icon) and the sign-in screens' headlines.
+const serif = DM_Serif_Display({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-logo", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Remindly",

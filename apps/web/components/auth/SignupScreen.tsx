@@ -46,7 +46,7 @@ export function SignupScreen({ onSignUp, onOAuth, onBackToLogin }: SignupScreenP
   }
 
   return (
-    <AuthLayout title="Create your account"
+    <AuthLayout title="Create your account" subtitle="One calendar for events and tasks, with countdowns that keep you on time."
       footer={<>Already have an account? <button type="button" className={styles.link} onClick={onBackToLogin}>Log in</button></>}>
       <OAuthButtons onOAuth={(p) => void onOAuth(p)} />
       <form className={styles.form} onSubmit={handleSubmit}>
@@ -63,7 +63,7 @@ export function SignupScreen({ onSignUp, onOAuth, onBackToLogin }: SignupScreenP
             autoComplete="new-password" required minLength={MIN_PASSWORD_LENGTH} />
         </Field>
         {error && <p className={styles.error} role="alert">{error}</p>}
-        <Button variant="primary" type="submit" className={styles.submit} disabled={working}>
+        <Button variant="accent" type="submit" className={styles.submit} disabled={working}>
           {working ? "Creating account…" : "Create account"}
         </Button>
       </form>

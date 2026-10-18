@@ -5,7 +5,8 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: calc(var(--s) * 0.225);
+  /* Round, like the browser tab icon (app/icon.png). */
+  border-radius: 50%;
   background: #f3f1ec;
   /* Keeps the paper square from melting into light backgrounds. */
   box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.08);

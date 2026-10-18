@@ -4,7 +4,7 @@ import styles from "./controls.module.css";
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(" ");
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "accent" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md";
 };
 

@@ -52,7 +52,7 @@ export function Toolbar({ year, month, view, onView, onNav, onToday, dayPanelOpe
           <PanelRight size={16} strokeWidth={1.75} />
         </IconButton>
       )}
-      <Button variant="primary" size="sm" onClick={onNew}>
+      <Button variant="accent" size="sm" onClick={onNew}>
         <Plus size={14} strokeWidth={2.25} /> New
       </Button>
     </header>

@@ -26,6 +26,14 @@
 }
 .primary:hover { background: var(--primary-hover); }
 
+/* Brand coral, for the main "make something" actions (+ New, log in). */
+.accent {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-sm);
+}
+.accent:hover { background: var(--accent-hover); }
+
 .secondary {
   box-shadow: inset 0 0 0 1px var(--border-strong);
 }

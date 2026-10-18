@@ -246,6 +246,11 @@ Native SwiftUI (tab bar, native forms and sheets, system light/dark colors), wit
 
 ## Recently done
 
+### Round tab icon, coral New button, new sign-in screens — 2026-10-18
+- [x] Browser tab icon is now the round mark (paper circle, ink "r", coral dot) with transparent corners; the sidebar / sign-in logo is round to match. Apple touch and PWA icons stay square for the OS to mask.
+- [x] "+ New" uses the brand coral (`--accent: #cf4a2c`, the icon's coral deepened to pass 4.5:1 with white text).
+- [x] Log in / sign up / reset password redesigned: form on the left with the wordmark, brand panel on the right (serif headline, a live mock of today's agenda and the Lock Screen countdown, three feature lines). Paper panel in light mode, ink in dark; form only below 960px.
+
 ### Repeating tasks, TODO cleanup — 2026-10-18
 - [x] Tasks can repeat (web + iOS editors and quick add, e.g. "task: water plants every sunday"). Like Google Tasks, a repeating task shows once, at its current due date; checking it off moves it to the next repeat after today, and it's only done once the repeat ends. Reminders follow the due date with no database change (checked against a local Postgres).
 - [x] **Google Tasks import** (web, Settings → Import): reads the `Tasks.json` from a Google Takeout export ([googleTasks.ts](apps/web/lib/calendar/googleTasks.ts)), previews it, maps each list to a category (same-named one picked automatically), sets one reminder choice, and optionally includes completed tasks. Undated tasks are due on the import day; subtasks come over as tasks with a note. Tagged `source = 'google_tasks'` + the Google id, so importing again skips what's already there. Repeats aren't in Google's export — set them in the editor afterwards.

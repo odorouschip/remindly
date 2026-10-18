@@ -23,6 +23,20 @@
   --primary: #2383e2;
   --primary-hover: #0077d4;
   --on-primary: #ffffff;
+  /* Brand coral (the icon's dot), deepened so white text on it stays readable. */
+  --accent: #cf4a2c;
+  --accent-hover: #b9401f;
+  --on-accent: #ffffff;
+
+  /* Brand (app icon): paper, ink and the dot's coral. The auth screens' brand panel uses these. */
+  --paper: #f3f1ec;
+  --ink: #0d0d0d;
+  --coral: #f7604b;
+  --brand-panel: #f3f1ec;
+  --brand-text: #0d0d0d;
+  --brand-muted: rgba(13, 13, 13, 0.6);
+  --brand-card: #ffffff;
+  --brand-card-border: rgba(13, 13, 13, 0.08);
   --today: #eb5757;
   --danger: #d44c47;
   --focus: rgba(35, 131, 226, 0.45);
@@ -100,6 +114,12 @@
 
   --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --brand-panel: #121211;
+  --brand-text: #f3f1ec;
+  --brand-muted: rgba(243, 241, 236, 0.6);
+  --brand-card: #1e1e1d;
+  --brand-card-border: rgba(255, 255, 255, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -138,6 +158,12 @@
 
     --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.45);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+    --brand-panel: #121211;
+    --brand-text: #f3f1ec;
+    --brand-muted: rgba(243, 241, 236, 0.6);
+    --brand-card: #1e1e1d;
+    --brand-card-border: rgba(255, 255, 255, 0.08);
   }
 }
 

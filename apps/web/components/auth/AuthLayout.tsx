@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/controls";
 import { Logo } from "@/components/ui/Logo";
+import { BrandPanel } from "./BrandPanel";
 import { AppleIcon, GitHubIcon, GoogleIcon, MicrosoftIcon } from "./ProviderIcons";
 import styles from "./auth.module.css";
 
@@ -26,7 +27,7 @@ const ENABLED_PROVIDERS = (process.env.NEXT_PUBLIC_AUTH_PROVIDERS ?? "")
   .filter((p): p is OAuthProvider => p in PROVIDERS);
 
 type AuthLayoutProps = {
-  /** Replaces the logo, e.g. a check mark on a success step. */
+  /** Shown above the title, e.g. a check mark on a success step. */
   icon?: ReactNode;
   title: string;
   subtitle?: ReactNode;
@@ -34,18 +35,29 @@ type AuthLayoutProps = {
   children?: ReactNode;
 };
 
+/** Sign-in screens: the form on the left, what Remindly is on the right (wide screens only). */
 export function AuthLayout({ icon, title, subtitle, footer, children }: AuthLayoutProps) {
   return (
     <main className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.head}>
-          {icon ?? <Logo size={40} />}
-          <h1 className={styles.title}>{title}</h1>
-          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+      <section className={styles.formSide}>
+        <div className={styles.brandRow}>
+          <Logo size={30} />
+          <span className={styles.wordmark}>Remindly</span>
         </div>
-        {children}
-        {footer && <div className={styles.footer}>{footer}</div>}
-      </div>
+
+        <div className={styles.card}>
+          <div className={styles.head}>
+            {icon}
+            <h1 className={styles.title}>{title}</h1>
+            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+          </div>
+          {children}
+          {footer && <div className={styles.footer}>{footer}</div>}
+        </div>
+
+        <p className={styles.fineprint}>Your calendar, tasks and reminders, synced between the web and iPhone.</p>
+      </section>
+      <BrandPanel />
     </main>
   );
 }

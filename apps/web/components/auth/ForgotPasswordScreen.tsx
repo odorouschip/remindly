@@ -59,7 +59,7 @@ export function ForgotPasswordScreen({ onSendCode, onVerifyCode, onUpdatePasswor
     return (
       <AuthLayout icon={<div className={styles.badge}><CircleCheck size={20} strokeWidth={1.75} /></div>}
         title="Password updated" subtitle="Log in with your new password.">
-        <Button variant="primary" className={styles.submit} onClick={onBackToLogin}>Log in</Button>
+        <Button variant="accent" className={styles.submit} onClick={onBackToLogin}>Log in</Button>
       </AuthLayout>
     );
   }
@@ -97,7 +97,7 @@ export function ForgotPasswordScreen({ onSendCode, onVerifyCode, onUpdatePasswor
           </Field>
         )}
         {error && <p className={styles.error} role="alert">{error}</p>}
-        <Button variant="primary" type="submit" className={styles.submit} disabled={working}>
+        <Button variant="accent" type="submit" className={styles.submit} disabled={working}>
           {working ? "One moment…" : copy.button}
         </Button>
       </form>

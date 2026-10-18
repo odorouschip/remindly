@@ -202,17 +202,20 @@ The iOS side is significantly less developed than the web side and the entire UI
 
 ### UI redesign (currently unsatisfactory — full overhaul planned)
 - [ ] **Decide the iOS visual direction.** Should it mirror the web (sidebar + theming + 7 themes) or lean into native iOS patterns (NavigationStack, tab bar, native sheets, system colors)? Probably native — but the web brand needs to be visible.
-- [ ] **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
-- [ ] **Rebuild events list / agenda view** with the new design language.
-- [ ] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
+- [x] *(Replaced rather than audited.)* **Audit current screens** — [RootView.swift](apps/ios/Calender/RootView.swift), [EventsView.swift](apps/ios/Calender/EventsView.swift), [EventEditorView.swift](apps/ios/Calender/EventEditorView.swift) — list everything that needs to change. (Quick pass before redesign begins.)
+- [x] *(Native Upcoming list for now: overdue tasks, days ahead, checkboxes, pull to refresh. Month/week views still to come.)* **Rebuild events list / agenda view** with the new design language.
+- [x] **Rebuild event editor** (currently `EventEditorView.swift`) — should feel like a native iOS form, not a port of the web create panel.
 - [ ] **Add month / week views** on iPad / larger phones.
 - [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
 
 ### Functionality still needed
+- [ ] **Background refresh.** Reminders only pick up web changes when the app is opened. A `BGAppRefreshTask` could sync a few times a day.
+- [ ] **Edit categories on iOS** (view-only for now; edit on the web).
+- [ ] **Forgot password on iOS** (points to the web for now).
 - [ ] **Auth UI** — match the web's simplified auth (email + password, forgot password with code, optional provider buttons).
 - [ ] *(release only)* **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
 - [ ] **Offline editing + sync conflict handling.**
-- [ ] **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
+- [x] *(Local notifications are the main path until there's a paid developer account.)* **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
 - [ ] **iCloud / device-local backup** of preferences (theme choice, default view, etc.).
 - [ ] **Calendar widgets** (Home Screen + Lock Screen) beyond the Live Activity.
 - [ ] **Share extension** so events can be created from other apps (e.g., from a Safari page).
@@ -227,6 +230,12 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### iOS data layer + native shell — 2026-10-17
+- [x] Generated [Remindly.xcodeproj](apps/ios/Remindly.xcodeproj) (app + Live Activity widget, folders auto-synced); renamed everything from Calender to Remindly, incl. the `remindly://` scheme. Supabase keys come from `apps/web/.env.local` via [sync-secrets.sh](apps/ios/scripts/sync-secrets.sh).
+- [x] New data layer in [apps/ios/Remindly/Data](apps/ios/Remindly/Data): Keychain-backed login with automatic token refresh, models for schema v2, repeat expansion ported from the web, local notifications for the next 60 reminders (rescheduled on every sync), Live Activities started from the editor.
+- [x] Native shell: sign in / sign up, Upcoming list, form-based editor, settings. Debug builds accept `-demo` (sample data) and `-open-event <id>`.
+- [x] Done tasks keep their reminder rows on web and iOS, so un-checking restores the reminder.
 
 ### Schema v2 + editable categories — 2026-10-17
 - [x] New migration [202610170001_schema_v2.sql](supabase/migrations/202610170001_schema_v2.sql) replaces the original tables: `profiles`, `categories`, `events` (events + tasks, real columns, date-based all-day, repeat interval), `event_exceptions`, `reminders` (rules with a DB-maintained `next_due_at`), `reminder_deliveries`, `devices` (one row per device), `live_activity_runs`. The JSON-in-notes metadata is gone.

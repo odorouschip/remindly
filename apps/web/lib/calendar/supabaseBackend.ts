@@ -53,7 +53,8 @@ export function rowToEvent(row: EventWithReminders): CalEvent {
 /** Minutes before the occurrence starts, as the reminders table stores them. */
 function reminderOffsets(ev: CalEvent): number[] {
   if (ev.isTask) {
-    if (ev.done || !ev.remind || ev.remind === "none") return [];
+    // Done tasks keep their rows (the database skips them), so un-checking restores the reminder.
+    if (!ev.remind || ev.remind === "none") return [];
     const beforeNine = ev.remind === "custom" ? ev.remindMinutes : REMIND_TO_MIN[ev.remind];
     return beforeNine === undefined ? [] : [beforeNine - NINE_AM];
   }

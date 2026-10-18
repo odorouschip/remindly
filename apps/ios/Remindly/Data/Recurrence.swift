@@ -13,8 +13,18 @@ struct Occurrence: Identifiable, Hashable {
     let end: Date
 
     var id: String { "\(event.id)|\(day)" }
-    /// The last day it covers (later than `day` for multi-day events).
-    var lastDay: Day { event.allDay ? Day(end) : Day(end.addingTimeInterval(-1)) }
+    /// The last day it covers (later than `day` for multi-day events). A timed
+    /// event ending at midnight doesn't reach into that day.
+    var lastDay: Day { event.allDay ? Day(end) : max(day, Day(end.addingTimeInterval(-1))) }
+
+    enum Part { case only, first, middle, last }
+
+    /// Which day of a multi-day occurrence `shown` is.
+    func part(on shown: Day) -> Part {
+        if day == lastDay { return .only }
+        if shown <= day { return .first }
+        return shown >= lastDay ? .last : .middle
+    }
 }
 
 extension CalendarEvent {

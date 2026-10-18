@@ -1,4 +1,5 @@
-import { WEEKDAYS, fmtTimeShort, monthGrid, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { WEEKDAYS, monthGrid, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { chipTime } from "@/lib/calendar/display";
 import { byDay, occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
 import { sortByStart, type CalEvent } from "@/lib/calendar/types";
 import { catStyle, useCategoryLookup } from "./categories";
@@ -59,7 +60,7 @@ export function MonthView({ year, month, events, selDate, onSelect, onCreate, on
                       : !ev.allDay && <span className={styles.dot} />}
                     <span className={styles.eventTitle}>{ev.title}</span>
                   </span>
-                  {ev.time && <span className={styles.eventTime}>{fmtTimeShort(ev.time)}</span>}
+                  {chipTime(ev) && <span className={styles.eventTime}>{chipTime(ev)}</span>}
                 </button>
               ))}
               {dayEvents.length > MAX_PER_DAY && (

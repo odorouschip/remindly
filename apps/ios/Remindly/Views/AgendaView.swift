@@ -13,12 +13,12 @@ struct AgendaView: View {
             List {
                 if !overdue.isEmpty {
                     Section("Overdue") {
-                        ForEach(overdue) { row($0) }
+                        ForEach(overdue) { row($0, on: $0.day) }
                     }
                 }
                 ForEach(days, id: \.day) { group in
                     Section {
-                        ForEach(group.occurrences) { row($0) }
+                        ForEach(group.occurrences) { row($0, on: group.day) }
                     } header: {
                         DayHeader(day: group.day)
                     }
@@ -81,8 +81,8 @@ struct AgendaView: View {
         }
     }
 
-    private func row(_ occurrence: Occurrence) -> some View {
-        EventRowView(occurrence: occurrence, category: store.category(occurrence.event.categoryId)) {
+    private func row(_ occurrence: Occurrence, on day: Day) -> some View {
+        EventRowView(occurrence: occurrence, day: day, category: store.category(occurrence.event.categoryId)) {
             Task { await store.toggleDone(occurrence.event) }
         }
         .contentShape(Rectangle())
@@ -113,11 +113,17 @@ struct AgendaView: View {
             }
         }
         return byDay.keys.sorted().map { day in
-            (day, byDay[day]!.sorted { a, b in
-                // All-day items first, then by start time.
-                if a.event.allDay != b.event.allDay { return a.event.allDay }
-                return a.start < b.start
-            })
+            (day, byDay[day]!.sorted { sortKey($0, on: day) < sortKey($1, on: day) })
+        }
+    }
+
+    /// All-day items (and the middle days of long events) first, then by when they start that day.
+    private func sortKey(_ occurrence: Occurrence, on day: Day) -> Date {
+        if occurrence.event.allDay { return .distantPast }
+        switch occurrence.part(on: day) {
+        case .middle: return .distantPast
+        case .last: return day.date()
+        case .only, .first: return occurrence.start
         }
     }
 }
@@ -152,6 +158,8 @@ private struct DayHeader: View {
 /// One line in the agenda: a color bar (or a checkbox for tasks), the title and when.
 struct EventRowView: View {
     let occurrence: Occurrence
+    /// The day this row is listed under (matters for multi-day events).
+    let day: Day
     let category: Category?
     var onToggleDone: () -> Void = {}
 
@@ -203,15 +211,31 @@ struct EventRowView: View {
     private var subtitle: String? {
         var parts: [String] = []
         if !event.isTask {
-            if event.allDay {
-                parts.append("All day")
-            } else {
-                parts.append("\(occurrence.start.formatted(date: .omitted, time: .shortened)) – \(occurrence.end.formatted(date: .omitted, time: .shortened))")
-            }
+            parts.append(whenText)
         } else if event.priority != .medium {
             parts.append("\(event.priority.label) priority")
         }
         if !event.location.isEmpty { parts.append(event.location) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Multi-day timed events show their start on the first day, "All day" in
+    /// between, and their end on the last day — not the range on every day.
+    private var whenText: String {
+        if event.allDay { return "All day" }
+        let start = occurrence.start.formatted(date: .omitted, time: .shortened)
+        let end = occurrence.end.formatted(date: .omitted, time: .shortened)
+        switch occurrence.part(on: day) {
+        case .only: return "\(start) – \(end)"
+        case .first: return "\(start) – \(Self.dayLabel(occurrence.lastDay)), \(end)"
+        case .middle: return "All day"
+        case .last: return "Until \(end)"
+        }
+    }
+
+    private static func dayLabel(_ day: Day) -> String {
+        if day == .today { return "Today" }
+        if day == Day.today.adding(days: 1) { return "Tomorrow" }
+        return day.date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
     }
 }

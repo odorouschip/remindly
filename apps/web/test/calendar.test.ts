@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byDay, occurrencesBetween } from "../lib/calendar/recurrence";
+import { chipTime, timeColumnLabel, whenLabel } from "../lib/calendar/display";
 import { rowToEvent } from "../lib/calendar/supabaseBackend";
 import { emptyEvent, type CalEvent } from "../lib/calendar/types";
 
@@ -79,5 +80,32 @@ describe("intervals and spans", () => {
   it("includes a multi-day occurrence that started before the window", () => {
     const evs = occurrencesBetween([{ ...base, allDay: true, time: "", end: "", date: "2026-02-27", endDate: "2026-03-02" }], "2026-03-01", "2026-03-31");
     expect(byDay(evs, "2026-03-01", "2026-03-31").map((e) => e.date)).toEqual(["2026-03-01", "2026-03-02"]);
+  });
+});
+
+describe("multi-day timed events", () => {
+  const trip: CalEvent = { ...base, id: "t", date: "2026-10-17", endDate: "2026-10-19", time: "10:00", end: "11:00" };
+  const split = (ev: CalEvent) => byDay([ev], "2026-10-01", "2026-10-31");
+
+  it("shows the start, then all day, then the end — not the range on every day", () => {
+    const days = split(trip);
+    expect(days.map((d) => [d.date, d.segment?.part, timeColumnLabel(d)])).toEqual([
+      ["2026-10-17", "first", "10:00 AM"],
+      ["2026-10-18", "middle", "All day"],
+      ["2026-10-19", "last", "Until 11:00 AM"],
+    ]);
+    expect(days.every((d) => d.segment?.fullDay)).toBe(true);
+    expect(whenLabel(days[0]!)).toMatch(/^10:00 AM – .+, 11:00 AM$/);
+    expect(chipTime(days[1]!)).toBe("");
+  });
+
+  it("keeps a short overnight event out of the all-day row", () => {
+    const flight = split({ ...trip, date: "2026-10-17", endDate: "2026-10-18", time: "23:00", end: "01:00" });
+    expect(flight.map((d) => d.segment)).toEqual([{ part: "first", fullDay: false }, { part: "last", fullDay: false }]);
+  });
+
+  it("doesn't spill onto the next day when it ends at midnight", () => {
+    const late = split({ ...trip, date: "2026-10-17", endDate: "2026-10-18", time: "22:00", end: "00:00" });
+    expect(late.map((d) => d.date)).toEqual(["2026-10-17"]);
   });
 });

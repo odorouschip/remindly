@@ -1,4 +1,4 @@
-import { addDays, parseIsoDate, toIsoDate } from "./dates";
+import { addDays, localDateTimeToIso, parseIsoDate, toIsoDate } from "./dates";
 import type { CalEvent } from "./types";
 
 // Mirrors public.next_reminder() in supabase/migrations/202610170001_schema_v2.sql;
@@ -32,20 +32,29 @@ export function occurrencesBetween(events: readonly CalEvent[], from: string, to
   return out;
 }
 
+const FULL_DAY_MINUTES = 24 * 60;
+
 /**
  * Splits multi-day events into one entry per day they cover, within [from, to],
- * for views that lay events out day by day.
+ * for views that lay events out day by day. Each copy is tagged with a segment
+ * so views can show "10:00 AM" / "All day" / "Until 11:00 AM" instead of
+ * repeating the full time range on every day.
  */
 export function byDay(events: readonly CalEvent[], from: string, to: string): CalEvent[] {
   const out: CalEvent[] = [];
   for (const ev of events) {
-    const end = ev.endDate || ev.date;
+    // A timed event ending at midnight doesn't reach into that day.
+    const endDay = ev.endDate || ev.date;
+    const end = !ev.allDay && ev.end === "00:00" && endDay > ev.date ? toIsoDate(addDays(parseIsoDate(endDay), -1)) : endDay;
     if (end <= ev.date) {
       out.push(ev);
       continue;
     }
+    const fullDay = ev.allDay
+      || Date.parse(localDateTimeToIso(endDay, ev.end)) - Date.parse(localDateTimeToIso(ev.date, ev.time)) >= FULL_DAY_MINUTES * 60_000;
     for (let d = ev.date < from ? from : ev.date; d <= end && d <= to; d = toIsoDate(addDays(parseIsoDate(d), 1))) {
-      out.push({ ...ev, date: d });
+      const part = d === ev.date ? "first" : d === end ? "last" : "middle";
+      out.push({ ...ev, date: d, segment: { part, fullDay } });
     }
   }
   return out;

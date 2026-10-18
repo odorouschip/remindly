@@ -121,7 +121,7 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
   };
 
   const timeError = kind === "event" && !allDay && endDate <= date && end <= time ? "End time must be after the start." : null;
-  const endDateError = kind === "event" && allDay && endDate < date ? "The last day can't be before the first." : null;
+  const endDateError = kind === "event" && endDate < date ? "The end can't be before the start." : null;
   const untilError = kind === "event" && recur && recurUntil && recurUntil < date ? "Can't stop repeating before it starts." : null;
   const customMinutes = custom.amount * (UNITS.find((u) => u.value === custom.unit)?.minutes ?? 1);
 
@@ -163,11 +163,11 @@ export function EventPanel({ open, editing, session, defaultDate, defaultTime, o
 
           <div className={styles.props}>
             <Prop icon={<Calendar size={14} />} label={kind === "task" ? "Due" : "Date"} error={endDateError}>
-              {kind === "event" && allDay ? (
+              {kind === "event" ? (
                 <div className={styles.timeRange}>
-                  <input type="date" className={styles.control} value={date} onChange={(e) => changeDate(e.target.value)} aria-label="First day" />
+                  <input type="date" className={styles.control} value={date} onChange={(e) => changeDate(e.target.value)} aria-label={allDay ? "First day" : "Start date"} />
                   <span className={styles.dash}>–</span>
-                  <input type="date" className={styles.control} value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} aria-label="Last day" />
+                  <input type="date" className={styles.control} value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} aria-label={allDay ? "Last day" : "End date"} />
                 </div>
               ) : (
                 <input type="date" className={styles.control} value={date} onChange={(e) => changeDate(e.target.value)} />

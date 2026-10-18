@@ -1,4 +1,10 @@
 export type Priority = "low" | "medium" | "high";
+
+/**
+ * Set by byDay() on the per-day copies of a multi-day event: which day of it
+ * this is, and whether it runs a full day or more (those go in all-day rows).
+ */
+export type DaySegment = { part: "first" | "middle" | "last"; fullDay: boolean };
 export type RemindKey = "none" | "at-time" | "30-min" | "1-day" | "1-week" | "2-weeks" | "custom";
 export type RecurLabel = "" | "Daily" | "Weekly" | "Monthly" | "Yearly";
 
@@ -27,6 +33,8 @@ export type CalEvent = {
   /** Minutes before 9:00 AM on the due date, for remind === "custom". */
   remindMinutes?: number | undefined;
   priority?: Priority | undefined;
+  /** Display-only; see DaySegment. */
+  segment?: DaySegment | undefined;
 };
 
 export const CATEGORY_COLORS = ["gray", "brown", "orange", "yellow", "green", "blue", "purple", "pink", "red"] as const;
@@ -74,8 +82,14 @@ export const PRIORITIES: readonly { value: Priority; label: string }[] = [
   { value: "high",   label: "High" },
 ];
 
+/** All-day items (and the middle days of long events) first, then by start time. */
 export function sortByStart(a: CalEvent, b: CalEvent): number {
-  return (a.date + a.time).localeCompare(b.date + b.time);
+  return (a.date + startKey(a)).localeCompare(b.date + startKey(b));
+}
+
+function startKey(ev: CalEvent): string {
+  if (ev.allDay || ev.segment?.part === "middle") return "";
+  return ev.segment?.part === "last" ? "00:00" : ev.time;
 }
 
 /** A blank draft; spread overrides onto it. */

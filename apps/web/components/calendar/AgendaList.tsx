@@ -1,6 +1,7 @@
 import { Repeat } from "lucide-react";
 import type { ReactNode } from "react";
-import { addDays, fmtTime, fmtTimeRange, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { addDays, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
+import { timeColumnLabel, untilLabel, whenLabel } from "@/lib/calendar/display";
 import { byDay, occurrenceKey, occurrencesBetween } from "@/lib/calendar/recurrence";
 import { sortByStart, type CalEvent } from "@/lib/calendar/types";
 import { catStyle, useCategoryLookup } from "./categories";
@@ -62,7 +63,7 @@ export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compac
           {dayEvents.map((ev) => (
             <div key={occurrenceKey(ev)} className={styles.row} style={catStyle(lookup(ev.categoryId)?.color)} data-done={ev.done || undefined}>
               {!compact && (
-                <span className={styles.time}>{ev.isTask ? "Task" : ev.allDay ? "All day" : fmtTime(ev.time)}</span>
+                <span className={styles.time}>{timeColumnLabel(ev)}</span>
               )}
               {ev.isTask
                 ? <TaskCheck done={ev.done} onToggle={() => onToggleDone(ev)} />
@@ -72,8 +73,8 @@ export function AgendaList({ events, onOpenEvent, onToggleDone, from, to, compac
                   {ev.title}
                   {ev.recur && <Repeat size={11} strokeWidth={2} className={styles.recur} aria-label={`Repeats ${ev.recur.toLowerCase()}`} />}
                 </span>
-                {compact && !ev.isTask && <span className={styles.meta}>{ev.allDay ? "All day" : fmtTimeRange(ev.time, ev.end)}</span>}
-                {!compact && !ev.allDay && ev.end && <span className={styles.meta}>until {fmtTime(ev.end)}</span>}
+                {compact && !ev.isTask && <span className={styles.meta}>{whenLabel(ev)}</span>}
+                {!compact && untilLabel(ev) && <span className={styles.meta}>{untilLabel(ev)}</span>}
                 {ev.desc && <span className={styles.desc}>{ev.desc}</span>}
               </button>
             </div>

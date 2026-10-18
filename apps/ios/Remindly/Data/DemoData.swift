@@ -63,6 +63,7 @@ enum DemoData {
             event(2, "Dentist", at: 10, category: "Health"),
             event(-4, "1:1 with Priya", at: 11, minutes: 30, category: "Work", rule: RepeatRule(frequency: .weekly, interval: 2)),
             conference,
+            { var trip = event(1, "Trip to Denver", at: 10, minutes: 2 * 1440 + 60, category: "Personal"); trip.location = "Denver"; return trip }(),
             event(6, "Dinner at Nonna's", at: 19, minutes: 120, category: "Social"),
         ]
     }

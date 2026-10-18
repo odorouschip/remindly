@@ -236,6 +236,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [x] New data layer in [apps/ios/Remindly/Data](apps/ios/Remindly/Data): Keychain-backed login with automatic token refresh, models for schema v2, repeat expansion ported from the web, local notifications for the next 60 reminders (rescheduled on every sync), Live Activities started from the editor.
 - [x] Native shell: sign in / sign up, Upcoming list, form-based editor, settings. Debug builds accept `-demo` (sample data) and `-open-event <id>`.
 - [x] Done tasks keep their reminder rows on web and iOS, so un-checking restores the reminder.
+- [x] Multi-day timed events no longer look like a daily repeat: first day shows the start, middle days "All day", last day "Until …" (web + iOS). Web week view puts ≥24h events in the all-day row and splits shorter overnight ones at midnight; the web editor has an end date for timed events. iOS loads the agenda before asking for notification permission.
 
 ### Schema v2 + editable categories — 2026-10-17
 - [x] New migration [202610170001_schema_v2.sql](supabase/migrations/202610170001_schema_v2.sql) replaces the original tables: `profiles`, `categories`, `events` (events + tasks, real columns, date-based all-day, repeat interval), `event_exceptions`, `reminders` (rules with a DB-maintained `next_due_at`), `reminder_deliveries`, `devices` (one row per device), `live_activity_runs`. The JSON-in-notes metadata is gone.

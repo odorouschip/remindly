@@ -37,6 +37,8 @@ function seedEvents(): CalEvent[] {
     ev(7, "Sprint planning", "10:00", "11:30", "Work"),
     ev(7, "Run club", "07:00", "08:00", "Health"),
     ev(10, "Flight to Denver", "07:15", "09:40", "Personal", { desc: "UA 1432 · Seat 14C" }),
+    ev(1, "Road trip", "10:00", "11:00", "Personal", { endDate: day(3), location: "Big Sur" }),
+    ev(2, "Red-eye home", "23:00", "01:00", "Personal", { endDate: day(3) }),
     allDay(11, "Conference", "Work", { endDate: day(12) }),
     allDay(4, "Sam's birthday", "Social", { recur: "Yearly" }),
     task(14, "Renew passport", "high"),

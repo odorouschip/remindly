@@ -16,8 +16,10 @@ struct RootView: View {
         }
         .task(id: auth.session?.userId) {
             if auth.isSignedIn || isDemo {
-                await store.notifications.requestAuthorization()
+                // Load first so the agenda isn't blank while the permission prompt is up.
                 await store.load()
+                await store.notifications.requestAuthorization()
+                await store.notifications.reschedule(events: store.events)
             } else {
                 await store.reset()
             }

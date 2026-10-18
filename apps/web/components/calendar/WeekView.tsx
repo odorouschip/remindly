@@ -42,8 +42,11 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, on
     if (scrollRef.current) scrollRef.current.scrollTop = FIRST_VISIBLE_HOUR * HOUR_PX - 8;
   }, []);
 
-  const allDayOn = (ds: string) => events.filter((e) => e.date === ds && e.allDay);
-  const hasAllDay = events.some((e) => e.allDay);
+  // Events lasting a full day or more sit in the all-day row; shorter overnight
+  // ones are drawn in the grid from their start to midnight, then on from midnight.
+  const inAllDayRow = (e: CalEvent) => e.allDay || Boolean(e.segment?.fullDay);
+  const allDayOn = (ds: string) => events.filter((e) => e.date === ds && inAllDayRow(e));
+  const hasAllDay = events.some(inAllDayRow);
 
   return (
     <div className={styles.week}>
@@ -96,16 +99,22 @@ export function WeekView({ selDate, events: allEvents, onSelect, onOpenEvent, on
                   if (e.target !== e.currentTarget) return; // clicks on events open them instead
                   onCreate(ds, fromMinutes(Math.floor((e.nativeEvent.offsetY / HOUR_PX) * 2) * 30));
                 }}>
-                {events.filter((e) => e.date === ds && !e.allDay).map((ev) => {
-                  const start = minutesOf(ev.time);
-                  const end = ev.end ? minutesOf(ev.end) : start + 60;
+                {events.filter((e) => e.date === ds && !inAllDayRow(e)).map((ev) => {
+                  const start = ev.segment?.part === "last" ? 0 : minutesOf(ev.time);
+                  const rawEnd = ev.segment?.part === "first" ? 24 * 60 : ev.end ? minutesOf(ev.end) : start + 60;
+                  // Ending at midnight the next day draws to the bottom of this column.
+                  const end = rawEnd <= start ? 24 * 60 : rawEnd;
                   const height = Math.max(((end - start) / 60) * HOUR_PX - 2, 20);
                   const short = height < 36;
                   return (
                     <button key={occurrenceKey(ev)} type="button" className={styles.event} style={{ ...catStyle(lookup(ev.categoryId)?.color), top: (start / 60) * HOUR_PX + 1, height }}
                       onClick={() => onOpenEvent(ev)} data-short={short || undefined}>
                       <span className={styles.eventTitle}>{ev.title}</span>
-                      <span className={styles.eventTime}>{short ? fmtTimeShort(ev.time) : fmtTimeRangeShort(ev.time, ev.end)}</span>
+                      <span className={styles.eventTime}>{
+                        ev.segment?.part === "first" ? `${fmtTimeShort(ev.time)} →`
+                        : ev.segment?.part === "last" ? `→ ${fmtTimeShort(ev.end)}`
+                        : short ? fmtTimeShort(ev.time) : fmtTimeRangeShort(ev.time, ev.end)
+                      }</span>
                     </button>
                   );
                 })}

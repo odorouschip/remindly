@@ -200,10 +200,16 @@ export function parseQuickAdd(input: string, now: Date = new Date(), categories:
     date = d;
   });
   take(String.raw`\b(?:on\s+)?the\s+(\d{1,2})(?:st|nd|rd|th)\b`, (m) => {
+    // This month if it's still ahead, otherwise next month (not next year).
     const day = Number(m[1]);
-    const d = upcomingDate(today, today.getMonth(), day) ?? upcomingDate(today, today.getMonth() + 1, day);
-    if (!d) return false;
-    date = d;
+    for (const offset of [0, 1]) {
+      const d = new Date(today.getFullYear(), today.getMonth() + offset, day);
+      if (d.getDate() === day && d >= today) {
+        date = d;
+        return;
+      }
+    }
+    return false;
   });
 
   if (tonight && start === null) start = 19 * 60;

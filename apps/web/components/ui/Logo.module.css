@@ -1,0 +1,36 @@
+.logo {
+  width: var(--s);
+  height: var(--s);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: calc(var(--s) * 0.225);
+  background: #f3f1ec;
+  /* Keeps the paper square from melting into light backgrounds. */
+  box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.08);
+}
+
+.mark {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--s) * 2 / 180);
+  margin-top: calc(var(--s) * -10 / 180);
+}
+
+.r {
+  font-family: var(--font-logo), "DM Serif Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: calc(var(--s) * 150 / 180);
+  line-height: 0.8;
+  color: #0d0d0d;
+}
+
+.dot {
+  width: calc(var(--s) * 22 / 180);
+  height: calc(var(--s) * 22 / 180);
+  margin-bottom: calc(var(--s) * 2 / 180);
+  border-radius: 50%;
+  background: oklch(0.68 0.19 30);
+}

@@ -1,13 +1,17 @@
+import styles from "./Logo.module.css";
+
+/**
+ * The Remindly mark — italic "r" with a coral dot on paper, same as the app
+ * icon. Built from text so it stays sharp at any size; proportions follow the
+ * 180px icon design (r = 150px, dot = 22px).
+ */
 export function Logo({ size = 22 }: { size?: number }) {
   return (
-    <div aria-hidden style={{
-      width: size, height: size, borderRadius: Math.round(size * 0.27), flexShrink: 0,
-      display: "grid", placeItems: "center", background: "var(--text)", color: "var(--bg)",
-    }}>
-      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 14 14" fill="none">
-        <rect x="1" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M1 6h12M4 1v3M10 1v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    </div>
+    <span aria-hidden className={styles.logo} style={{ "--s": `${size}px` } as React.CSSProperties}>
+      <span className={styles.mark}>
+        <span className={styles.r}>r</span>
+        <span className={styles.dot} />
+      </span>
+    </span>
   );
 }

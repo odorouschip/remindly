@@ -26,24 +26,24 @@ struct SettingsView: View {
                 } header: {
                     Text("Reminders")
                 } footer: {
-                    Text("Reminders are scheduled on this iPhone each time Remindly syncs. Open the app after adding events on the web so it picks them up.")
+                    Text("Reminders are scheduled on this iPhone. Remindly syncs when you open it, and in the background a few times a day if Background App Refresh is on.")
                 }
 
-                Section {
-                    ForEach(store.categories) { category in
-                        Label {
-                            Text(category.name)
-                        } icon: {
-                            Image(systemName: "circle.fill").foregroundStyle(category.color.color)
-                        }
-                    }
-                } header: {
-                    Text("Categories")
-                } footer: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Rename, recolor or add categories in Settings on the web app.")
-                        if let web = RemindlyConfig.webAppURL {
-                            Link("Open the web app", destination: web)
+                Section("Categories") {
+                    NavigationLink {
+                        CategoriesView()
+                    } label: {
+                        HStack {
+                            Text("Edit Categories")
+                            Spacer()
+                            HStack(spacing: -4) {
+                                ForEach(store.categories.prefix(5)) { category in
+                                    Circle()
+                                        .fill(category.color.color)
+                                        .frame(width: 12, height: 12)
+                                        .overlay(Circle().stroke(Color(.systemBackground), lineWidth: 1.5))
+                                }
+                            }
                         }
                     }
                 }

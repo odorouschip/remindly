@@ -12,6 +12,9 @@ enum DemoData {
     /// `-live-activity` starts a countdown for the next timed event after loading.
     static var startsLiveActivity: Bool { ProcessInfo.processInfo.arguments.contains("-live-activity") }
 
+    /// `-quick-add <text>` opens quick add with that text typed in.
+    static var quickAddText: String? { argument(after: "-quick-add") }
+
     /// `-tab upcoming` starts on the Upcoming tab.
     static var launchTab: String? { argument(after: "-tab") }
 

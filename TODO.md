@@ -210,7 +210,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 
 ### Functionality still needed
 - [x] **Background refresh.** `BGAppRefreshTask` every ≥3h (iOS decides); needs an on-device check since the simulator can't run it — see apps/ios/README.md.
-- [ ] **Edit categories on iOS** (view-only for now; edit on the web).
+- [x] **Edit categories on iOS** — Settings → Edit Categories: rename, recolor, add, reorder, delete.
 - [ ] **Forgot password on iOS** (points to the web for now).
 - [ ] **Auth UI** — match the web's simplified auth (email + password, forgot password with code, optional provider buttons).
 - [ ] *(release only)* **Sign in with Apple** — should be the primary sign-in on iOS per App Store guidelines.
@@ -230,6 +230,12 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Quick add on iPhone, web logo — 2026-10-18
+- [x] iOS quick add / search sheet (✨🔍 button on both tabs): natural-language create, "Add details first…", jump to a date, find events. Parser ported to Swift ([QuickAdd.swift](apps/ios/Remindly/Data/QuickAdd.swift)) and checked against the web's test phrases.
+- [x] Fixed "the 2nd" (on the 15th) jumping to next year instead of next month — in both parsers.
+- [x] iOS category editing.
+- [x] Web logo, favicon, Apple touch icon and PWA icons switched to the italic "r" mark.
 
 ### iOS redesign, part 1 — 2026-10-18
 - [x] New app icon (light italic "r" with coral dot) and matching sign-in logo.

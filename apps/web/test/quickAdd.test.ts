@@ -22,6 +22,7 @@ describe("parseQuickAdd", () => {
     ["meeting from 10 to 11:30",           { title: "Meeting", time: "10:00", end: "11:30" }],
     ["review on oct 3",                    { title: "Review", date: "2027-10-03" }],
     ["call mom next thursday at 4",        { title: "Call mom", date: "2026-10-22", time: "16:00" }],
+    ["rent the 2nd",                       { title: "Rent", date: "2026-11-02" }],
   ])("%s", (input, expected) => {
     expect(parse(input)).toMatchObject(expected);
   });

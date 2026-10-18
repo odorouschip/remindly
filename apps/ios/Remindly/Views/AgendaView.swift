@@ -37,7 +37,8 @@ struct AgendaView: View {
                     Button(action: actions.showSettings) { Image(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    QuickAddButton(action: actions.showQuickAdd)
                     NewMenu(day: .today, create: actions.create)
                 }
             }

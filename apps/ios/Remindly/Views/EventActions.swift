@@ -8,6 +8,7 @@ struct EventActions {
     var toggleDone: (CalendarEvent) -> Void
     var delete: (CalendarEvent) -> Void
     var showSettings: () -> Void
+    var showQuickAdd: () -> Void
 }
 
 extension View {

@@ -11,16 +11,20 @@ struct MainView: View {
     @State private var editing: CalendarEvent?
     @State private var showingSettings = false
     @State private var confirmingDelete: CalendarEvent?
+    @State private var showingQuickAdd = false
+    /// A day for the Calendar tab to jump to (from quick add).
+    @State private var requestedDay: Day?
 
     init() {
         #if DEBUG
         if DemoData.launchTab == "upcoming" { _tab = State(initialValue: .upcoming) }
+        if DemoData.quickAddText != nil { _showingQuickAdd = State(initialValue: true) }
         #endif
     }
 
     var body: some View {
         TabView(selection: $tab) {
-            CalendarView(actions: actions)
+            CalendarView(actions: actions, requestedDay: $requestedDay)
                 .tabItem { Label("Calendar", systemImage: "calendar") }
                 .tag(MainTab.calendar)
             AgendaView(actions: actions)
@@ -29,6 +33,21 @@ struct MainView: View {
         }
         .sheet(item: $editing) { EventEditorView(event: $0) }
         .sheet(isPresented: $showingSettings) { SettingsView() }
+        .sheet(isPresented: $showingQuickAdd) {
+            QuickAddView(
+                onOpen: { event in
+                    // Let the quick add sheet finish closing before the editor opens.
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(450))
+                        editing = store.event(event.id) ?? event
+                    }
+                },
+                onGoTo: { day in
+                    tab = .calendar
+                    requestedDay = day
+                }
+            )
+        }
         .confirmationDialog(
             "Delete every occurrence of “\(confirmingDelete?.title ?? "")”?",
             isPresented: Binding(get: { confirmingDelete != nil }, set: { if !$0 { confirmingDelete = nil } }),
@@ -62,7 +81,8 @@ struct MainView: View {
                 guard let series = store.event(event.id) else { return }
                 if series.repeatRule != nil { confirmingDelete = series } else { Task { await store.delete(series) } }
             },
-            showSettings: { showingSettings = true }
+            showSettings: { showingSettings = true },
+            showQuickAdd: { showingQuickAdd = true }
         )
     }
 

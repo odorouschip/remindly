@@ -4,6 +4,7 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(CalendarStore.self) private var store
     let actions: EventActions
+    @Binding var requestedDay: Day?
 
     @State private var month = Day.today.startOfMonth
     @State private var selected = Day.today
@@ -37,8 +38,14 @@ struct CalendarView: View {
                     if selected != .today || month != Day.today.startOfMonth {
                         Button("Today") { select(.today) }
                     }
+                    QuickAddButton(action: actions.showQuickAdd)
                     NewMenu(day: selected, create: actions.create)
                 }
+            }
+            .onChange(of: requestedDay) { _, day in
+                guard let day else { return }
+                select(day)
+                requestedDay = nil
             }
         }
     }
@@ -230,6 +237,16 @@ private struct DayCell: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(day.date().formatted(date: .complete, time: .omitted) + (dots.isEmpty ? "" : ", has events"))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// Opens quick add (natural-language add, jump to date, search).
+struct QuickAddButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { Image(systemName: "sparkle.magnifyingglass") }
+            .accessibilityLabel("Quick add or search")
     }
 }
 

@@ -151,6 +151,64 @@ final class CalendarStore {
         await save(task)
     }
 
+    // MARK: Categories
+
+    /// Inserts or updates a category (new ones carry a fresh id).
+    func saveCategory(_ category: Category, isNew: Bool) async {
+        var trimmed = category
+        trimmed.name = String(category.name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
+        guard !trimmed.name.isEmpty else { return }
+        if let i = categories.firstIndex(where: { $0.id == trimmed.id }) { categories[i] = trimmed } else { categories.append(trimmed) }
+        #if DEBUG
+        if DemoData.isEnabled { return }
+        #endif
+        do {
+            var row: [String: Any] = ["name": trimmed.name, "color": trimmed.color.rawValue, "sort_order": trimmed.sortOrder]
+            if isNew {
+                row["id"] = trimmed.id.uuidString
+                try await rest.send(.post, "categories", body: try JSONSerialization.data(withJSONObject: row))
+            } else {
+                try await rest.send(.patch, "categories", query: ["id": "eq.\(trimmed.id)"], body: try JSONSerialization.data(withJSONObject: row))
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            await load()
+        }
+    }
+
+    /// Deletes a category; its events become uncategorized.
+    func deleteCategory(_ category: Category) async {
+        categories.removeAll { $0.id == category.id }
+        #if DEBUG
+        if DemoData.isEnabled {
+            events = events.map { var e = $0; if e.categoryId == category.id { e.categoryId = nil }; return e }
+            return
+        }
+        #endif
+        do {
+            try await rest.send(.delete, "categories", query: ["id": "eq.\(category.id)"])
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        await load()
+    }
+
+    /// Reorders categories and saves the new positions.
+    func moveCategories(from source: IndexSet, to destination: Int) async {
+        // Same result as SwiftUI's move(fromOffsets:toOffset:), without importing SwiftUI here.
+        var reordered = categories
+        let moving = source.sorted().map { reordered[$0] }
+        for index in source.sorted(by: >) { reordered.remove(at: index) }
+        reordered.insert(contentsOf: moving, at: destination - source.filter { $0 < destination }.count)
+        let changed = reordered.enumerated().filter { $0.element.sortOrder != $0.offset }
+        categories = reordered.enumerated().map { var c = $0.element; c.sortOrder = $0.offset; return c }
+        for (index, category) in changed {
+            var moved = category
+            moved.sortOrder = index
+            await saveCategory(moved, isNew: false)
+        }
+    }
+
     /// Forget everything on sign-out.
     func reset() async {
         events = []

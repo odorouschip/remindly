@@ -41,7 +41,15 @@ then continue. "Background refresh started/finished" appears in the console (sub
 
 ## Debug launch arguments
 
-Edit Scheme → Run → Arguments: `-demo` runs on sample data without an account; `-open-event <uuid>` opens that event on launch.
+Edit Scheme → Run → Arguments (Debug builds only):
+
+| Argument | Effect |
+|---|---|
+| `-demo` | Sample data, no account needed; edits stay in memory |
+| `-tab upcoming` | Start on the Upcoming tab |
+| `-open-event <uuid>` | Open that event on launch, as a tapped notification would |
+| `-quick-add "<text>"` | Open quick add with the text typed in |
+| `-live-activity` | Start a countdown for the next timed event |
 
 ## Command-line build
 

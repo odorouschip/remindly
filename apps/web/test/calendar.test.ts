@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { byDay, occurrencesBetween } from "../lib/calendar/recurrence";
+import { applyToSeries, changesSeriesOnly, endBefore, hasChanges, overrideFor } from "../lib/calendar/occurrenceEdits";
+import { byDay, occurrenceKey, occurrenceOf, occurrencesBetween } from "../lib/calendar/recurrence";
 import { chipTime, timeColumnLabel, whenLabel } from "../lib/calendar/display";
 import { rowToEvent } from "../lib/calendar/supabaseBackend";
 import { emptyEvent, type CalEvent } from "../lib/calendar/types";
@@ -35,13 +36,18 @@ describe("occurrencesBetween", () => {
   });
 });
 
+const row = {
+  id: "r1", user_id: "u1", kind: "event" as const, title: "Trip", notes: "Pack light", location: "Denver",
+  category_id: "c1", timezone: "America/New_York", repeat_freq: null, repeat_interval: 1, repeat_until: null,
+  priority: null, completed_at: null, source: "manual", external_id: null, deleted_at: null,
+  created_at: "", updated_at: "", reminders: [],
+};
+const exceptionRow = {
+  id: "x", event_id: "r1", user_id: "u1", occurrence_date: "", cancelled: false, title: null, notes: null, location: null, category_id: null,
+  starts_at: null, ends_at: null, start_date: null, end_date: null, created_at: "", updated_at: "",
+};
+
 describe("rowToEvent", () => {
-  const row = {
-    id: "r1", user_id: "u1", kind: "event" as const, title: "Trip", notes: "Pack light", location: "Denver",
-    category_id: "c1", timezone: "America/New_York", repeat_freq: null, repeat_interval: 1, repeat_until: null,
-    priority: null, completed_at: null, source: "manual", external_id: null, deleted_at: null,
-    created_at: "", updated_at: "", reminders: [],
-  };
 
   it("keeps all-day dates as dates, including multi-day spans", () => {
     const ev = rowToEvent({ ...row, all_day: true, start_date: "2026-07-04", end_date: "2026-07-06", starts_at: null, ends_at: null });
@@ -107,5 +113,81 @@ describe("multi-day timed events", () => {
   it("doesn't spill onto the next day when it ends at midnight", () => {
     const late = split({ ...trip, date: "2026-10-17", endDate: "2026-10-18", time: "22:00", end: "00:00" });
     expect(late.map((d) => d.date)).toEqual(["2026-10-17"]);
+  });
+});
+
+describe("one occurrence of a repeating event", () => {
+  const standup: CalEvent = { ...base, title: "Standup", date: "2026-10-19", endDate: "2026-10-19", time: "09:30", end: "09:45", recur: "Daily" };
+  const week = (ev: CalEvent) => occurrencesBetween([ev], "2026-10-19", "2026-10-25");
+
+  it("skips a cancelled occurrence", () => {
+    const ev = { ...standup, exceptions: { "2026-10-21": { cancelled: true } } };
+    expect(week(ev).map((e) => e.date)).not.toContain("2026-10-21");
+    expect(week(ev)).toHaveLength(6);
+  });
+
+  it("shows a moved occurrence on its new day and time, keyed by its original date", () => {
+    const ev = { ...standup, exceptions: { "2026-10-21": { cancelled: false, title: "Late standup", date: "2026-10-22", endDate: "2026-10-22", time: "16:00", end: "16:30" } } };
+    const thursday = week(ev).filter((e) => e.date === "2026-10-22");
+    expect(thursday.map((e) => [e.title, e.time, e.occurrenceDate])).toEqual([
+      ["Standup", "09:30", "2026-10-22"],
+      ["Late standup", "16:00", "2026-10-21"],
+    ]);
+    expect(week(ev).some((e) => e.date === "2026-10-21")).toBe(false);
+    expect(new Set(week(ev).map(occurrenceKey)).size).toBe(week(ev).length);
+  });
+
+  it("finds an occurrence moved into the window from outside it", () => {
+    const ev = { ...standup, recurUntil: "2026-10-20", exceptions: { "2026-10-20": { cancelled: false, date: "2026-11-02", endDate: "2026-11-02", time: "09:30", end: "09:45" } } };
+    expect(occurrencesBetween([ev], "2026-11-01", "2026-11-07").map((e) => e.occurrenceDate)).toEqual(["2026-10-20"]);
+  });
+
+  it("ignores exceptions for dates the series doesn't fall on", () => {
+    const weekly = { ...standup, recur: "Weekly" as const, exceptions: { "2026-10-20": { cancelled: false, date: "2026-10-24", endDate: "2026-10-24", time: "10:00", end: "11:00" } } };
+    expect(week(weekly).map((e) => e.date)).toEqual(["2026-10-19"]);
+  });
+
+  it("stores only what changed for “This event”, and nothing once it matches again", () => {
+    const shown = occurrenceOf(standup, "2026-10-21");
+    expect(overrideFor(standup, "2026-10-21", { ...shown, title: "Retro" })).toEqual({ cancelled: false, title: "Retro" });
+    expect(overrideFor(standup, "2026-10-21", { ...shown, time: "10:00", end: "10:15" }))
+      .toEqual({ cancelled: false, date: "2026-10-21", endDate: "2026-10-21", time: "10:00", end: "10:15" });
+    const moved = { ...standup, exceptions: { "2026-10-21": { cancelled: false, title: "Retro" } } };
+    expect(overrideFor(moved, "2026-10-21", { ...shown, title: "Standup" })).toBeNull();
+  });
+
+  it("moves the whole series by the same number of days for “All events”", () => {
+    const shown = occurrenceOf(standup, "2026-10-21");
+    const series = applyToSeries(standup, shown, { ...shown, date: "2026-10-22", endDate: "2026-10-22", time: "10:00", end: "10:15" });
+    expect(series).toMatchObject({ date: "2026-10-20", endDate: "2026-10-20", time: "10:00", end: "10:15", recur: "Daily" });
+    expect(series.occurrenceDate).toBeUndefined();
+  });
+
+  it("asks only about changes one occurrence can hold", () => {
+    const shown = occurrenceOf(standup, "2026-10-21");
+    expect(hasChanges(shown, { ...shown })).toBe(false);
+    expect(changesSeriesOnly(shown, { ...shown, title: "x" })).toBe(false);
+    expect(changesSeriesOnly(shown, { ...shown, recurInterval: 2 })).toBe(true);
+    expect(changesSeriesOnly(shown, { ...shown, allDay: true })).toBe(true);
+  });
+
+  it("ends the series the day before for “This and following”", () => {
+    expect(endBefore(standup, "2026-10-23")?.recurUntil).toBe("2026-10-22");
+    expect(endBefore(standup, "2026-10-19")).toBeNull();
+  });
+
+  it("reads exception rows, keeping the series' length when a moved one has no end", () => {
+    const ev = rowToEvent({
+      ...row, all_day: false, start_date: null, end_date: null, repeat_freq: "daily",
+      starts_at: new Date(2026, 9, 19, 9, 30).toISOString(), ends_at: new Date(2026, 9, 19, 9, 45).toISOString(),
+      event_exceptions: [
+        { ...exceptionRow, occurrence_date: "2026-10-21", cancelled: true },
+        { ...exceptionRow, occurrence_date: "2026-10-22", title: "Retro", starts_at: new Date(2026, 9, 22, 16).toISOString(), ends_at: null },
+      ],
+    });
+    expect(ev.exceptions).toEqual({
+      "2026-10-21": { cancelled: true },
+      "2026-10-22": { cancelled: false, title: "Retro", date: "2026-10-22", endDate: "2026-10-22", time: "16:00", end: "16:15" },
+    });
   });
 });

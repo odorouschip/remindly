@@ -91,7 +91,7 @@ struct CalendarView: View {
                     EventRowView(occurrence: occurrence, day: selected, category: store.category(occurrence.event.categoryId)) {
                         actions.toggleDone(occurrence.event)
                     }
-                    .eventRowActions(occurrence.event, actions)
+                    .eventRowActions(occurrence, actions)
                 }
             } header: {
                 Text(selected.date().formatted(.dateTime.weekday(.wide).month(.wide).day()))

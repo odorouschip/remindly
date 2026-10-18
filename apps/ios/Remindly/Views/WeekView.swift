@@ -95,7 +95,7 @@ struct WeekView: View {
                             continuesBefore: bar.occurrence.day < days[0], continuesAfter: bar.occurrence.lastDay > days[6]
                         )
                             .frame(width: CGFloat(bar.lastColumn - bar.firstColumn + 1) * columnWidth - 2, height: rowHeight)
-                            .eventActions(bar.occurrence.event, actions)
+                            .eventActions(bar.occurrence, actions)
                             .offset(x: CGFloat(bar.firstColumn) * columnWidth + 1, y: CGFloat(bar.row) * (rowHeight + spacing))
                     }
                     if folds && !allDayExpanded {
@@ -211,7 +211,7 @@ struct WeekView: View {
         let height = max(CGFloat(block.endMinute - block.startMinute) / 60 * Self.hourHeight - 1, 18)
         return EventBlock(block: block, category: store.category(block.occurrence.event.categoryId), height: height)
             .frame(width: max(inner - indent, 4), height: height)
-            .eventActions(block.occurrence.event, actions)
+            .eventActions(block.occurrence, actions)
             .offset(x: CGFloat(block.column) * columnWidth + 1.5 + indent, y: top)
             .zIndex(Double(block.lane))
     }

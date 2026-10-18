@@ -1,7 +1,9 @@
 import { CalendarDays, CircleCheck, Columns3, LayoutGrid, List, Monitor, Moon, PanelRight, Plus, Settings, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addDays, parseIsoDate, relativeDayLabel, toIsoDate, todayIso } from "@/lib/calendar/dates";
-import { emptyEvent, type CalEvent, type Category } from "@/lib/calendar/types";
+import { applyToSeries, changesSeriesOnly, endBefore, hasChanges, overrideFor } from "@/lib/calendar/occurrenceEdits";
+import { occurrenceOf } from "@/lib/calendar/recurrence";
+import { emptyEvent, type CalEvent, type Category, type OccurrenceOverride } from "@/lib/calendar/types";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
 import { Button } from "@/components/ui/controls";
 import { AgendaList } from "./AgendaList";
@@ -10,6 +12,7 @@ import { CommandBar, type CommandAction } from "./CommandBar";
 import { DayPanel } from "./DayPanel";
 import { EventPanel } from "./EventPanel";
 import { MonthView } from "./MonthView";
+import { ScopeDialog, type Scope } from "./ScopeDialog";
 import { SettingsModal } from "./SettingsModal";
 import { Sidebar, type Account } from "./Sidebar";
 import { Toolbar, type ViewMode } from "./Toolbar";
@@ -24,13 +27,14 @@ type WorkspaceProps = {
   onNotify: (message: string) => void;
   onSave: (ev: CalEvent) => void;
   onDelete: (id: string) => void;
+  onSaveOccurrence: (seriesId: string, occurrenceDate: string, override: OccurrenceOverride | null) => void;
   onSaveCategory: (cat: Category) => void;
   onDeleteCategory: (id: string) => void;
   onSignOut: () => void;
 };
 
 export function Workspace(props: WorkspaceProps) {
-  const { events, categories, account, notice, onNotify, onSave, onDelete, onSignOut } = props;
+  const { events, categories, account, notice, onNotify, onSave, onDelete, onSaveOccurrence, onSignOut } = props;
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -46,6 +50,8 @@ export function Workspace(props: WorkspaceProps) {
   const [panel, setPanel] = useState<{
     open: boolean; editing: CalEvent | null; date?: string | undefined; time?: string | undefined; session: number;
   }>({ open: false, editing: null, session: 0 });
+  // Asking "this event or all events?" about the occurrence in the panel.
+  const [scope, setScope] = useState<{ action: "save"; edited: CalEvent } | { action: "delete" } | null>(null);
   // Which settings section to scroll to, or null when closed.
   const [settings, setSettings] = useState<null | "top" | "categories">(null);
   const [themePref, setThemePref] = useState<ThemePref>("system");
@@ -97,11 +103,50 @@ export function Workspace(props: WorkspaceProps) {
     if (date) setSelDate(date);
     setPanel((p) => ({ open: true, editing: null, date: date ?? selDate ?? todayIso(), time, session: p.session + 1 }));
   };
-  // Occurrences of a repeating event are copies; edit the stored series instead.
+  // Views hand over copies (occurrences, day segments); the stored series is the source of truth.
   const seriesOf = (ev: CalEvent) => events.find((e) => e.id === ev.id) ?? ev;
-  const openEvent = (ev: CalEvent) =>
-    setPanel((p) => ({ open: true, editing: seriesOf(ev), session: p.session + 1 }));
+  // A repeating event opens at the occurrence that was clicked; anything else opens as stored.
+  const openEvent = (ev: CalEvent) => {
+    const series = seriesOf(ev);
+    const editing = series.recur && ev.occurrenceDate ? occurrenceOf(series, ev.occurrenceDate) : series;
+    setPanel((p) => ({ open: true, editing, session: p.session + 1 }));
+  };
   const closePanel = () => setPanel((p) => ({ ...p, open: false, editing: null }));
+
+  // Saving or deleting one occurrence of a repeating event asks which ones it applies to.
+  const shown = panel.editing;
+  const occurrence = shown?.id && shown.occurrenceDate && seriesOf(shown).recur ? shown : null;
+
+  const saveFromPanel = (edited: CalEvent) => {
+    if (!occurrence) { onSave(edited); closePanel(); return; }
+    if (!hasChanges(occurrence, edited)) { closePanel(); return; }
+    // A new repeat rule, all-day or kind can only mean the whole series.
+    if (changesSeriesOnly(occurrence, edited)) { onSave(applyToSeries(seriesOf(occurrence), occurrence, edited)); closePanel(); return; }
+    setScope({ action: "save", edited });
+  };
+
+  const deleteFromPanel = (id: string) => {
+    if (!occurrence) { onDelete(id); closePanel(); return; }
+    setScope({ action: "delete" });
+  };
+
+  const chooseScope = (choice: Scope) => {
+    if (!occurrence || !scope) return;
+    const series = seriesOf(occurrence);
+    const date = occurrence.occurrenceDate!;
+    if (scope.action === "save") {
+      if (choice === "this") onSaveOccurrence(series.id, date, overrideFor(series, date, scope.edited));
+      else onSave(applyToSeries(series, occurrence, scope.edited));
+    } else if (choice === "this") {
+      onSaveOccurrence(series.id, date, { cancelled: true });
+    } else {
+      const shortened = choice === "following" ? endBefore(series, date) : null;
+      if (shortened) onSave(shortened);
+      else onDelete(series.id);
+    }
+    setScope(null);
+    closePanel();
+  };
   const toggleDone = (ev: CalEvent) => {
     const series = seriesOf(ev);
     onSave({ ...series, done: !series.done });
@@ -210,8 +255,11 @@ export function Workspace(props: WorkspaceProps) {
         <EventPanel open={panel.open} editing={panel.editing} session={panel.session}
           defaultDate={panel.date ?? selDate ?? today} defaultTime={panel.time}
           onClose={closePanel}
-          onSave={(ev) => { onSave(ev); closePanel(); }}
-          onDelete={(id) => { onDelete(id); closePanel(); }} />
+          onSave={saveFromPanel}
+          onDelete={deleteFromPanel} />
+
+        <ScopeDialog action={scope?.action ?? null} isFirst={Boolean(occurrence && occurrence.occurrenceDate! <= seriesOf(occurrence).date)}
+          onChoose={chooseScope} onCancel={() => setScope(null)} />
 
         <SettingsModal open={settings !== null} focus={settings ?? "top"} onClose={() => setSettings(null)}
           themePref={themePref} onThemePref={setTheme}

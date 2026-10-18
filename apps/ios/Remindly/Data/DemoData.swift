@@ -21,8 +21,15 @@ enum DemoData {
     /// `-tab upcoming` starts on the Upcoming tab; `-tab week` / `-tab month` on the Calendar tab in that view.
     static var launchTab: String? { argument(after: "-tab") }
 
-    /// `-open-event <uuid>` opens that event on launch, as a tapped notification would.
-    static var eventToOpen: UUID? { argument(after: "-open-event").flatMap(UUID.init(uuidString:)) }
+    /// `-open-event <uuid>` opens that event on launch, as a tapped notification would;
+    /// `-open-event <uuid>@<yyyy-mm-dd>` opens that occurrence of a repeating event.
+    static var eventToOpen: UUID? { argument(after: "-open-event").flatMap { UUID(uuidString: String($0.prefix(36))) } }
+    static var occurrenceToOpen: Day? {
+        argument(after: "-open-event").flatMap { $0.split(separator: "@").dropFirst().first.flatMap { Day(string: String($0)) } }
+    }
+
+    /// The demo Standup (daily), for `-open-event`.
+    static let standupId = UUID(uuidString: "00000000-0000-0000-0000-00000000DE71")!
 
     private static func argument(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
@@ -67,7 +74,17 @@ enum DemoData {
         conference.isSaved = true
 
         return [
-            event(-2, "Standup", at: 9, 30, minutes: 15, category: "Work", rule: RepeatRule(frequency: .daily, until: Day.today.adding(days: 10))),
+            {
+                // Tomorrow's is skipped; the one after moved to the afternoon and renamed.
+                var standup = event(-2, "Standup", at: 9, 30, minutes: 15, category: "Work", rule: RepeatRule(frequency: .daily, until: Day.today.adding(days: 10)))
+                standup.id = standupId
+                let moved = Calendar.current.date(bySettingHour: 16, minute: 0, second: 0, of: Day.today.adding(days: 2).date())!
+                standup.exceptions = [
+                    Day.today.adding(days: 1): OccurrenceOverride(cancelled: true),
+                    Day.today.adding(days: 2): OccurrenceOverride(title: "Standup (late)", start: moved, end: moved.addingTimeInterval(30 * 60)),
+                ]
+                return standup
+            }(),
             { var lunch = event(0, "Lunch with Sam", at: 12, 30, category: "Social", location: "Tartine"); lunch.id = linkTestId; return lunch }(),
             event(0, "Gym", at: 18, category: "Health"),
             event(0, "Call Mom", at: 18, 30, minutes: 30, category: "Personal"),

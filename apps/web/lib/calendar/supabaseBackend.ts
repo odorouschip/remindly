@@ -1,11 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { REMINDER_PRESETS_MINUTES } from "@calender/shared";
-import type { CategoryRow, Database, EventRow, ReminderRow } from "@/lib/supabase/client";
+import type { CategoryRow, Database, EventRow, ExceptionRow, ReminderRow } from "@/lib/supabase/client";
 import type { CalendarBackend } from "./backend";
 import { isoToLocalParts, localDateTimeToIso } from "./dates";
-import { REMIND_TO_MIN, type CalEvent, type Category, type RecurLabel, type RemindKey } from "./types";
+import { REMIND_TO_MIN, type CalEvent, type Category, type OccurrenceOverride, type RecurLabel, type RemindKey } from "./types";
 
-type EventWithReminders = EventRow & { reminders: Pick<ReminderRow, "offset_minutes">[] };
+type EventWithReminders = EventRow & {
+  reminders: Pick<ReminderRow, "offset_minutes">[];
+  /** Embedded by listEvents; optional so rows built elsewhere (tests) needn't have it. */
+  event_exceptions?: ExceptionRow[];
+};
 
 const FREQ_TO_LABEL: Record<NonNullable<EventRow["repeat_freq"]>, RecurLabel> = {
   daily: "Daily", weekly: "Weekly", monthly: "Monthly", yearly: "Yearly",
@@ -42,12 +46,52 @@ export function rowToEvent(row: EventWithReminders): CalEvent {
     ...(isTask ? { priority: row.priority ?? "medium", ...taskRemind(row.reminders.map((r) => r.offset_minutes)) } : {}),
   } satisfies Partial<CalEvent>;
 
+  const exceptions = row.repeat_freq && row.event_exceptions?.length
+    ? Object.fromEntries(row.event_exceptions.map((x) => [x.occurrence_date, rowToOverride(x, row)]))
+    : undefined;
   if (row.all_day) {
-    return { ...base, allDay: true, date: row.start_date!, endDate: row.end_date!, time: "", end: "" };
+    return { ...base, exceptions, allDay: true, date: row.start_date!, endDate: row.end_date!, time: "", end: "" };
   }
   const start = isoToLocalParts(row.starts_at!);
   const end = isoToLocalParts(row.ends_at!);
-  return { ...base, allDay: false, date: start.date, endDate: end.date, time: start.time, end: end.time };
+  return { ...base, exceptions, allDay: false, date: start.date, endDate: end.date, time: start.time, end: end.time };
+}
+
+/** An event_exceptions row in the UI's terms. Like occurrence_bounds() in SQL, a moved occurrence without an end keeps the series' length. */
+function rowToOverride(x: ExceptionRow, series: EventRow): OccurrenceOverride {
+  const out: OccurrenceOverride = { cancelled: x.cancelled };
+  if (x.title !== null) out.title = x.title;
+  if (x.notes !== null) out.desc = x.notes;
+  if (x.location !== null) out.location = x.location;
+  if (x.category_id !== null) out.categoryId = x.category_id;
+  if (series.all_day && x.start_date) {
+    Object.assign(out, { date: x.start_date, endDate: x.end_date ?? x.start_date, time: "", end: "" });
+  } else if (!series.all_day && x.starts_at) {
+    const length = Date.parse(series.ends_at!) - Date.parse(series.starts_at!);
+    const start = isoToLocalParts(x.starts_at);
+    const end = isoToLocalParts(x.ends_at ?? new Date(Date.parse(x.starts_at) + length).toISOString());
+    Object.assign(out, { date: start.date, endDate: end.date, time: start.time, end: end.time });
+  }
+  return out;
+}
+
+/** Every column of an override row; null keeps the series value. (Location and category
+ *  need 202610180001_exception_location_category.sql.) */
+function overrideToRow(seriesId: string, occurrenceDate: string, x: OccurrenceOverride): Database["public"]["Tables"]["event_exceptions"]["Insert"] {
+  const timed = Boolean(x.date && x.time);
+  return {
+    event_id: seriesId,
+    occurrence_date: occurrenceDate,
+    cancelled: x.cancelled,
+    title: x.title ?? null,
+    notes: x.desc ?? null,
+    location: x.location ?? null,
+    category_id: x.categoryId ?? null,
+    starts_at: timed ? localDateTimeToIso(x.date!, x.time!) : null,
+    ends_at: timed ? localDateTimeToIso(x.endDate || x.date!, x.end || x.time!) : null,
+    start_date: x.date && !timed ? x.date : null,
+    end_date: x.date && !timed ? x.endDate || x.date : null,
+  };
 }
 
 /** Minutes before the occurrence starts, as the reminders table stores them. */
@@ -95,7 +139,7 @@ export function createSupabaseBackend(supabase: SupabaseClient<Database>): Calen
     async listEvents() {
       const { data, error } = await supabase
         .from("events")
-        .select("*, reminders(offset_minutes)")
+        .select("*, reminders(offset_minutes), event_exceptions(*)")
         .is("deleted_at", null);
       if (error) throw new Error(error.message);
       return ((data ?? []) as EventWithReminders[]).map(rowToEvent);
@@ -121,6 +165,14 @@ export function createSupabaseBackend(supabase: SupabaseClient<Database>): Calen
 
     async deleteEvent(id) {
       const { error } = await supabase.from("events").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+
+    async saveOccurrence(seriesId, occurrenceDate, override) {
+      const { error } = override
+        ? await supabase.from("event_exceptions")
+          .upsert(overrideToRow(seriesId, occurrenceDate, override), { onConflict: "event_id,occurrence_date" })
+        : await supabase.from("event_exceptions").delete().eq("event_id", seriesId).eq("occurrence_date", occurrenceDate);
       if (error) throw new Error(error.message);
     },
 

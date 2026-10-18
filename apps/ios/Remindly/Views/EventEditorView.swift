@@ -1,11 +1,19 @@
 import SwiftUI
 
 /// Create or edit an event or task. Works on a copy and saves on Done.
+/// Opened on one occurrence of a repeating event, it asks whether changes
+/// apply to that occurrence or all of them.
 struct EventEditorView: View {
     @Environment(CalendarStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
+    /// The day the occurrence being edited normally falls on; nil when editing a whole event.
+    private let occurrenceDate: Day?
+    /// The event as it was opened, to tell what changed.
+    private let original: CalendarEvent
     @State private var draft: CalendarEvent
+    /// An edit to one occurrence, waiting for "this event / all events".
+    @State private var pendingEdit: CalendarEvent?
     @State private var taskReminder: TaskReminder
     @State private var customAmount = 2
     @State private var customUnit: CustomUnit = .hours
@@ -14,7 +22,9 @@ struct EventEditorView: View {
     @State private var liveActivityMessage: String?
     @FocusState private var titleFocused: Bool
 
-    init(event: CalendarEvent) {
+    init(event: CalendarEvent, occurrenceDate: Day? = nil) {
+        self.occurrenceDate = occurrenceDate
+        original = event
         _draft = State(initialValue: event)
         let reminder = TaskReminder(offsets: event.isTask ? event.reminderOffsets : TaskReminder.oneDay.offsets)
         _taskReminder = State(initialValue: reminder)
@@ -100,14 +110,31 @@ struct EventEditorView: View {
                 }
             }
             .confirmationDialog("Delete this \(draft.isTask ? "task" : "event")?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-                Button("Delete", role: .destructive) {
-                    Task {
-                        await store.delete(draft)
-                        dismiss()
+                if let day = occurrenceDate, let series = repeatingSeries {
+                    DeleteScopeButtons(series: series, occurrenceDate: day) { scope in
+                        Task {
+                            await store.delete(series, occurrenceOn: day, scope: scope)
+                            dismiss()
+                        }
+                    }
+                } else {
+                    Button("Delete", role: .destructive) {
+                        Task {
+                            await store.delete(draft)
+                            dismiss()
+                        }
                     }
                 }
             } message: {
-                if draft.repeatRule != nil { Text("This deletes every occurrence.") }
+                if repeatingSeries != nil {
+                    Text(occurrenceDate == nil ? "This deletes every occurrence." : "This is a repeating event.")
+                }
+            }
+            .confirmationDialog("Save changes to a repeating event?", isPresented: Binding(
+                get: { pendingEdit != nil }, set: { if !$0 { pendingEdit = nil } }
+            ), titleVisibility: .visible, presenting: pendingEdit) { edited in
+                Button("Save for This Event") { Task { await saveThisOccurrence(edited) } }
+                Button("Save for All Events") { Task { await saveSeries(edited) } }
             }
             .onAppear { if !draft.isSaved { titleFocused = true } }
         }
@@ -141,7 +168,9 @@ struct EventEditorView: View {
                 }
             }
         } footer: {
-            if draft.repeatRule != nil && draft.isSaved { Text("Changes apply to every occurrence.") }
+            if draft.repeatRule != nil && draft.isSaved {
+                Text(occurrenceDate == nil ? "Changes apply to every occurrence." : "Repeat changes apply to every occurrence.")
+            }
         }
     }
 
@@ -289,9 +318,42 @@ struct EventEditorView: View {
                 event.reminderOffsets = taskReminder.offsets
             }
         }
+        guard occurrenceDate != nil, let series = repeatingSeries else {
+            await commit(event)
+            return
+        }
+        // One occurrence of a repeating event: nothing changed, a change only
+        // the whole series can take, or ask.
+        if !event.hasChanges(from: original) {
+            dismiss()
+        } else if event.changesSeriesOnly(from: original) {
+            await commit(series.applying(event, shownAs: original))
+        } else {
+            pendingEdit = event
+        }
+    }
+
+    private func commit(_ event: CalendarEvent) async {
         isSaving = true
         defer { isSaving = false }
         if await store.save(event) { dismiss() }
+    }
+
+    private func saveThisOccurrence(_ edited: CalendarEvent) async {
+        guard let day = occurrenceDate, let series = repeatingSeries else { return }
+        isSaving = true
+        defer { isSaving = false }
+        if await store.saveOccurrence(of: series, on: day, series.override(on: day, toMatch: edited)) { dismiss() }
+    }
+
+    private func saveSeries(_ edited: CalendarEvent) async {
+        guard let series = repeatingSeries else { return }
+        await commit(series.applying(edited, shownAs: original))
+    }
+
+    /// The stored series, when this is a saved repeating event.
+    private var repeatingSeries: CalendarEvent? {
+        store.event(draft.id).flatMap { $0.repeatRule != nil ? $0 : nil }
     }
 
     // MARK: Live Activity
@@ -300,7 +362,8 @@ struct EventEditorView: View {
     private var nextOccurrence: Occurrence? {
         guard draft.isSaved, !draft.isTask, !draft.allDay else { return nil }
         let today = Day.today
-        return draft.occurrences(from: today, to: today.adding(days: 1)).first { $0.end > Date() }
+        // The stored series, not the draft: a draft opened on a later occurrence starts there.
+        return (store.event(draft.id) ?? draft).occurrences(from: today, to: today.adding(days: 1)).first { $0.end > Date() }
     }
 
     private var canStartLiveActivity: Bool {

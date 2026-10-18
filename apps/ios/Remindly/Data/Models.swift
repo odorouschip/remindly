@@ -104,6 +104,8 @@ struct CalendarEvent: Identifiable, Hashable {
     var isDone = false
     /// Minutes before the start of each occurrence, as the reminders table stores them.
     var reminderOffsets: [Int] = []
+    /// Repeating events: occurrences that were changed or skipped, keyed by the day each would normally fall on.
+    var exceptions: [Day: OccurrenceOverride] = [:]
 
     var isTask: Bool { kind == .task }
 
@@ -127,6 +129,21 @@ struct CalendarEvent: Identifiable, Hashable {
     static func newTask(on day: Day) -> CalendarEvent {
         CalendarEvent(kind: .task, allDay: true, start: day.date(), end: day.date(), reminderOffsets: TaskReminder.oneDay.offsets)
     }
+}
+
+/// One occurrence of a repeating event that was skipped or changed (a row of
+/// `event_exceptions`). Nil fields keep the series' value.
+struct OccurrenceOverride: Hashable {
+    var cancelled = false
+    var title: String?
+    var notes: String?
+    var location: String?
+    var categoryId: UUID?
+    /// Moved: the new start and end (local midnight of the first and last day when all-day).
+    var start: Date?
+    var end: Date?
+
+    var isEmpty: Bool { self == OccurrenceOverride() }
 }
 
 struct Category: Identifiable, Hashable, Decodable {
@@ -166,6 +183,8 @@ struct EventRow: Decodable {
     let priority: Priority?
     let completedAt: String?
     let reminders: [ReminderRow]
+    /// Optional so a select without the embed still decodes.
+    let eventExceptions: [ExceptionRow]?
 
     func toEvent() -> CalendarEvent? {
         let start: Date, end: Date
@@ -192,9 +211,59 @@ struct EventRow: Decodable {
             repeatRule: repeatFreq.map { RepeatRule(frequency: $0, interval: repeatInterval, until: repeatUntil) },
             priority: priority ?? .medium,
             isDone: completedAt != nil,
-            reminderOffsets: reminders.map(\.offsetMinutes).sorted(by: >)
+            reminderOffsets: reminders.map(\.offsetMinutes).sorted(by: >),
+            exceptions: repeatFreq == nil ? [:] : Dictionary(
+                (eventExceptions ?? []).map { ($0.occurrenceDate, $0.toOverride(allDay: allDay, length: end.timeIntervalSince(start))) },
+                uniquingKeysWith: { first, _ in first }
+            )
         )
     }
+}
+
+/// A row of `event_exceptions`. Location and category arrive once the
+/// 202610180001 migration is applied (optional until then).
+struct ExceptionRow: Decodable {
+    let occurrenceDate: Day
+    let cancelled: Bool
+    let title: String?
+    let notes: String?
+    let location: String?
+    let categoryId: UUID?
+    let startsAt: String?
+    let endsAt: String?
+    let startDate: Day?
+    let endDate: Day?
+
+    /// Like occurrence_bounds() in SQL, a moved occurrence without an end keeps the series' length.
+    func toOverride(allDay: Bool, length: TimeInterval) -> OccurrenceOverride {
+        var x = OccurrenceOverride(cancelled: cancelled, title: title, notes: notes, location: location, categoryId: categoryId)
+        if allDay, let startDate {
+            x.start = startDate.date()
+            x.end = (endDate ?? startDate).date()
+        } else if !allDay, let start = startsAt.flatMap(Timestamp.parse) {
+            x.start = start
+            x.end = endsAt.flatMap(Timestamp.parse) ?? start.addingTimeInterval(length)
+        }
+        return x
+    }
+}
+
+/// What gets sent to insert or update an `event_exceptions` row; nulls keep the series value.
+func exceptionRow(seriesId: UUID, occurrenceDate: Day, allDay: Bool, _ x: OccurrenceOverride) -> [String: Any] {
+    let moved = x.start.flatMap { start in x.end.map { (start, $0) } }
+    return [
+        "event_id": seriesId.uuidString,
+        "occurrence_date": occurrenceDate.description,
+        "cancelled": x.cancelled,
+        "title": x.title ?? NSNull(),
+        "notes": x.notes ?? NSNull(),
+        "location": x.location ?? NSNull(),
+        "category_id": x.categoryId?.uuidString ?? NSNull(),
+        "starts_at": moved.map { allDay ? NSNull() : Timestamp.format($0.0) as Any } ?? NSNull(),
+        "ends_at": moved.map { allDay ? NSNull() : Timestamp.format($0.1) as Any } ?? NSNull(),
+        "start_date": moved.map { allDay ? Day($0.0).description as Any : NSNull() } ?? NSNull(),
+        "end_date": moved.map { allDay ? Day($0.1).description as Any : NSNull() } ?? NSNull(),
+    ]
 }
 
 /// What gets sent to insert or update an `events` row. Every column is

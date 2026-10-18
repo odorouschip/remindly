@@ -8,9 +8,10 @@ enum MainTab: Hashable {
 struct MainView: View {
     @Environment(CalendarStore.self) private var store
     @State private var tab: MainTab = .calendar
-    @State private var editing: CalendarEvent?
+    @State private var editing: EditorTarget?
     @State private var showingSettings = false
-    @State private var confirmingDelete: CalendarEvent?
+    /// An occurrence of a repeating event waiting for "this event / all events".
+    @State private var confirmingDelete: Occurrence?
     @State private var showingQuickAdd = false
     /// A day for the Calendar tab to jump to (from quick add).
     @State private var requestedDay: Day?
@@ -34,7 +35,7 @@ struct MainView: View {
                 .tabItem { Label("Upcoming", systemImage: "list.bullet") }
                 .tag(MainTab.upcoming)
         }
-        .sheet(item: $editing) { EventEditorView(event: $0) }
+        .sheet(item: $editing) { EventEditorView(event: $0.event, occurrenceDate: $0.occurrenceDate) }
         .sheet(isPresented: $showingSettings) { SettingsView() }
         .sheet(isPresented: $showingQuickAdd) {
             QuickAddView(
@@ -42,7 +43,7 @@ struct MainView: View {
                     // Let the quick add sheet finish closing before the editor opens.
                     Task {
                         try? await Task.sleep(for: .milliseconds(450))
-                        editing = store.event(event.id) ?? event
+                        editing = EditorTarget(event: store.event(event.id) ?? event)
                     }
                 },
                 onGoTo: { day in
@@ -52,14 +53,15 @@ struct MainView: View {
             )
         }
         .confirmationDialog(
-            "Delete every occurrence of “\(confirmingDelete?.title ?? "")”?",
+            "Delete “\(confirmingDelete?.event.title ?? "")”?",
             isPresented: Binding(get: { confirmingDelete != nil }, set: { if !$0 { confirmingDelete = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Delete All", role: .destructive) {
-                if let event = confirmingDelete { Task { await store.delete(event) } }
+            titleVisibility: .visible,
+            presenting: confirmingDelete.flatMap { occurrence in store.event(occurrence.event.id).map { (occurrence, $0) } }
+        ) { occurrence, series in
+            DeleteScopeButtons(series: series, occurrenceDate: occurrence.occurrenceDate) { scope in
+                Task { await store.delete(series, occurrenceOn: occurrence.occurrenceDate, scope: scope) }
             }
-        } message: {
+        } message: { _, _ in
             Text("This is a repeating event.")
         }
         .alert("Something went wrong", isPresented: Binding(
@@ -77,12 +79,18 @@ struct MainView: View {
 
     private var actions: EventActions {
         EventActions(
-            open: { event in editing = store.event(event.id) ?? event },
-            create: { editing = $0 },
+            open: { occurrence in
+                guard let series = store.event(occurrence.event.id) else { return }
+                // A repeating event opens at the occurrence that was tapped.
+                editing = series.repeatRule == nil
+                    ? EditorTarget(event: series)
+                    : EditorTarget(event: CalendarEvent(editing: series.occurrence(on: occurrence.occurrenceDate)), occurrenceDate: occurrence.occurrenceDate)
+            },
+            create: { editing = EditorTarget(event: $0) },
             toggleDone: { event in Task { await store.toggleDone(event) } },
-            delete: { event in
-                guard let series = store.event(event.id) else { return }
-                if series.repeatRule != nil { confirmingDelete = series } else { Task { await store.delete(series) } }
+            delete: { occurrence in
+                guard let series = store.event(occurrence.event.id) else { return }
+                if series.repeatRule != nil { confirmingDelete = occurrence } else { Task { await store.delete(series) } }
             },
             showSettings: { showingSettings = true },
             showQuickAdd: { showingQuickAdd = true }
@@ -92,6 +100,35 @@ struct MainView: View {
     private func openPendingEvent() {
         guard store.hasLoaded, let id = store.pendingEventId else { return }
         store.pendingEventId = nil
-        editing = store.event(id)
+        #if DEBUG
+        if let day = DemoData.occurrenceToOpen, let series = store.event(id), series.repeatRule != nil {
+            editing = EditorTarget(event: CalendarEvent(editing: series.occurrence(on: day)), occurrenceDate: day)
+            return
+        }
+        #endif
+        editing = store.event(id).map { EditorTarget(event: $0) }
+    }
+}
+
+/// What the editor sheet is showing: an event, or one occurrence of a repeating one.
+struct EditorTarget: Identifiable {
+    let event: CalendarEvent
+    /// The day the occurrence normally falls on, when editing one occurrence.
+    var occurrenceDate: Day?
+    var id: String { "\(event.id)|\(occurrenceDate?.description ?? "")" }
+}
+
+/// "Delete This Event / This and Following / All Events" for a repeating event.
+struct DeleteScopeButtons: View {
+    let series: CalendarEvent
+    let occurrenceDate: Day
+    let onDelete: (OccurrenceScope) -> Void
+
+    var body: some View {
+        Button("Delete This Event", role: .destructive) { onDelete(.this) }
+        if occurrenceDate > series.firstDay {
+            Button("Delete This and Following", role: .destructive) { onDelete(.following) }
+        }
+        Button("Delete All Events", role: .destructive) { onDelete(.all) }
     }
 }

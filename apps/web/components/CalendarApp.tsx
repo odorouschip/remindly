@@ -9,7 +9,7 @@ import { Workspace } from "./calendar/Workspace";
 import type { CalendarBackend } from "@/lib/calendar/backend";
 import { createDemoBackend } from "@/lib/calendar/demoBackend";
 import { createSupabaseBackend } from "@/lib/calendar/supabaseBackend";
-import type { CalEvent, Category } from "@/lib/calendar/types";
+import type { CalEvent, Category, OccurrenceOverride } from "@/lib/calendar/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const DEMO_REQUESTED = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -97,6 +97,16 @@ export function CalendarApp() {
       await reload();
     } catch (error) {
       showNotice(error instanceof Error ? error.message : "Could not delete.");
+    }
+  }
+
+  async function handleSaveOccurrence(seriesId: string, occurrenceDate: string, override: OccurrenceOverride | null) {
+    if (!backend) return;
+    try {
+      await backend.saveOccurrence(seriesId, occurrenceDate, override);
+      await reload();
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : "Could not save.");
     }
   }
 
@@ -252,6 +262,7 @@ export function CalendarApp() {
       onNotify={showNotice}
       onSave={(ev) => void handleSave(ev)}
       onDelete={(id) => void handleDelete(id)}
+      onSaveOccurrence={(seriesId, date, override) => void handleSaveOccurrence(seriesId, date, override)}
       onSaveCategory={(cat) => void handleSaveCategory(cat)}
       onDeleteCategory={(id) => void handleDeleteCategory(id)}
       onSignOut={() => void handleSignOut()}

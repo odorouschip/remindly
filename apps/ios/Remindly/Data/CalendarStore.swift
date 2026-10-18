@@ -102,7 +102,7 @@ final class CalendarStore {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let eventData = rest.send(.get, "events", query: ["select": "*,reminders(offset_minutes)", "deleted_at": "is.null"])
+            async let eventData = rest.send(.get, "events", query: ["select": "*,reminders(offset_minutes),event_exceptions(*)", "deleted_at": "is.null"])
             async let categoryData = rest.send(.get, "categories", query: ["select": "id,name,color,sort_order", "order": "sort_order,created_at"])
             let rows = try SupabaseREST.decoder.decode([EventRow].self, from: try await eventData)
             categories = try SupabaseREST.decoder.decode([Category].self, from: try await categoryData)
@@ -160,6 +160,44 @@ final class CalendarStore {
             await load()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Changes or skips the occurrence of `series` that normally falls on `day`;
+    /// nil puts it back to match the series. Returns whether it worked.
+    @discardableResult
+    func saveOccurrence(of series: CalendarEvent, on day: Day, _ override: OccurrenceOverride?) async -> Bool {
+        #if DEBUG
+        if DemoData.isEnabled {
+            if let i = events.firstIndex(where: { $0.id == series.id }) { events[i].exceptions[day] = override }
+            return true
+        }
+        #endif
+        do {
+            if let override {
+                let row = exceptionRow(seriesId: series.id, occurrenceDate: day, allDay: series.allDay, override)
+                try await rest.send(.post, "event_exceptions", query: ["on_conflict": "event_id,occurrence_date"],
+                                    body: try JSONSerialization.data(withJSONObject: row), prefer: "resolution=merge-duplicates")
+            } else {
+                try await rest.send(.delete, "event_exceptions", query: ["event_id": "eq.\(series.id)", "occurrence_date": "eq.\(day)"])
+            }
+            await load()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Deletes one occurrence of a repeating event, it and the ones after, or the whole series.
+    func delete(_ series: CalendarEvent, occurrenceOn day: Day, scope: OccurrenceScope) async {
+        switch scope {
+        case .this:
+            await saveOccurrence(of: series, on: day, OccurrenceOverride(cancelled: true))
+        case .following:
+            if let shortened = series.endingBefore(day) { await save(shortened) } else { await delete(series) }
+        case .all:
+            await delete(series)
         }
     }
 

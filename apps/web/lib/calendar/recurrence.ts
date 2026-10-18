@@ -1,35 +1,76 @@
 import { addDays, localDateTimeToIso, parseIsoDate, toIsoDate } from "./dates";
-import type { CalEvent } from "./types";
+import type { CalEvent, OccurrenceOverride } from "./types";
 
 // Mirrors public.next_reminder() in supabase/migrations/202610170001_schema_v2.sql;
 // keep the two in step.
 
 const DAY_MS = 86_400_000;
 
-const daysBetween = (a: string, b: string) =>
+export const daysBetween = (a: string, b: string) =>
   Math.round((parseIsoDate(b).getTime() - parseIsoDate(a).getTime()) / DAY_MS);
+
+const spanOf = (ev: CalEvent) => Math.max(0, daysBetween(ev.date, ev.endDate || ev.date));
 
 /**
  * Occurrences overlapping [from, to] (inclusive, YYYY-MM-DD). A repeating
- * event becomes one copy per occurrence; copies keep the series id, so key
- * them by id + date.
+ * event becomes one copy per occurrence, with any skipped or changed
+ * occurrences (`exceptions`) applied; copies keep the series id and carry
+ * `occurrenceDate`, so key them with occurrenceKey().
  */
 export function occurrencesBetween(events: readonly CalEvent[], from: string, to: string): CalEvent[] {
   const out: CalEvent[] = [];
   for (const ev of events) {
-    const span = Math.max(0, daysBetween(ev.date, ev.endDate || ev.date));
     if (!ev.recur) {
       if (ev.date <= to && (ev.endDate || ev.date) >= from) out.push(ev);
       continue;
     }
     // Start early enough to catch a multi-day occurrence already underway.
-    const earliest = toIsoDate(addDays(parseIsoDate(from), -span));
+    const earliest = toIsoDate(addDays(parseIsoDate(from), -spanOf(ev)));
     const last = ev.recurUntil && ev.recurUntil < to ? ev.recurUntil : to;
     for (const date of repeatDates(ev, earliest, last)) {
-      out.push(date === ev.date ? ev : { ...ev, date, endDate: toIsoDate(addDays(parseIsoDate(date), span)) });
+      const x = ev.exceptions?.[date];
+      if (x?.cancelled || x?.date) continue; // skipped, or moved (added below)
+      out.push(occurrenceOf(ev, date));
+    }
+    // A moved occurrence can land in the window from anywhere.
+    for (const [date, x] of Object.entries(ev.exceptions ?? {})) {
+      if (x.cancelled || !x.date || !isRepeatDate(ev, date)) continue;
+      const moved = occurrenceOf(ev, date);
+      if (moved.date <= to && moved.endDate >= from) out.push(moved);
     }
   }
   return out;
+}
+
+/** The occurrence of `series` that normally falls on `date`, with its exception (if any) applied. */
+export function occurrenceOf(series: CalEvent, date: string): CalEvent {
+  const natural: CalEvent = { ...series, date, endDate: toIsoDate(addDays(parseIsoDate(date), spanOf(series))), occurrenceDate: date };
+  const x = series.exceptions?.[date];
+  return x ? applyOverride(natural, x) : natural;
+}
+
+function applyOverride(ev: CalEvent, x: OccurrenceOverride): CalEvent {
+  const out = { ...ev };
+  if (x.title !== undefined) out.title = x.title;
+  if (x.desc !== undefined) out.desc = x.desc;
+  if (x.location !== undefined) out.location = x.location;
+  if (x.categoryId !== undefined) out.categoryId = x.categoryId;
+  if (x.date) {
+    out.date = x.date;
+    out.endDate = x.endDate || x.date;
+    if (!ev.allDay) {
+      out.time = x.time || ev.time;
+      out.end = x.end || ev.end;
+    }
+  }
+  return out;
+}
+
+/** Whether a repeating event has an occurrence on `date` (before any exceptions). */
+export function isRepeatDate(ev: CalEvent, date: string): boolean {
+  if (!ev.recur || date < ev.date || (ev.recurUntil && date > ev.recurUntil)) return false;
+  for (const d of repeatDates(ev, date, date)) return d === date;
+  return false;
 }
 
 const FULL_DAY_MINUTES = 24 * 60;
@@ -60,7 +101,8 @@ export function byDay(events: readonly CalEvent[], from: string, to: string): Ca
   return out;
 }
 
-export const occurrenceKey = (ev: CalEvent): string => `${ev.id}:${ev.date}`;
+/** Unique per occurrence and day shown (moved occurrences and multi-day segments included). */
+export const occurrenceKey = (ev: CalEvent): string => `${ev.id}:${ev.occurrenceDate ?? ""}:${ev.date}`;
 
 function* repeatDates(ev: CalEvent, from: string, to: string): Generator<string> {
   const start = parseIsoDate(ev.date);

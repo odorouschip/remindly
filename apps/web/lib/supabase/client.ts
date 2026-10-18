@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { CategoryColor, Priority } from "@/lib/calendar/types";
 
-// Row shapes for supabase/migrations/202610170001_schema_v2.sql. Only the
+// Row shapes for supabase/migrations/ (schema v2 and later). Only the
 // tables the web app touches are typed here.
 
 export type EventRow = {
@@ -41,6 +41,25 @@ export type ReminderRow = {
   created_at: string;
 };
 
+export type ExceptionRow = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  occurrence_date: string;
+  cancelled: boolean;
+  title: string | null;
+  notes: string | null;
+  /** Added by 202610180001_exception_location_category.sql. */
+  location: string | null;
+  category_id: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CategoryRow = {
   id: string;
   user_id: string;
@@ -64,6 +83,7 @@ export type Database = {
       events: Table<EventRow, "title", "id" | "user_id" | "created_at" | "updated_at">;
       reminders: Table<ReminderRow, "event_id" | "offset_minutes", "id" | "user_id" | "created_at" | "next_due_at" | "next_occurrence_date">;
       categories: Table<CategoryRow, "name", "id" | "user_id" | "created_at" | "updated_at">;
+      event_exceptions: Table<ExceptionRow, "event_id" | "occurrence_date", "id" | "user_id" | "created_at" | "updated_at">;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

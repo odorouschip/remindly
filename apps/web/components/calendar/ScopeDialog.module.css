@@ -1,0 +1,39 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-7);
+  background: var(--bg-overlay);
+  animation: fade 0.15s var(--ease);
+}
+.dialog {
+  width: 100%;
+  max-width: 340px;
+  padding: var(--sp-6);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-pop);
+  animation: rise 0.18s var(--ease);
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px) scale(0.99); } }
+
+.title {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+.message {
+  margin: 0 0 var(--sp-5);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.choices > * { justify-content: center; width: 100%; }

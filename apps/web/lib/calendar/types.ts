@@ -35,6 +35,30 @@ export type CalEvent = {
   priority?: Priority | undefined;
   /** Display-only; see DaySegment. */
   segment?: DaySegment | undefined;
+  /** Repeating events: occurrences that were changed or skipped, keyed by the date each would normally fall on. */
+  exceptions?: Record<string, OccurrenceOverride> | undefined;
+  /**
+   * Set on each occurrence of a repeating event: the date it would normally
+   * fall on. Identifies the occurrence even after it's been moved.
+   */
+  occurrenceDate?: string | undefined;
+};
+
+/**
+ * One occurrence of a repeating event that was skipped or changed (a row of
+ * event_exceptions). Fields left out keep the series' value. A moved
+ * occurrence has all four of date/endDate/time/end (time and end "" when all-day).
+ */
+export type OccurrenceOverride = {
+  cancelled: boolean;
+  title?: string | undefined;
+  desc?: string | undefined;
+  location?: string | undefined;
+  categoryId?: string | undefined;
+  date?: string | undefined;
+  endDate?: string | undefined;
+  time?: string | undefined;
+  end?: string | undefined;
 };
 
 export const CATEGORY_COLORS = ["gray", "brown", "orange", "yellow", "green", "blue", "purple", "pink", "red"] as const;

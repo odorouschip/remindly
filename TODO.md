@@ -119,7 +119,9 @@ Current schema lives in [supabase/migrations/202604300001_init.sql](supabase/mig
 - [ ] **If B wins:** build the on-signup `handle_new_user()` trigger and an admin script to refresh holiday rows each year.
 
 ### Recurrence storage
-- [ ] **Edit or skip one occurrence (web UI).** `event_exceptions` is ready (and the reminder scheduler respects it), but the editor still only edits the whole series. Add "This event / All events" when saving or deleting an occurrence, and apply exceptions in [recurrence.ts](apps/web/lib/calendar/recurrence.ts).
+- [x] **Edit or skip one occurrence** (web + iOS). "This event / All events" on save, "This event / This and following / All events" on delete.
+- [ ] **"This and following" for edits** (split the series in two) — only delete has it so far.
+- [ ] An occurrence can't drop the series' category (a null override means "same as the series").
 - [ ] **Category order.** `sort_order` exists; Settings has no drag-to-reorder yet.
 - [x] **Decide expansion strategy.** Today `events` stores `repeat_frequency` + `repeat_until` but the views never expand the rule into instances — only the original date renders (tracked in Functional gaps → Calendar views). Three approaches: (a) expand client-side on read from the single stored row, (b) generate occurrence rows in a database view, (c) materialize the next N occurrences into a separate table via a job. **(a) is the simplest start** — defer (c) until performance forces it.
 - [x] *(Table exists and reminders honor it; the web UI to skip/move one occurrence is still to build.)* **Exceptions table.** Once recurrence is expanded, users will want to move or delete a single instance of a repeating event. Add `recurrence_exceptions` (event_id, occurrence_date, action: cancelled / modified, override_event_id).
@@ -232,6 +234,11 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### One occurrence of a repeating event — 2026-10-18
+- [x] Opening an occurrence of a repeating event (web and iOS) now shows that occurrence, not the first one. Saving asks **This event / All events** (repeat, all-day and kind changes always apply to all); deleting offers **This event / This and following / All events**. "This event" writes an `event_exceptions` row, so it stays part of the series and the reminder scheduler already honors it; "All events" moves the whole series by the same number of days.
+- [x] Exceptions applied when expanding repeats on web ([recurrence.ts](apps/web/lib/calendar/recurrence.ts)) and iOS ([Recurrence.swift](apps/ios/Remindly/Data/Recurrence.swift)), including occurrences moved in from outside the visible range. Edit logic in [occurrenceEdits.ts](apps/web/lib/calendar/occurrenceEdits.ts) ↔ [OccurrenceEdits.swift](apps/ios/Remindly/Data/OccurrenceEdits.swift).
+- [x] New migration [202610180001_exception_location_category.sql](supabase/migrations/202610180001_exception_location_category.sql): exceptions can also override location and category (category must be the user's own). Checked against a local Postgres: scheduling around skipped/moved occurrences, upserts, RLS, category deletion.
 
 ### iOS widgets — 2026-10-18
 - [x] **Up Next** (small, Lock Screen rectangular + inline): the event on now or next, then the one after. **Today** (medium, large): what's left today with overdue tasks first, then the coming days; rows open their event. Fed by a two-week snapshot the app writes to the App Group after each sync/change ([WidgetSnapshot.swift](apps/ios/Shared/WidgetSnapshot.swift), [WidgetSync.swift](apps/ios/Remindly/Data/WidgetSync.swift)); widgets reload only when it changes and roll forward at each event start/end and midnight.

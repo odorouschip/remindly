@@ -49,7 +49,7 @@ struct AgendaView: View {
         EventRowView(occurrence: occurrence, day: day, category: store.category(occurrence.event.categoryId)) {
             actions.toggleDone(occurrence.event)
         }
-        .eventRowActions(occurrence.event, actions)
+        .eventRowActions(occurrence, actions)
     }
 }
 

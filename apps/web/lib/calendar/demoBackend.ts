@@ -65,6 +65,15 @@ export function createDemoBackend(): CalendarBackend {
     async deleteEvent(id) {
       events = events.filter((e) => e.id !== id);
     },
+    async saveOccurrence(seriesId, occurrenceDate, override) {
+      events = events.map((e) => {
+        if (e.id !== seriesId) return e;
+        const exceptions = { ...e.exceptions };
+        if (override) exceptions[occurrenceDate] = override;
+        else delete exceptions[occurrenceDate];
+        return { ...e, exceptions };
+      });
+    },
     async listCategories() {
       return [...categories].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => ({ ...c }));
     },

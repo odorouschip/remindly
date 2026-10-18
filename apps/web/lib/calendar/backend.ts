@@ -1,4 +1,4 @@
-import type { CalEvent, Category } from "./types";
+import type { CalEvent, Category, OccurrenceOverride } from "./types";
 
 /**
  * Everything the calendar UI needs from storage. The UI only talks to this,
@@ -11,6 +11,11 @@ export interface CalendarBackend {
   /** Inserts when `ev.id` is empty, otherwise updates. */
   saveEvent(ev: CalEvent): Promise<void>;
   deleteEvent(id: string): Promise<void>;
+  /**
+   * Changes or skips one occurrence of a repeating event, identified by the
+   * date it would normally fall on. Null puts it back to match the series.
+   */
+  saveOccurrence(seriesId: string, occurrenceDate: string, override: OccurrenceOverride | null): Promise<void>;
 
   listCategories(): Promise<Category[]>;
   /** Inserts when `cat.id` is empty, otherwise updates. Returns the saved category. */

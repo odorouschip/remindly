@@ -56,7 +56,7 @@ Edit Scheme → Run → Arguments (Debug builds only):
 | `-demo` | Sample data, no account needed; edits stay in memory |
 | `-tab upcoming` | Start on the Upcoming tab |
 | `-tab week` / `-tab month` | Start on the Calendar tab in that view |
-| `-open-event <uuid>` | Open that event on launch, as a tapped notification would |
+| `-open-event <uuid>` | Open that event on launch, as a tapped notification would; `<uuid>@YYYY-MM-DD` opens one occurrence of a repeating event (the demo Standup is `00000000-0000-0000-0000-00000000DE71`) |
 | `-quick-add "<text>"` | Open quick add with the text typed in |
 | `-live-activity` | Start a countdown for the next timed event |
 | `-widgets` | Show the widget gallery (Home / Lock Screen widgets at their sizes) instead of the app |

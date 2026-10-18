@@ -5,6 +5,8 @@ import WidgetKit
 @main
 struct RemindlyWidgetsBundle: WidgetBundle {
     var body: some Widget {
+        UpNextWidget()
+        TodayWidget()
         RemindlyLiveActivity()
     }
 }
@@ -175,18 +177,6 @@ extension RemindlyActivityAttributes.ContentState {
 
     /// The event's category color (dark-mode shades, since the background is dark).
     var tintColor: Color {
-        let hex: UInt32 = switch tint {
-        case "gray": 0x9B9B9B
-        case "brown": 0xBA856F
-        case "orange": 0xFFA344
-        case "yellow": 0xFFDC49
-        case "green": 0x4DAB9A
-        case "blue": 0x529CCA
-        case "purple": 0xA782D8
-        case "pink": 0xE255A1
-        case "red": 0xFF7369
-        default: 0xF7604B // coral when there's no category
-        }
-        return Color(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
+        CategoryPalette.darkColor(tint) ?? Brand.coral // coral when there's no category
     }
 }

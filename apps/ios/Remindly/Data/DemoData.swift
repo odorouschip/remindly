@@ -15,6 +15,9 @@ enum DemoData {
     /// `-quick-add <text>` opens quick add with that text typed in.
     static var quickAddText: String? { argument(after: "-quick-add") }
 
+    /// `-widgets` shows the widget gallery instead of the app.
+    static var showsWidgetGallery: Bool { ProcessInfo.processInfo.arguments.contains("-widgets") }
+
     /// `-tab upcoming` starts on the Upcoming tab; `-tab week` / `-tab month` on the Calendar tab in that view.
     static var launchTab: String? { argument(after: "-tab") }
 

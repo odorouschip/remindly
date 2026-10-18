@@ -12,8 +12,12 @@ final class CalendarStore {
         }
     }
     /// Derived from `events`; rebuilt when they change or the day rolls over.
-    private(set) var agenda = Agenda()
-    private(set) var categories: [Category] = []
+    private(set) var agenda = Agenda() {
+        didSet { updateWidgets() }
+    }
+    private(set) var categories: [Category] = [] {
+        didSet { updateWidgets() }
+    }
     private(set) var isLoading = false
     private(set) var hasLoaded = false
     var errorMessage: String?
@@ -67,6 +71,17 @@ final class CalendarStore {
         guard auth.isSignedIn else { return }
         await load()
         BackgroundRefresh.log.info("Background refresh finished (\(self.events.count) events)")
+    }
+
+    /// What the Home Screen / Lock Screen widgets show.
+    func widgetSnapshot() -> WidgetSnapshot {
+        WidgetSnapshot(agenda: agenda, category: category, signedIn: hasLoaded)
+    }
+
+    private func updateWidgets() {
+        WidgetSync.schedule { [weak self] in
+            self?.widgetSnapshot() ?? WidgetSnapshot(signedIn: false, overdue: [], days: [])
+        }
     }
 
     func category(_ id: UUID?) -> Category? {
@@ -219,6 +234,7 @@ final class CalendarStore {
         events = []
         categories = []
         hasLoaded = false
+        updateWidgets()
         lastLoadedAt = nil
         errorMessage = nil
         await notifications.reschedule(events: [])

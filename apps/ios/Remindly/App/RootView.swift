@@ -8,7 +8,9 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if auth.isSignedIn || isDemo {
+            if isDemo && showsWidgetGallery {
+                WidgetGallery()
+            } else if auth.isSignedIn || isDemo {
                 MainView()
             } else {
                 SignInView()
@@ -54,6 +56,14 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             store.rollOverIfNeeded()
         }
+    }
+
+    private var showsWidgetGallery: Bool {
+        #if DEBUG
+        DemoData.showsWidgetGallery
+        #else
+        false
+        #endif
     }
 
     private var isDemo: Bool {

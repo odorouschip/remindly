@@ -218,7 +218,8 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [ ] **Offline editing + sync conflict handling.**
 - [x] *(Local notifications are the main path until there's a paid developer account.)* **Push notifications fallback** when Live Activities aren't supported (older iOS, iPad without Dynamic Island, etc.).
 - [ ] **iCloud / device-local backup** of preferences (theme choice, default view, etc.).
-- [ ] **Calendar widgets** (Home Screen + Lock Screen) beyond the Live Activity.
+- [x] **Calendar widgets** (Home Screen + Lock Screen) beyond the Live Activity.
+- [ ] **Check the widgets on a real phone** (App Group on the free team, Lock Screen tinting) and consider a tap-to-complete checkbox for tasks (needs an App Intent that can write to Supabase).
 - [ ] **Share extension** so events can be created from other apps (e.g., from a Safari page).
 
 ### Polish / quality
@@ -231,6 +232,10 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### iOS widgets — 2026-10-18
+- [x] **Up Next** (small, Lock Screen rectangular + inline): the event on now or next, then the one after. **Today** (medium, large): what's left today with overdue tasks first, then the coming days; rows open their event. Fed by a two-week snapshot the app writes to the App Group after each sync/change ([WidgetSnapshot.swift](apps/ios/Shared/WidgetSnapshot.swift), [WidgetSync.swift](apps/ios/Remindly/Data/WidgetSync.swift)); widgets reload only when it changes and roll forward at each event start/end and midnight.
+- [x] `Day` and the category palette moved to `apps/ios/Shared` — one palette for the app, Live Activity and widgets.
 
 ### Week view on iPhone — 2026-10-18
 - [x] Calendar tab has a Month / Week switch (remembered). Week ([WeekView.swift](apps/ios/Remindly/Views/WeekView.swift), layout in [WeekLayout.swift](apps/ios/Remindly/Data/WeekLayout.swift)): day headers, all-day bars spanning the days they cover (folds to "+N" past three rows), a 24-hour timeline with a now line, overnight events split at midnight like the web, overlapping events cascaded like Calendar's. Tap an empty slot to add an event at that half hour; swipe to change weeks; tap / press and hold events as in the lists.

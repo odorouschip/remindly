@@ -25,6 +25,7 @@ supabase/.branches/
 supabase/.temp/
 .playwright-mcp/
 .claude/
+CLAUDE.md
 
 # iOS secrets (generated from apps/web/.env.local)
 apps/ios/Config/Secrets.xcconfig

@@ -24,11 +24,24 @@ struct RootView: View {
                 await store.reset()
             }
         }
-        // Pick up changes made on the web whenever the app comes back to the foreground.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active && auth.isSignedIn && !isDemo && store.hasLoaded {
-                Task { await store.load() }
+            switch phase {
+            case .active:
+                // Pick up changes made on the web, unless we synced moments ago.
+                if auth.isSignedIn && !isDemo && store.hasLoaded {
+                    Task { await store.refreshIfStale() }
+                } else {
+                    store.rollOverIfNeeded()
+                }
+            case .background:
+                if auth.isSignedIn || isDemo { BackgroundRefresh.schedule() }
+            default:
+                break
             }
+        }
+        // Midnight, a time zone change or the clock being set: "Today" moves.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            store.rollOverIfNeeded()
         }
     }
 

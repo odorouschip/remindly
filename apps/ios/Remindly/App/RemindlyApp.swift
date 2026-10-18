@@ -32,6 +32,11 @@ struct RemindlyApp: App {
                     store.pendingEventId = id
                 }
         }
+        // iOS launches the app in the background now and then to run this.
+        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+            await store.backgroundRefresh()
+            BackgroundRefresh.schedule()
+        }
     }
 }
 

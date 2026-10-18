@@ -5,8 +5,19 @@
 <dict>
 	<key>SUPABASE_URL</key>
 	<string>https://$(SUPABASE_HOST)</string>
+	<key>REMINDLY_WEB_HOST</key>
+	<string>$(REMINDLY_WEB_HOST)</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
+	<!-- Background refresh: iOS wakes the app now and then to sync and reschedule reminders. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).refresh</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

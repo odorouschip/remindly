@@ -78,9 +78,14 @@ struct SignInView: View {
                 .font(.subheadline)
 
                 if mode == .signIn {
-                    Text("Forgot your password? Reset it on the web app.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if let web = RemindlyConfig.webAppURL {
+                        Link("Forgot your password? Reset it on the web", destination: web)
+                            .font(.footnote)
+                    } else {
+                        Text("Forgot your password? Reset it on the web app.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.horizontal, 24)

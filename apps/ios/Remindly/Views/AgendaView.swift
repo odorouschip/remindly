@@ -6,17 +6,15 @@ struct AgendaView: View {
     @State private var editing: CalendarEvent?
     @State private var showingSettings = false
 
-    private static let daysAhead = 45
-
     var body: some View {
         NavigationStack {
             List {
-                if !overdue.isEmpty {
+                if !store.agenda.overdue.isEmpty {
                     Section("Overdue") {
-                        ForEach(overdue) { row($0, on: $0.day) }
+                        ForEach(store.agenda.overdue) { row($0, on: $0.day) }
                     }
                 }
-                ForEach(days, id: \.day) { group in
+                ForEach(store.agenda.days) { group in
                     Section {
                         ForEach(group.occurrences) { row($0, on: group.day) }
                     } header: {
@@ -26,7 +24,7 @@ struct AgendaView: View {
             }
             .listStyle(.plain)
             .overlay {
-                if store.hasLoaded && days.isEmpty && overdue.isEmpty {
+                if store.hasLoaded && store.agenda.isEmpty {
                     ContentUnavailableView("Nothing coming up", systemImage: "calendar",
                                            description: Text("Tap + to add an event or task."))
                 } else if !store.hasLoaded && store.isLoading {
@@ -87,44 +85,6 @@ struct AgendaView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { editing = occurrence.event }
-    }
-
-    /// Unfinished tasks whose due date has passed.
-    private var overdue: [Occurrence] {
-        let today = Day.today
-        return store.events
-            .filter { $0.isTask && !$0.isDone && $0.firstDay < today }
-            .map { $0.occurrence(on: $0.firstDay) }
-            .sorted { $0.start < $1.start }
-    }
-
-    private var days: [(day: Day, occurrences: [Occurrence])] {
-        let today = Day.today
-        let last = today.adding(days: Self.daysAhead)
-        var byDay: [Day: [Occurrence]] = [:]
-        for event in store.events {
-            for occurrence in event.occurrences(from: today, to: last) {
-                // Multi-day events show on every day they cover.
-                var day = max(occurrence.day, today)
-                while day <= occurrence.lastDay && day <= last {
-                    byDay[day, default: []].append(occurrence)
-                    day = day.adding(days: 1)
-                }
-            }
-        }
-        return byDay.keys.sorted().map { day in
-            (day, byDay[day]!.sorted { sortKey($0, on: day) < sortKey($1, on: day) })
-        }
-    }
-
-    /// All-day items (and the middle days of long events) first, then by when they start that day.
-    private func sortKey(_ occurrence: Occurrence, on day: Day) -> Date {
-        if occurrence.event.allDay { return .distantPast }
-        switch occurrence.part(on: day) {
-        case .middle: return .distantPast
-        case .last: return day.date()
-        case .only, .first: return occurrence.start
-        }
     }
 }
 

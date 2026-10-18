@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { PwaRegistration } from "@/components/PwaRegistration";
 import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -28,7 +27,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <PwaRegistration />
         {children}
       </body>
     </html>

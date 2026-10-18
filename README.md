@@ -59,6 +59,18 @@ supabase functions deploy dispatch-reminders
 
 Schedule `dispatch-reminders` to run once per minute in Supabase Scheduled Functions. If you set `CRON_SECRET`, pass it as a bearer token when invoking the function.
 
+## Deploying the web app (Vercel)
+
+1. Push the repo to GitHub, then on [vercel.com](https://vercel.com) choose **Add New → Project** and import it.
+2. Set **Root Directory** to `apps/web`. Leave the framework (Next.js) and build/install commands on their defaults — Vercel installs the npm workspaces from the repo root.
+3. Add **Environment Variables**: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (same values as `apps/web/.env.local`; never the secret/service-role key). Optionally `NEXT_PUBLIC_AUTH_PROVIDERS`.
+4. **Deploy.** If the keys are missing, the site says so instead of showing demo data.
+5. **Custom domain:** Project → Settings → Domains → add e.g. `remindly.yourdomain.com`, then create the DNS record Vercel shows (usually a `CNAME` to `cname.vercel-dns.com`) at your domain registrar. HTTPS is automatic.
+6. In Supabase → **Authentication → URL Configuration**, set **Site URL** to the production URL and add it (plus `http://localhost:3000`) under **Redirect URLs**, so confirmation and reset emails link to the right place.
+7. Optional: set `REMINDLY_WEB_HOST` in `apps/ios/Config/Base.xcconfig` so the iOS app links to the web app.
+
+Every push to `main` redeploys; other branches get preview URLs.
+
 ## iOS setup
 
 See [apps/ios/README.md](apps/ios/README.md) for Xcode target configuration. The iOS app requires a real device, an Apple Developer account, and Push Notifications + Live Activities entitlements enabled.

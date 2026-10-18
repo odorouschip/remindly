@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { OAuthProvider } from "./auth/AuthLayout";
+import { AuthLayout, type OAuthProvider } from "./auth/AuthLayout";
 import { ForgotPasswordScreen } from "./auth/ForgotPasswordScreen";
 import { LoginScreen } from "./auth/LoginScreen";
 import { SignupScreen } from "./auth/SignupScreen";
@@ -12,8 +12,14 @@ import { createSupabaseBackend } from "@/lib/calendar/supabaseBackend";
 import type { CalEvent, Category } from "@/lib/calendar/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-/** Without Supabase keys (or with NEXT_PUBLIC_DEMO_MODE=true) the app runs on sample data. */
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true" || !isSupabaseConfigured;
+const DEMO_REQUESTED = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+/**
+ * A production build without Supabase keys is a deploy mistake (e.g. env vars
+ * missing on Vercel), so say so instead of quietly showing sample data.
+ */
+const MISCONFIGURED = !isSupabaseConfigured && !DEMO_REQUESTED && process.env.NODE_ENV === "production";
+/** Locally without Supabase keys, or with NEXT_PUBLIC_DEMO_MODE=true, the app runs on sample data. */
+const DEMO_MODE = DEMO_REQUESTED || (!isSupabaseConfigured && !MISCONFIGURED);
 
 type Session = { userId: string; email: string | null };
 
@@ -23,7 +29,7 @@ function authMessage(message: string): string {
 }
 
 export function CalendarApp() {
-  const supabase = useMemo(() => (DEMO_MODE ? null : getSupabaseBrowserClient()), []);
+  const supabase = useMemo(() => (DEMO_MODE || MISCONFIGURED ? null : getSupabaseBrowserClient()), []);
 
   const [authView, setAuthView] = useState<"login" | "signup" | "forgot">("login");
   const [session, setSession] = useState<Session | null>(null);
@@ -183,6 +189,13 @@ export function CalendarApp() {
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
+  }
+
+  if (MISCONFIGURED) {
+    return (
+      <AuthLayout title="Remindly isn't connected yet"
+        subtitle={<>This deploy is missing <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>. Add them in the hosting settings and redeploy.</>} />
+    );
   }
 
   // Blank until we know whether there's a session, so the login screen doesn't flash.

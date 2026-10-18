@@ -12,6 +12,12 @@ enum RemindlyConfig {
         return url
     }
 
+    /// The hosted web app, if REMINDLY_WEB_HOST is set in Config/Base.xcconfig.
+    static var webAppURL: URL? {
+        guard let host = Bundle.main.object(forInfoDictionaryKey: "REMINDLY_WEB_HOST") as? String, !host.isEmpty else { return nil }
+        return URL(string: "https://\(host)")
+    }
+
     static var supabaseAnonKey: String {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String, !key.isEmpty else {
             fatalError("SUPABASE_ANON_KEY is missing. Run apps/ios/scripts/sync-secrets.sh, then rebuild.")

@@ -184,7 +184,7 @@ Light, Dark and System today (tokens in [globals.css](apps/web/app/globals.css))
 - [ ] *(release only)* Share-calendar-with-another-user (longer term).
 
 ### PWA story
-- [ ] **Service worker has no real strategy.** [apps/web/public/sw.js](apps/web/public/sw.js) pre-caches `/` and `/icon.svg`, then does network-first with cache fallback. But `/` is a Server Component HTML that depends on auth state, so cached HTML is mostly useless. No JS/CSS/asset caching, no offline event store. Either commit to a real offline-first design (cache the app shell properly, queue mutations while offline, sync on reconnect) or take the SW out until the design is ready — right now it's vaporware that adds confusion.
+- [x] *(Removed for now; revisit if offline support is ever wanted.)* **Service worker has no real strategy.** [apps/web/public/sw.js](apps/web/public/sw.js) pre-caches `/` and `/icon.svg`, then does network-first with cache fallback. But `/` is a Server Component HTML that depends on auth state, so cached HTML is mostly useless. No JS/CSS/asset caching, no offline event store. Either commit to a real offline-first design (cache the app shell properly, queue mutations while offline, sync on reconnect) or take the SW out until the design is ready — right now it's vaporware that adds confusion.
 - [ ] **App shell route.** If the SW is going to work, the calendar app needs a stable shell route that doesn't depend on session — `/app` or similar, with auth checked client-side after hydration.
 
 ### Quality bar before public
@@ -209,7 +209,7 @@ The iOS side is significantly less developed than the web side and the entire UI
 - [ ] **App-wide theming layer** — [Theme.swift](apps/ios/Calender/Theme.swift) exists; match the web's light/dark tokens.
 
 ### Functionality still needed
-- [ ] **Background refresh.** Reminders only pick up web changes when the app is opened. A `BGAppRefreshTask` could sync a few times a day.
+- [x] **Background refresh.** `BGAppRefreshTask` every ≥3h (iOS decides); needs an on-device check since the simulator can't run it — see apps/ios/README.md.
 - [ ] **Edit categories on iOS** (view-only for now; edit on the web).
 - [ ] **Forgot password on iOS** (points to the web for now).
 - [ ] **Auth UI** — match the web's simplified auth (email + password, forgot password with code, optional provider buttons).
@@ -230,6 +230,12 @@ The iOS side is significantly less developed than the web side and the entire UI
 ---
 
 ## Recently done
+
+### Background refresh, battery pass, hosting prep — 2026-10-18
+- [x] iOS background refresh ([BackgroundRefresh.swift](apps/ios/Remindly/Data/BackgroundRefresh.swift)): syncs and reschedules reminders while the app is closed.
+- [x] Battery/efficiency: foreground re-sync skipped if synced <2 min ago; notifications diffed instead of all removed and re-added; agenda built once per change (and on day rollover) instead of every redraw.
+- [x] Web: production builds without Supabase keys show a setup error instead of demo data; service worker removed (it cached nothing useful and risked stale deploys); basic security headers. Vercel + custom-domain steps in the README.
+- [x] iOS links to the web app for password reset / category editing once `REMINDLY_WEB_HOST` is set.
 
 ### iOS data layer + native shell — 2026-10-17
 - [x] Generated [Remindly.xcodeproj](apps/ios/Remindly.xcodeproj) (app + Live Activity widget, folders auto-synced); renamed everything from Calender to Remindly, incl. the `remindly://` scheme. Supabase keys come from `apps/web/.env.local` via [sync-secrets.sh](apps/ios/scripts/sync-secrets.sh).

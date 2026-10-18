@@ -27,6 +27,22 @@ The folders are synchronized with the project, so any file added inside them is 
 
 Add your Apple ID in **Xcode → Settings → Accounts**, then set **Team** to your Personal Team on both targets (Signing & Capabilities). With a free account the app has to be re-run from Xcode every 7 days. Bundle IDs are `com.odorouschip.Remindly` and `com.odorouschip.Remindly.Widgets`; change both if that prefix is taken.
 
+## Reminders and background refresh
+
+Reminders are local notifications: after every sync the app keeps the next 60 scheduled (iOS allows 64), changing only the ones that differ. To pick up events added on the web without opening the app, it asks iOS for a background refresh at most every 3 hours; iOS decides the actual timing from how often you use the app, battery and network, and each run is two small requests.
+
+Background refresh doesn't run in the simulator ("BGTaskScheduler is not available on this platform"). To test it on a phone: run from Xcode, send the app to the background, pause in the debugger (⌃⌘Y) and run
+
+```
+e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.odorouschip.Remindly.refresh"]
+```
+
+then continue. "Background refresh started/finished" appears in the console (subsystem `com.odorouschip.Remindly`, category `refresh`). It also needs **Settings → General → Background App Refresh** on.
+
+## Debug launch arguments
+
+Edit Scheme → Run → Arguments: `-demo` runs on sample data without an account; `-open-event <uuid>` opens that event on launch.
+
 ## Command-line build
 
 ```sh

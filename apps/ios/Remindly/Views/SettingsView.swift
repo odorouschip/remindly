@@ -40,7 +40,12 @@ struct SettingsView: View {
                 } header: {
                     Text("Categories")
                 } footer: {
-                    Text("Rename, recolor or add categories in Settings on the web app.")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Rename, recolor or add categories in Settings on the web app.")
+                        if let web = RemindlyConfig.webAppURL {
+                            Link("Open the web app", destination: web)
+                        }
+                    }
                 }
 
                 Section {

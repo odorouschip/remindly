@@ -3,8 +3,8 @@ import UserNotifications
 
 /// Turns reminders into local notifications on this device.
 ///
-/// iOS keeps at most 64 pending notifications per app, so this schedules the
-/// soonest ones and is re-run after every sync. (Server push via the
+/// iOS keeps at most 64 pending notifications per app, so this keeps the
+/// soonest ones scheduled and is re-run after every sync. (Server push via the
 /// dispatch-reminders function needs a paid developer account; if that's ever
 /// turned on, this should stand down to avoid double alerts.)
 @MainActor
@@ -24,13 +24,32 @@ final class NotificationScheduler {
         await center.notificationSettings().authorizationStatus
     }
 
+    /// Brings pending notifications in line with `events`, touching only the
+    /// ones that changed (a sync with no edits does no notification work).
     func reschedule(events: [CalendarEvent]) async {
-        let stale = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(Self.prefix) }
-        center.removePendingNotificationRequests(withIdentifiers: stale)
+        let wanted = Dictionary(Self.requests(for: events).map { ($0.identifier, $0) }, uniquingKeysWith: { first, _ in first })
+        let pending = await center.pendingNotificationRequests().filter { $0.identifier.hasPrefix(Self.prefix) }
 
+        var unchanged = Set<String>()
+        var stale: [String] = []
+        for request in pending {
+            if let match = wanted[request.identifier], Self.same(request, match) {
+                unchanged.insert(request.identifier)
+            } else {
+                stale.append(request.identifier)
+            }
+        }
+        if !stale.isEmpty { center.removePendingNotificationRequests(withIdentifiers: stale) }
+        for (id, request) in wanted where !unchanged.contains(id) {
+            try? await center.add(request)
+        }
+    }
+
+    /// The soonest reminders across all events, as notification requests.
+    private static func requests(for events: [CalendarEvent]) -> [UNNotificationRequest] {
         let now = Date()
         let today = Day.today
-        let horizon = today.adding(days: Self.horizonDays)
+        let horizon = today.adding(days: horizonDays)
         var upcoming: [(fire: Date, occurrence: Occurrence, offset: Int)] = []
         for event in events where !(event.isTask && event.isDone) {
             let offsets = reminderOffsets(for: event)
@@ -43,22 +62,26 @@ final class NotificationScheduler {
             }
         }
 
-        for item in upcoming.sorted(by: { $0.fire < $1.fire }).prefix(Self.limit) {
+        return upcoming.sorted { $0.fire < $1.fire }.prefix(limit).map { item in
             let content = UNMutableNotificationContent()
             content.title = item.occurrence.event.title
-            content.body = Self.body(for: item.occurrence.event, offset: item.offset)
+            content.body = body(for: item.occurrence.event, offset: item.offset)
             content.sound = .default
             content.threadIdentifier = item.occurrence.event.id.uuidString
             content.userInfo = ["eventId": item.occurrence.event.id.uuidString]
-
             let when = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: item.fire)
-            let request = UNNotificationRequest(
-                identifier: "\(Self.prefix)\(item.occurrence.id).\(item.offset)",
+            return UNNotificationRequest(
+                identifier: "\(prefix)\(item.occurrence.id).\(item.offset)",
                 content: content,
                 trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
             )
-            try? await center.add(request)
         }
+    }
+
+    private static func same(_ a: UNNotificationRequest, _ b: UNNotificationRequest) -> Bool {
+        a.content.title == b.content.title
+            && a.content.body == b.content.body
+            && (a.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate() == (b.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate()
     }
 
     /// Same wording as the server dispatcher's alertBody().
